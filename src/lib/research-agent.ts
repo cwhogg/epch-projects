@@ -13,111 +13,82 @@ const ANALYSIS_STEPS = [
   { name: 'Scoring & Synthesis', key: 'scoring' },
 ];
 
-function createPrompt(idea: ProductIdea, step: string): string {
-  const baseContext = `
-You are a Market Research Analyst specializing in SEO-driven B2C products.
+function createPrompt(idea: ProductIdea, step: string, additionalContext?: string): string {
+  const baseContext = `You are a concise Market Research Analyst. Be direct and avoid filler.
 
-CRITICAL RULES:
-- NEVER fabricate data (search volumes, keyword difficulty, traffic estimates)
-- When data is unavailable, state "Unknown" or "Data unavailable"
-- Be conservative in estimates
-- Flag uncertainty explicitly
+RULES:
+- NEVER fabricate data (search volumes, traffic estimates)
+- Mark unavailable data as "Unknown"
+- No lengthy disclaimers or repetition
 
-Product being analyzed:
-- Name: ${idea.name}
-- Description: ${idea.description}
-- Target User: ${idea.targetUser}
-- Problem Solved: ${idea.problemSolved}
-${idea.url ? `- Landing Page: ${idea.url}` : ''}
-${idea.documentContent ? `\nAdditional Context:\n${idea.documentContent.substring(0, 2000)}` : ''}
+Product: ${idea.name}
+${idea.description ? `Description: ${idea.description}` : ''}
+${idea.targetUser ? `Target User: ${idea.targetUser}` : ''}
+${idea.problemSolved ? `Problem: ${idea.problemSolved}` : ''}
+${idea.url ? `URL: ${idea.url}` : ''}
+${idea.documentContent ? `\nContext:\n${idea.documentContent.substring(0, 3000)}` : ''}
+${additionalContext ? `\nAdditional Analysis Context:\n${additionalContext}` : ''}
 `;
 
   switch (step) {
     case 'competitors':
       return `${baseContext}
 
-Conduct a competitive analysis for this product idea. Find 5-10 direct and indirect competitors.
+Find 5-8 competitors (direct and indirect). For each, provide ONE line with:
+Name | URL | What they do | Pricing | Key strength | Key weakness
 
-For each competitor, document:
-- Name & URL
-- One-line description
-- Target audience
-- Pricing (if available)
-- Key strengths
-- Key weaknesses
+Then list 3 differentiation opportunities as bullet points.
 
-Assess market maturity as: Crowded / Emerging / Nascent
+Market maturity: Crowded / Emerging / Nascent
 
-Identify 3-5 differentiation opportunities.
-
-Format your response as markdown with clear sections.`;
+Keep it under 400 words total.`;
 
     case 'keywords':
       return `${baseContext}
 
-Conduct SEO and keyword research for this product idea.
+List 15-20 seed keywords in a simple table:
+| Keyword | Type | SERP Leaders | Content Gap |
 
-IMPORTANT: You do NOT have access to Ahrefs or SEMrush data. You CANNOT provide:
-- Actual search volume numbers
-- Keyword difficulty scores
-- Traffic estimates
+Types: product, problem, alternative, question
 
-Instead, provide:
-1. Brainstorm 20-30 relevant seed keywords across categories:
-   - Product-focused (e.g., "[product type] app")
-   - Problem-focused (e.g., "how to [solve problem]")
-   - Alternative-focused (e.g., "[competitor] alternative")
-   - Question-based
+Then list top 3 content opportunities as bullet points.
 
-2. For each top keyword, conduct SERP analysis (who ranks, content gaps)
-
-3. Group keywords into thematic clusters
-
-4. Identify content opportunities based on SERP observation
-
-Mark all volume/difficulty as "Unknown - requires Ahrefs/SEMrush"
-
-Format your response as markdown.`;
+No search volume data available - don't pretend otherwise.
+Keep it under 400 words total.`;
 
     case 'wtp':
       return `${baseContext}
 
-Analyze willingness to pay for this product category.
+List 3-5 comparable products with pricing in a table:
+| Product | Pricing | Model |
 
-Research and document:
-1. Existing paid products in this space with their pricing
-2. Price points and pricing models (subscription, one-time, freemium)
-3. Purchase intent signals (reviews, "worth it" discussions)
-4. Price sensitivity indicators
+WTP Rating: Strong / Moderate / Weak / Unknown
 
-Rate willingness to pay as: Strong / Moderate / Weak / Unknown
+Evidence (3 bullet points max).
 
-Provide specific evidence for your rating.
-
-Format your response as markdown.`;
+Keep it under 250 words total.`;
 
     case 'scoring':
       return `${baseContext}
 
-Based on the research conducted, provide a final scoring and recommendation.
+SCORING TABLE (use exactly this format):
 
-Score each dimension 1-10 (or "?" if data unavailable):
+| Dimension | Score | Reasoning |
+|-----------|-------|-----------|
+| SEO Opportunity | ?/10 | No data |
+| Competitive Landscape | X/10 | [one sentence] |
+| Willingness to Pay | X/10 | [one sentence] |
+| Differentiation Potential | X/10 | [one sentence] |
+| Expertise Alignment | 5/10 | Assumed moderate |
 
-| Dimension | Weight | Score | Reasoning |
-|-----------|--------|-------|-----------|
-| SEO Opportunity | 50% | ?/10 | [Without Ahrefs data, mark as unknown] |
-| Competitive Landscape | 20% | X/10 | [Based on competitor analysis] |
-| Willingness to Pay | 15% | X/10 | [Based on WTP analysis] |
-| Differentiation Potential | 10% | X/10 | [Based on gaps identified] |
-| Expertise Alignment | 5% | X/10 | [Assume moderate alignment] |
+Overall Recommendation: Test First / Test Later / Don't Test / Incomplete
+Confidence Level: High / Medium / Low
 
-Provide:
-1. Overall recommendation: Test First / Test Later / Don't Test / Incomplete
-2. Confidence level: High / Medium / Low
-3. Key risks (3-5 bullet points)
-4. Suggested next steps if testing
+Key Risks (3-5 bullets, one line each)
 
-Format as markdown with clear sections.`;
+Next Steps (if testing, 3 bullets max)
+
+Keep it under 300 words total.`;
 
     default:
       return baseContext;
@@ -192,7 +163,7 @@ function parseSummary(content: string): string {
   return '';
 }
 
-export async function runResearchAgent(idea: ProductIdea): Promise<Analysis> {
+export async function runResearchAgent(idea: ProductIdea, additionalContext?: string): Promise<Analysis> {
   const progress: AnalysisProgress = {
     ideaId: idea.id,
     status: 'running',
@@ -217,11 +188,11 @@ export async function runResearchAgent(idea: ProductIdea): Promise<Analysis> {
       // Call Claude
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
+        max_tokens: 2048,
         messages: [
           {
             role: 'user',
-            content: createPrompt(idea, step.key),
+            content: createPrompt(idea, step.key, additionalContext),
           },
         ],
       });
@@ -231,42 +202,26 @@ export async function runResearchAgent(idea: ProductIdea): Promise<Analysis> {
 
       // Mark step complete
       progress.steps[i].status = 'complete';
-      progress.steps[i].detail = `Generated ${responseText.length} characters`;
+      progress.steps[i].detail = `Done`;
       await saveProgress(idea.id, progress);
     }
 
-    // Combine all content into final analysis
-    const fullContent = `# Analysis: ${idea.name}
-
-## Product Summary
-
-**Name:** ${idea.name}
-**Description:** ${idea.description}
-**Target User:** ${idea.targetUser}
-**Problem Solved:** ${idea.problemSolved}
-
+    // Combine into concise analysis
+    const fullContent = `# ${idea.name}
+${idea.description ? `\n${idea.description}\n` : ''}
+${additionalContext ? `\n**Analysis Context:** ${additionalContext}\n` : ''}
 ---
 
-## Competitive Analysis
-
+## Competitors
 ${content.competitors || 'Not available'}
 
----
-
-## SEO & Keyword Research
-
+## Keywords
 ${content.keywords || 'Not available'}
 
----
-
 ## Willingness to Pay
-
 ${content.wtp || 'Not available'}
 
----
-
-## Scoring & Recommendation
-
+## Recommendation
 ${content.scoring || 'Not available'}
 `;
 

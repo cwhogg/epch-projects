@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAnalysis } from '@/lib/data';
 import { getAnalysisFromDb, getAnalysisContent, isRedisConfigured } from '@/lib/db';
 import MarkdownContent from '@/components/MarkdownContent';
+import ReanalyzeForm from '@/components/ReanalyzeForm';
 import { Analysis } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -141,6 +142,9 @@ export default async function AnalysisPage({ params }: PageProps) {
         </div>
       )}
 
+      {/* Re-analyze */}
+      <ReanalyzeForm ideaId={analysis.id} />
+
       {/* Main Analysis */}
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
@@ -148,26 +152,6 @@ export default async function AnalysisPage({ params }: PageProps) {
         </h2>
         <MarkdownContent content={content.main} />
       </div>
-
-      {/* Competitors */}
-      {content.competitors && (
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-            Competitor Analysis
-          </h2>
-          <MarkdownContent content={content.competitors} />
-        </div>
-      )}
-
-      {/* Keywords */}
-      {content.keywords && (
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-            Keyword Research
-          </h2>
-          <MarkdownContent content={content.keywords} />
-        </div>
-      )}
     </div>
   );
 }

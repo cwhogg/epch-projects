@@ -29,8 +29,17 @@ export async function POST(
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
 
+    // Check for additional context in request body
+    let additionalContext: string | undefined;
+    try {
+      const body = await request.json();
+      additionalContext = body.additionalContext;
+    } catch {
+      // No body or invalid JSON, that's fine
+    }
+
     // Start analysis in background (don't await)
-    runResearchAgent(idea).catch((error) => {
+    runResearchAgent(idea, additionalContext).catch((error) => {
       console.error('Analysis failed:', error);
     });
 
