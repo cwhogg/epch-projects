@@ -7,5 +7,6 @@
 *.swo
 *~
 
-# Node (if used later)
+# Node
 node_modules/
+.next/
