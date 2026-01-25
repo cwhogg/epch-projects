@@ -60,9 +60,14 @@ function ScoreRing({ score, label, size = 56 }: { score: number | null; label: s
     return '#f87171';
   };
 
+  const getGlow = () => {
+    if (score === null || score < 7) return 'none';
+    return `drop-shadow(0 0 4px ${getColor()}40)`;
+  };
+
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex flex-col items-center gap-1 transition-transform duration-200 hover:scale-110">
+      <div className="relative" style={{ width: size, height: size, filter: getGlow() }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           <circle
             cx={size / 2}
@@ -105,11 +110,19 @@ export default async function Home() {
   return (
     <div className="space-y-8 sm:space-y-12">
       {/* Header */}
-      <header className="animate-slide-up stagger-1">
-        <h1 className="text-2xl sm:text-3xl font-display" style={{ color: 'var(--text-primary)' }}>
+      <header className="animate-slide-up stagger-1 relative">
+        {/* Decorative gradient orb */}
+        <div
+          className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none hidden sm:block"
+          style={{
+            background: 'radial-gradient(circle, rgba(255, 107, 91, 0.12) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
+        <h1 className="text-2xl sm:text-3xl font-display relative" style={{ color: 'var(--text-primary)' }}>
           Product Ideas
         </h1>
-        <p className="mt-2 text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-2 text-sm sm:text-base relative" style={{ color: 'var(--text-secondary)' }}>
           AI-powered analysis across competition, SEO, and willingness to pay.
         </p>
       </header>

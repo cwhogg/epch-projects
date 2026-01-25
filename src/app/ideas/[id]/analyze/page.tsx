@@ -22,11 +22,11 @@ interface AnalysisProgress {
   };
 }
 
-const defaultSteps = [
-  { name: 'Competitive Analysis', status: 'pending' as const },
-  { name: 'SEO & Keywords', status: 'pending' as const },
-  { name: 'Willingness to Pay', status: 'pending' as const },
-  { name: 'Scoring', status: 'pending' as const },
+const defaultSteps: AnalysisStep[] = [
+  { name: 'Competitive Analysis', status: 'pending' },
+  { name: 'SEO & Keywords', status: 'pending' },
+  { name: 'Willingness to Pay', status: 'pending' },
+  { name: 'Scoring', status: 'pending' },
 ];
 
 export default function AnalyzePage() {
@@ -146,12 +146,28 @@ export default function AnalyzePage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="card-static p-6 sm:p-8">
+      <div className="card-static p-6 sm:p-8 relative overflow-hidden">
+        {/* Ambient gradient background */}
+        <div
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            background: progress?.status === 'complete'
+              ? 'radial-gradient(ellipse at top, rgba(52, 211, 153, 0.15) 0%, transparent 60%)'
+              : 'radial-gradient(ellipse at top, rgba(255, 107, 91, 0.15) 0%, transparent 60%)',
+          }}
+        />
+
         {/* Header */}
-        <div className="text-center mb-8 animate-slide-up stagger-1">
+        <div className="text-center mb-8 animate-slide-up stagger-1 relative">
           <div
-            className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-            style={{ background: 'var(--accent-coral-soft)' }}
+            className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
+              progress?.status === 'complete' ? '' : 'animate-glow'
+            }`}
+            style={{
+              background: progress?.status === 'complete'
+                ? 'rgba(52, 211, 153, 0.15)'
+                : 'var(--accent-coral-soft)',
+            }}
           >
             {progress?.status === 'complete' ? (
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -167,7 +183,7 @@ export default function AnalyzePage() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="animate-pulse"
+                className="animate-float"
               >
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
@@ -184,18 +200,20 @@ export default function AnalyzePage() {
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-6 animate-slide-up stagger-2">
+        <div className="mb-6 animate-slide-up stagger-2 relative">
           <div
-            className="h-1.5 rounded-full overflow-hidden"
+            className="h-2 rounded-full overflow-hidden"
             style={{ background: 'var(--border-default)' }}
           >
             <div
-              className="h-full rounded-full transition-all duration-500"
+              className="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
               style={{
                 width: `${progressPercent}%`,
                 background: progress?.status === 'complete'
-                  ? '#34d399'
-                  : 'linear-gradient(90deg, var(--accent-coral) 0%, #ff8f6b 100%)',
+                  ? 'linear-gradient(90deg, #34d399 0%, #4ade80 100%)'
+                  : 'linear-gradient(90deg, var(--accent-coral) 0%, #ff8f6b 50%, var(--accent-coral) 100%)',
+                backgroundSize: progress?.status === 'complete' ? '100% 100%' : '200% 100%',
+                animation: progress?.status === 'complete' ? 'none' : 'shimmer 2s ease-in-out infinite',
               }}
             />
           </div>

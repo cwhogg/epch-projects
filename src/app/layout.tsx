@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {/* Navigation */}
-        <nav className="sticky top-0 z-50 backdrop-blur-xl" style={{ background: 'rgba(13, 13, 15, 0.8)', borderBottom: '1px solid var(--border-subtle)' }}>
+        <nav className="sticky top-0 z-50 backdrop-blur-xl nav-blur">
           <div className="container-app">
             <div className="flex items-center justify-between h-16">
               {/* Logo */}

@@ -14,19 +14,21 @@ const ANALYSIS_STEPS = [
 ];
 
 function createPrompt(idea: ProductIdea, step: string, additionalContext?: string): string {
-  const baseContext = `You are a concise Market Research Analyst. Be direct and avoid filler.
+  const baseContext = `You are a SENIOR market research analyst with deep domain expertise. You research like a VC doing due diligence - finding real insights, not surface-level observations.
 
-RULES:
-- NEVER fabricate data (search volumes, traffic estimates)
-- Mark unavailable data as "Unknown"
-- No lengthy disclaimers or repetition
+CRITICAL RULES:
+- Be a DOMAIN EXPERT. If this is healthcare, think like a healthcare insider. If it's B2B software, think like a SaaS veteran.
+- Find NICHE competitors, not just the obvious big players. The best insights come from specialized tools, emerging startups, and adjacent solutions.
+- Look beyond Google results. Consider: Reddit communities, niche forums, patient advocacy groups, industry publications, Hacker News discussions, ProductHunt, Crunchbase, etc.
+- NEVER fabricate data (search volumes, traffic). Mark unknown data as "Unknown".
+- Be SPECIFIC and ANALYTICAL. Generic observations are worthless.
 
 Product: ${idea.name}
 ${idea.description ? `Description: ${idea.description}` : ''}
 ${idea.targetUser ? `Target User: ${idea.targetUser}` : ''}
 ${idea.problemSolved ? `Problem: ${idea.problemSolved}` : ''}
 ${idea.url ? `URL: ${idea.url}` : ''}
-${idea.documentContent ? `\nContext:\n${idea.documentContent.substring(0, 3000)}` : ''}
+${idea.documentContent ? `\nContext:\n${idea.documentContent.substring(0, 4000)}` : ''}
 ${additionalContext ? `\nAdditional Analysis Context:\n${additionalContext}` : ''}
 `;
 
@@ -34,61 +36,114 @@ ${additionalContext ? `\nAdditional Analysis Context:\n${additionalContext}` : '
     case 'competitors':
       return `${baseContext}
 
-Find 5-8 competitors (direct and indirect). For each, provide ONE line with:
-Name | URL | What they do | Pricing | Key strength | Key weakness
+COMPETITIVE ANALYSIS - Think like a domain insider, not a generalist.
 
-Then list 3 differentiation opportunities as bullet points.
+1. Find 6-8 competitors across these categories:
+   - Direct competitors (same solution, same audience)
+   - Adjacent solutions (different approach, same problem)
+   - Niche/specialized tools (may serve subset of audience)
+   - Emerging/stealth startups (recently funded, ProductHunt launches, etc.)
 
-Market maturity: Crowded / Emerging / Nascent
+AVOID listing only the obvious big players. The most valuable competitive intel comes from specialized tools and emerging players.
 
-Keep it under 400 words total.`;
+For each competitor, provide in table format:
+| Name | URL | Focus | Pricing | Why they win | Why they lose |
+
+2. DIFFERENTIATION OPPORTUNITIES (3-5 bullets):
+   - What gaps exist in current solutions?
+   - What do users complain about in reviews/Reddit/forums?
+   - What adjacent problems are unsolved?
+
+3. Market Assessment:
+   - Maturity: Crowded / Emerging / Nascent
+   - Moat difficulty: Easy / Medium / Hard (how hard to differentiate?)
+
+Be specific. Generic observations like "good UI" or "established brand" are useless.`;
 
     case 'keywords':
       return `${baseContext}
 
-List 15-20 seed keywords in a simple table:
-| Keyword | Type | SERP Leaders | Content Gap |
+SEO & KEYWORD RESEARCH - Think like someone actually searching for this solution.
 
-Types: product, problem, alternative, question
+1. Seed Keywords (15-20) in table:
+| Keyword | Intent | Who's Ranking | Content Gap |
 
-Then list top 3 content opportunities as bullet points.
+Include:
+- Problem-aware queries ("how to [solve problem]", "[symptom] help")
+- Solution-aware queries ("[product type] for [use case]")
+- Alternative queries ("[competitor] alternative", "best [category]")
+- Community queries (what people ask on Reddit, forums, Quora)
+- Long-tail specific queries
 
-No search volume data available - don't pretend otherwise.
-Keep it under 400 words total.`;
+2. CONTENT OPPORTUNITIES (top 3):
+   - What questions are people asking that no one answers well?
+   - What informational content could establish authority?
+   - What comparison/review content is missing?
+
+3. Community Signals:
+   - Relevant subreddits and their activity level
+   - Forums, Facebook groups, Discord servers where target users gather
+   - Common complaints/wishes expressed in these communities
+
+NOTE: No search volume data available. Focus on intent and gaps, not volume.`;
 
     case 'wtp':
       return `${baseContext}
 
-List 3-5 comparable products with pricing in a table:
-| Product | Pricing | Model |
+WILLINGNESS TO PAY - Deep dive on monetization potential.
 
-WTP Rating: Strong / Moderate / Weak / Unknown
+1. Pricing Landscape (5-7 comparable products):
+| Product | Price | Model | What's Included | Target Segment |
 
-Evidence (3 bullet points max).
+Include a mix of:
+- Direct competitors
+- Adjacent products users might already pay for
+- Premium vs. budget options in the space
 
-Keep it under 250 words total.`;
+2. PRICE SENSITIVITY SIGNALS:
+- What are people ALREADY paying for in this space?
+- Evidence from reviews, Reddit, forums about price complaints or "worth it" comments
+- B2B vs B2C dynamics (who's the actual buyer?)
+
+3. MONETIZATION INSIGHTS:
+- Recommended pricing model (subscription/one-time/freemium/usage-based)
+- Price anchor (what existing spend does this replace or supplement?)
+- Willingness to pay barriers (regulatory concerns, trust issues, budget owner)
+
+WTP RATING: Strong / Moderate / Weak / Unknown
+Confidence in rating: High / Medium / Low
+
+Evidence summary (3 bullets max, be specific).`;
 
     case 'scoring':
       return `${baseContext}
 
-SCORING TABLE (use exactly this format):
+FINAL SCORING - Be decisive and justify with evidence.
 
-| Dimension | Score | Reasoning |
-|-----------|-------|-----------|
-| SEO Opportunity | ?/10 | No data |
-| Competitive Landscape | X/10 | [one sentence] |
-| Willingness to Pay | X/10 | [one sentence] |
-| Differentiation Potential | X/10 | [one sentence] |
-| Expertise Alignment | 5/10 | Assumed moderate |
+SCORING TABLE (use EXACTLY this format - scores in second column):
 
-Overall Recommendation: Test First / Test Later / Don't Test / Incomplete
-Confidence Level: High / Medium / Low
+| Dimension | Score | Evidence-Based Reasoning |
+|-----------|-------|--------------------------|
+| SEO Opportunity | X/10 | [specific reasoning based on keyword analysis] |
+| Competitive Landscape | X/10 | [how crowded, how differentiated can you be] |
+| Willingness to Pay | X/10 | [evidence of actual spending in space] |
+| Differentiation Potential | X/10 | [what unique angle exists] |
+| Expertise Alignment | 5/10 | [assumed moderate unless context suggests otherwise] |
 
-Key Risks (3-5 bullets, one line each)
+OVERALL RECOMMENDATION: Test First / Test Later / Don't Test
+CONFIDENCE: High / Medium / Low
 
-Next Steps (if testing, 3 bullets max)
+KEY RISKS (3-5, be specific not generic):
+- [Specific risk with explanation]
+- [Specific risk with explanation]
+- [Specific risk with explanation]
 
-Keep it under 300 words total.`;
+NEXT STEPS (if testing):
+- [Specific actionable step]
+- [Specific actionable step]
+- [Specific actionable step]
+
+Be DECISIVE. Wishy-washy analysis helps no one.`;
 
     default:
       return baseContext;
@@ -105,12 +160,14 @@ function parseScores(content: string): AnalysisScores {
     overall: null,
   };
 
+  // Match format: | Dimension | X/10 | reasoning |
+  // Score appears right after dimension name, followed by pipe
   const patterns = [
-    { key: 'seoOpportunity', pattern: /SEO Opportunity[^|]*\|[^|]*\|\s*(\d+)\/10/i },
-    { key: 'competitiveLandscape', pattern: /Competitive.*?Landscape[^|]*\|[^|]*\|\s*(\d+)\/10/i },
-    { key: 'willingnessToPay', pattern: /Willingness.*?Pay[^|]*\|[^|]*\|\s*(\d+)\/10/i },
-    { key: 'differentiationPotential', pattern: /Differentiation[^|]*\|[^|]*\|\s*(\d+)\/10/i },
-    { key: 'expertiseAlignment', pattern: /(?:Expertise|Alignment)[^|]*\|[^|]*\|\s*(\d+)\/10/i },
+    { key: 'seoOpportunity', pattern: /SEO Opportunity\s*\|\s*(\d+)\/10/i },
+    { key: 'competitiveLandscape', pattern: /Competitive\s*(?:Landscape)?\s*\|\s*(\d+)\/10/i },
+    { key: 'willingnessToPay', pattern: /Willingness\s*(?:to)?\s*Pay\s*\|\s*(\d+)\/10/i },
+    { key: 'differentiationPotential', pattern: /Differentiation\s*(?:Potential)?\s*\|\s*(\d+)\/10/i },
+    { key: 'expertiseAlignment', pattern: /Expertise\s*(?:Alignment)?\s*\|\s*(\d+)\/10/i },
   ];
 
   patterns.forEach(({ key, pattern }) => {
@@ -120,10 +177,44 @@ function parseScores(content: string): AnalysisScores {
     }
   });
 
+  // Calculate overall as weighted average if we have scores
+  const weights = {
+    seoOpportunity: 0.3,
+    competitiveLandscape: 0.2,
+    willingnessToPay: 0.25,
+    differentiationPotential: 0.2,
+    expertiseAlignment: 0.05,
+  };
+
+  let totalWeight = 0;
+  let weightedSum = 0;
+
+  Object.entries(weights).forEach(([key, weight]) => {
+    const score = scores[key as keyof AnalysisScores];
+    if (score !== null) {
+      weightedSum += score * weight;
+      totalWeight += weight;
+    }
+  });
+
+  if (totalWeight > 0) {
+    scores.overall = Math.round(weightedSum / totalWeight);
+  }
+
   return scores;
 }
 
 function parseRecommendation(content: string): Analysis['recommendation'] {
+  // Look for explicit recommendation patterns
+  const recMatch = content.match(/(?:OVERALL\s+)?RECOMMENDATION[:\s]*(Test First|Test Later|Don't Test|Incomplete)/i);
+  if (recMatch) {
+    const rec = recMatch[1];
+    if (rec.toLowerCase().includes("don't")) return "Don't Test";
+    if (rec.toLowerCase().includes('first')) return 'Test First';
+    if (rec.toLowerCase().includes('later')) return 'Test Later';
+  }
+
+  // Fallback to simple search
   if (content.includes("Don't Test")) return "Don't Test";
   if (content.includes('Test First')) return 'Test First';
   if (content.includes('Test Later')) return 'Test Later';
@@ -131,34 +222,57 @@ function parseRecommendation(content: string): Analysis['recommendation'] {
 }
 
 function parseConfidence(content: string): Analysis['confidence'] {
-  const match = content.match(/Confidence.*?(High|Medium|Low)/i);
+  const match = content.match(/CONFIDENCE[:\s]*(High|Medium|Low)/i);
   if (match) return match[1] as Analysis['confidence'];
+
+  // Fallback
+  const fallback = content.match(/Confidence.*?(High|Medium|Low)/i);
+  if (fallback) return fallback[1] as Analysis['confidence'];
+
   return 'Unknown';
 }
 
 function parseRisks(content: string): string[] {
   const risks: string[] = [];
-  const riskSection = content.match(/Key Risks[\s\S]*?(?=##|$)/i);
+
+  // Look for KEY RISKS section
+  const riskSection = content.match(/KEY RISKS[:\s]*\n([\s\S]*?)(?=\n(?:NEXT STEPS|##|$))/i);
   if (riskSection) {
-    const bullets = riskSection[0].match(/[-*]\s*\*?\*?([^*\n]+)/g);
-    if (bullets) {
-      bullets.slice(0, 5).forEach((b) => {
-        const cleaned = b.replace(/^[-*]\s*\*?\*?/, '').trim();
-        if (cleaned.length > 5) risks.push(cleaned);
-      });
+    const lines = riskSection[1].split('\n');
+    for (const line of lines) {
+      // Match bullet points
+      const bulletMatch = line.match(/^[-*•]\s*(.+)/);
+      if (bulletMatch && bulletMatch[1].trim().length > 10) {
+        risks.push(bulletMatch[1].trim());
+      }
     }
   }
-  return risks;
+
+  // Fallback to old pattern if no risks found
+  if (risks.length === 0) {
+    const fallbackSection = content.match(/(?:Key )?Risks[:\s]*\n([\s\S]*?)(?=\n(?:Next|##|$))/i);
+    if (fallbackSection) {
+      const bullets = fallbackSection[1].match(/[-*•]\s*([^\n]+)/g);
+      if (bullets) {
+        bullets.slice(0, 5).forEach((b) => {
+          const cleaned = b.replace(/^[-*•]\s*/, '').trim();
+          if (cleaned.length > 10) risks.push(cleaned);
+        });
+      }
+    }
+  }
+
+  return risks.slice(0, 5);
 }
 
 function parseSummary(content: string): string {
-  // Try to find an executive summary or first substantial paragraph
-  const summaryMatch = content.match(/(?:Summary|Overview|Recommendation)[:\s]*\n\n?([^\n]+)/i);
-  if (summaryMatch) return summaryMatch[1].substring(0, 500);
+  // Look for recommendation section as summary
+  const recSection = content.match(/OVERALL RECOMMENDATION[:\s]*([^\n]+)/i);
+  if (recSection) return recSection[1].trim();
 
-  // Fallback to first paragraph
-  const firstPara = content.match(/^#[^\n]+\n\n([^\n]+)/);
-  if (firstPara) return firstPara[1].substring(0, 500);
+  // Try to find an executive summary or first substantial paragraph
+  const summaryMatch = content.match(/(?:Summary|Overview)[:\s]*\n\n?([^\n]+)/i);
+  if (summaryMatch) return summaryMatch[1].substring(0, 500);
 
   return '';
 }
@@ -185,10 +299,10 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
       progress.steps[i].status = 'running';
       await saveProgress(idea.id, progress);
 
-      // Call Claude
+      // Call Claude with higher token limit for richer analysis
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
+        max_tokens: 3000,
         messages: [
           {
             role: 'user',
@@ -206,22 +320,22 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
       await saveProgress(idea.id, progress);
     }
 
-    // Combine into concise analysis
+    // Combine into analysis document
     const fullContent = `# ${idea.name}
-${idea.description ? `\n${idea.description}\n` : ''}
-${additionalContext ? `\n**Analysis Context:** ${additionalContext}\n` : ''}
+${idea.description ? `\n*${idea.description}*\n` : ''}
+${additionalContext ? `\n> **Analysis Focus:** ${additionalContext}\n` : ''}
 ---
 
-## Competitors
+## Competitive Landscape
 ${content.competitors || 'Not available'}
 
-## Keywords
+## SEO & Keywords
 ${content.keywords || 'Not available'}
 
 ## Willingness to Pay
 ${content.wtp || 'Not available'}
 
-## Recommendation
+## Scoring & Recommendation
 ${content.scoring || 'Not available'}
 `;
 

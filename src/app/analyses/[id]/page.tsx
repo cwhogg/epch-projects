@@ -73,9 +73,17 @@ function ScoreRing({ score, label, size = 72 }: { score: number | null; label: s
     return '#f87171';
   };
 
+  const getGlow = () => {
+    if (score === null || score < 7) return 'none';
+    return `drop-shadow(0 0 6px ${getColor()}50)`;
+  };
+
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex flex-col items-center gap-2 group">
+      <div
+        className="relative transition-transform duration-200 group-hover:scale-105"
+        style={{ width: size, height: size, filter: getGlow() }}
+      >
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           <circle
             cx={size / 2}
@@ -107,7 +115,7 @@ function ScoreRing({ score, label, size = 72 }: { score: number | null; label: s
           {score !== null ? score : '?'}
         </div>
       </div>
-      <span className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="text-xs text-center transition-colors group-hover:text-[var(--text-secondary)]" style={{ color: 'var(--text-muted)' }}>{label}</span>
     </div>
   );
 }
@@ -122,13 +130,30 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   const { analysis, content } = result;
 
+  // Get gradient color based on recommendation
+  const getHeaderGradient = () => {
+    switch (analysis.recommendation) {
+      case 'Test First':
+        return 'radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.1) 0%, transparent 50%)';
+      case 'Test Later':
+        return 'radial-gradient(ellipse at top left, rgba(251, 191, 36, 0.08) 0%, transparent 50%)';
+      case "Don't Test":
+        return 'radial-gradient(ellipse at top left, rgba(248, 113, 113, 0.08) 0%, transparent 50%)';
+      default:
+        return 'none';
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-      {/* Header */}
-      <header className="animate-slide-up stagger-1">
+      {/* Header with ambient gradient */}
+      <header
+        className="animate-slide-up stagger-1 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 rounded-xl"
+        style={{ background: getHeaderGradient() }}
+      >
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm mb-4 transition-colors"
+          className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
