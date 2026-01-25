@@ -1,12 +1,36 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysis } from '@/lib/data';
+import { getAnalysisFromDb, getAnalysisContent, isRedisConfigured } from '@/lib/db';
 import MarkdownContent from '@/components/MarkdownContent';
+import { Analysis } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+interface AnalysisData {
+  analysis: Analysis;
+  content: { main: string; competitors?: string; keywords?: string };
+}
+
+async function getAnalysisData(id: string): Promise<AnalysisData | null> {
+  // Try database first if configured
+  if (isRedisConfigured()) {
+    const analysis = await getAnalysisFromDb(id);
+    if (analysis) {
+      const content = await getAnalysisContent(id);
+      return {
+        analysis,
+        content: content || { main: 'Analysis content not available' },
+      };
+    }
+  }
+
+  // Fall back to file system
+  return getAnalysis(id);
 }
 
 function getRecommendationColor(rec: string) {
@@ -37,7 +61,7 @@ function getConfidenceColor(conf: string) {
 
 export default async function AnalysisPage({ params }: PageProps) {
   const { id } = await params;
-  const result = getAnalysis(id);
+  const result = await getAnalysisData(id);
 
   if (!result) {
     notFound();
@@ -103,7 +127,7 @@ export default async function AnalysisPage({ params }: PageProps) {
       </div>
 
       {/* Risks */}
-      {analysis.risks.length > 0 && (
+      {analysis.risks && analysis.risks.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Key Risks</h2>
           <ul className="space-y-2">

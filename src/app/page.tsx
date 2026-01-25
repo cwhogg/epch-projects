@@ -1,7 +1,23 @@
 import Link from 'next/link';
 import { getLeaderboard, getAnalyses } from '@/lib/data';
+import { getLeaderboardFromDb, getAnalysesFromDb, isRedisConfigured } from '@/lib/db';
+import { Analysis, LeaderboardEntry } from '@/types';
 
 export const dynamic = 'force-dynamic';
+
+async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[] }> {
+  if (isRedisConfigured()) {
+    const [leaderboard, analyses] = await Promise.all([
+      getLeaderboardFromDb(),
+      getAnalysesFromDb(),
+    ]);
+    return { leaderboard, analyses };
+  }
+  return {
+    leaderboard: getLeaderboard(),
+    analyses: getAnalyses(),
+  };
+}
 
 function getRecommendationColor(rec: string) {
   switch (rec) {
@@ -29,9 +45,8 @@ function getConfidenceColor(conf: string) {
   }
 }
 
-export default function Home() {
-  const leaderboard = getLeaderboard();
-  const analyses = getAnalyses();
+export default async function Home() {
+  const { leaderboard, analyses } = await getData();
 
   return (
     <div className="space-y-8">
@@ -43,11 +58,11 @@ export default function Home() {
         {leaderboard.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-8 text-center">
             <p className="text-zinc-600 dark:text-zinc-400">
-              No analyses yet. Add an idea and run the research agent to get started.
+              No analyses yet. Add an idea to get started.
             </p>
             <Link
               href="/ideas/new"
-              className="inline-block mt-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 rounded-md text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200"
+              className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
             >
               Add Your First Idea
             </Link>
@@ -127,7 +142,7 @@ export default function Home() {
         {analyses.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-8 text-center">
             <p className="text-zinc-600 dark:text-zinc-400">
-              No analyses found. Run the research agent on an idea to generate analyses.
+              No analyses found. Add an idea to generate an analysis.
             </p>
           </div>
         ) : (

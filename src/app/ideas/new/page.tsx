@@ -34,10 +34,11 @@ export default function NewIdeaPage() {
         throw new Error('Failed to save idea');
       }
 
-      router.push('/');
+      const idea = await res.json();
+      // Redirect to analysis page to start the research agent
+      router.push(`/ideas/${idea.id}/analyze`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
       setLoading(false);
     }
   };
@@ -193,9 +194,9 @@ export default function NewIdeaPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Save Idea'}
+            {loading ? 'Starting Analysis...' : 'Save & Analyze'}
           </button>
           <button
             type="button"
@@ -208,13 +209,10 @@ export default function NewIdeaPage() {
       </form>
 
       <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Running the Research Agent</h3>
+        <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">What happens next?</h3>
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          After saving your idea, run the research agent from the command line to generate the analysis:
+          After clicking &quot;Save & Analyze&quot;, our AI research agent will automatically analyze your idea across 4 dimensions: competitive landscape, SEO opportunity, willingness to pay, and differentiation potential. This takes about 1-2 minutes.
         </p>
-        <code className="block mt-2 p-2 bg-blue-100 dark:bg-blue-900/40 rounded text-sm font-mono text-blue-800 dark:text-blue-200">
-          claude &quot;Analyze the idea: [idea-name] following the research agent playbook&quot;
-        </code>
       </div>
     </div>
   );
