@@ -57,6 +57,15 @@ export async function updateIdeaStatus(id: string, status: ProductIdea['status']
   }
 }
 
+export async function deleteIdeaFromDb(id: string): Promise<boolean> {
+  const deleted = await getRedis().hdel('ideas', id);
+  // Also delete associated analysis and content
+  await getRedis().hdel('analyses', id);
+  await getRedis().hdel('analysis_content', id);
+  await getRedis().del(`progress:${id}`);
+  return deleted > 0;
+}
+
 // Analyses
 export async function saveAnalysisToDb(analysis: Analysis): Promise<Analysis> {
   await getRedis().hset('analyses', { [analysis.id]: JSON.stringify(analysis) });

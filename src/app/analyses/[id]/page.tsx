@@ -4,6 +4,7 @@ import { getAnalysis } from '@/lib/data';
 import { getAnalysisFromDb, getAnalysisContent, isRedisConfigured } from '@/lib/db';
 import MarkdownContent from '@/components/MarkdownContent';
 import ReanalyzeForm from '@/components/ReanalyzeForm';
+import DeleteButton from '@/components/DeleteButton';
 import { Analysis } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -142,8 +143,12 @@ export default async function AnalysisPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Re-analyze */}
-      <ReanalyzeForm ideaId={analysis.id} />
+      {/* Actions */}
+      <div className="flex items-center gap-4">
+        <ReanalyzeForm ideaId={analysis.id} />
+        <span className="text-zinc-300 dark:text-zinc-700">|</span>
+        <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
+      </div>
 
       {/* Main Analysis */}
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">

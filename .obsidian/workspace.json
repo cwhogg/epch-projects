@@ -186,6 +186,8 @@
   },
   "active": "16c561c426ab6012",
   "lastOpenFiles": [
+    "src/components/DeleteButton.tsx",
+    "src/components/ReanalyzeForm.tsx",
     "src/app/api/analyses/[id]/route.ts",
     "src/app/api/analyses/[id]",
     "src/app/ideas/[id]/analyze/page.tsx",
@@ -195,8 +197,6 @@
     "src/app/api/analyze/[id]",
     "src/app/api/analyze",
     "src/lib/research-agent.ts",
-    "src/lib/db.ts",
-    "node_modules/@upstash/redis/zmscore-0SAuWM0q.d.ts",
     "node_modules/@upstash/redis/README.md",
     "node_modules/@vercel/kv/license.md",
     "node_modules/@vercel/kv/README.md",

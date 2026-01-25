@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { getIdeas, saveIdea, deleteIdea } from '@/lib/data';
-import { saveIdeaToDb, getIdeasFromDb, isRedisConfigured } from '@/lib/db';
+import { saveIdeaToDb, getIdeasFromDb, deleteIdeaFromDb, isRedisConfigured } from '@/lib/db';
 import { ProductIdea } from '@/types';
 
 export async function GET() {
@@ -60,7 +60,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const deleted = deleteIdea(id);
+    let deleted: boolean;
+    if (isRedisConfigured()) {
+      deleted = await deleteIdeaFromDb(id);
+    } else {
+      deleted = deleteIdea(id);
+    }
+
     if (!deleted) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
