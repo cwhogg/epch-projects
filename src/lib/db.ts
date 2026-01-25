@@ -23,6 +23,14 @@ export function isRedisConfigured(): boolean {
   return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
+// Helper to parse value that might already be parsed by Upstash
+function parseValue<T>(value: unknown): T {
+  if (typeof value === 'string') {
+    return JSON.parse(value) as T;
+  }
+  return value as T;
+}
+
 // Ideas
 export async function saveIdeaToDb(idea: ProductIdea): Promise<ProductIdea> {
   await getRedis().hset('ideas', { [idea.id]: JSON.stringify(idea) });
@@ -32,13 +40,13 @@ export async function saveIdeaToDb(idea: ProductIdea): Promise<ProductIdea> {
 export async function getIdeasFromDb(): Promise<ProductIdea[]> {
   const ideas = await getRedis().hgetall('ideas');
   if (!ideas) return [];
-  return Object.values(ideas).map((v) => JSON.parse(v as string));
+  return Object.values(ideas).map((v) => parseValue<ProductIdea>(v));
 }
 
 export async function getIdeaFromDb(id: string): Promise<ProductIdea | null> {
   const idea = await getRedis().hget('ideas', id);
   if (!idea) return null;
-  return JSON.parse(idea as string);
+  return parseValue<ProductIdea>(idea);
 }
 
 export async function updateIdeaStatus(id: string, status: ProductIdea['status']): Promise<void> {
@@ -58,13 +66,13 @@ export async function saveAnalysisToDb(analysis: Analysis): Promise<Analysis> {
 export async function getAnalysesFromDb(): Promise<Analysis[]> {
   const analyses = await getRedis().hgetall('analyses');
   if (!analyses) return [];
-  return Object.values(analyses).map((v) => JSON.parse(v as string));
+  return Object.values(analyses).map((v) => parseValue<Analysis>(v));
 }
 
 export async function getAnalysisFromDb(id: string): Promise<Analysis | null> {
   const analysis = await getRedis().hget('analyses', id);
   if (!analysis) return null;
-  return JSON.parse(analysis as string);
+  return parseValue<Analysis>(analysis);
 }
 
 // Analysis progress tracking
@@ -101,7 +109,7 @@ export async function saveAnalysisContent(id: string, content: AnalysisContent):
 export async function getAnalysisContent(id: string): Promise<AnalysisContent | null> {
   const content = await getRedis().hget('analysis_content', id);
   if (!content) return null;
-  return JSON.parse(content as string);
+  return parseValue<AnalysisContent>(content);
 }
 
 // Leaderboard
