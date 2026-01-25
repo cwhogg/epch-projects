@@ -84,11 +84,10 @@ export default function NewIdeaPage() {
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            One-Line Description *
+            One-Line Description
           </label>
           <input
             type="text"
-            required
             value={formData.description}
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -98,11 +97,10 @@ export default function NewIdeaPage() {
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Target User *
+            Target User
           </label>
           <input
             type="text"
-            required
             value={formData.targetUser}
             onChange={(e) => setFormData((prev) => ({ ...prev, targetUser: e.target.value }))}
             className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -112,10 +110,9 @@ export default function NewIdeaPage() {
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Problem Solved *
+            Problem Solved
           </label>
           <textarea
-            required
             value={formData.problemSolved}
             onChange={(e) => setFormData((prev) => ({ ...prev, problemSolved: e.target.value }))}
             rows={3}
@@ -126,7 +123,7 @@ export default function NewIdeaPage() {
 
         <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
           <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">
-            Additional Resources (Optional)
+            Additional Context
           </h3>
 
           <div className="space-y-4">
@@ -211,7 +208,7 @@ export default function NewIdeaPage() {
       <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">What happens next?</h3>
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          After clicking &quot;Save & Analyze&quot;, our AI research agent will automatically analyze your idea across 4 dimensions: competitive landscape, SEO opportunity, willingness to pay, and differentiation potential. This takes about 1-2 minutes.
+          After clicking &quot;Save & Analyze&quot;, our AI research agent will analyze your idea across 4 dimensions: competitive landscape, SEO opportunity, willingness to pay, and differentiation potential. You can provide just a name and uploaded document - the agent will extract the details it needs.
         </p>
       </div>
     </div>
