@@ -14,11 +14,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **Overall Score** | 7.4/10 |
-| **Confidence** | Medium |
-| **Recommendation** | **Test First** |
+| **Overall Score** | Incomplete (SEO data missing) |
+| **Confidence** | Low-Medium |
+| **Recommendation** | **Conditionally Test First** (pending SEO validation) |
 
-**One-line verdict:** Strong opportunity in underserved niche with passionate user base, but execution complexity and trust-building are significant challenges.
+**One-line verdict:** Promising opportunity in underserved niche with passionate user base. Competitive landscape and willingness-to-pay signals are positive. However, SEO opportunity cannot be scored without keyword tool data - this is 50% of the scoring weight. Need Ahrefs access to complete analysis.
 
 ---
 
@@ -26,7 +26,7 @@
 
 | Dimension | Weight | Score | Reasoning |
 |-----------|--------|-------|-----------|
-| **SEO Opportunity** | 50% | 7/10 | Strong opportunity in rare disease / undiagnosed keywords. Problem-aware queries have low-moderate competition. Content gaps exist. Hospital systems dominate "second opinion" but long-tail is accessible. Rare disease community is search-active. |
+| **SEO Opportunity** | 50% | ?/10 (Unknown) | **Cannot score without Ahrefs data.** SERP analysis shows content gaps (forums ranking, outdated content) and low AI tool competition for problem-aware queries. But actual volume, difficulty, and traffic potential are unknown. Need keyword tool access to validate. |
 | **Competitive Landscape** | 20% | 8/10 | Nascent for rare disease focus. Symptom checkers (Ada, Ubie) too shallow. Hospital second opinions ($500-$3000) too expensive. DxGPT is only direct competitor but clinician-focused. Clear differentiation opportunity. |
 | **Willingness to Pay** | 15% | 7/10 | Strong signals: Hospital second opinions cost $500-$3000 and 67% recommend treatment changes. Rare disease patients are highly motivated and often spend significantly on diagnosis. Gap at $20-100 price point. Concern: Free symptom checkers set expectations. |
 | **Differentiation Potential** | 10% | 9/10 | Unique positioning as "the diagnostic journey tool for rare disease patients." Iterative approach (analyze → gaps → refine) is genuinely novel. PRO-validated follow-up adds clinical credibility competitors lack. |
@@ -34,8 +34,25 @@
 
 **Weighted Calculation:**
 ```
-(7 × 0.50) + (8 × 0.20) + (7 × 0.15) + (9 × 0.10) + (8 × 0.05) = 7.35 → 7.4/10
+SEO (50%): UNKNOWN - Cannot calculate without Ahrefs data
+Competitive (20%): 8 × 0.20 = 1.6
+WTP (15%): 7 × 0.15 = 1.05
+Differentiation (10%): 9 × 0.10 = 0.9
+Expertise (5%): 8 × 0.05 = 0.4
+
+Non-SEO subtotal: 3.95/5.0 (79% of available points)
+Overall: INCOMPLETE - Need SEO data for 50% of score
 ```
+
+**What We Know vs. Don't Know:**
+
+| Dimension | Data Quality | Source |
+|-----------|-------------|--------|
+| Competitive Landscape | Good | Web search, competitor site analysis |
+| Willingness to Pay | Good | Competitor pricing, hospital second opinion costs |
+| Differentiation | Good | Product positioning analysis |
+| Expertise Fit | Good | Owner background |
+| SEO Opportunity | **Poor** | SERP observation only, no volume/difficulty data |
 
 ---
 

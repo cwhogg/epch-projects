@@ -2,195 +2,186 @@
 
 ## Summary
 
-The rare/undiagnosed disease keyword space has **strong opportunity signals**. Search volume for problem-aware queries ("undiagnosed symptoms," "doctors can't find what's wrong") is substantial with moderate-to-low competition. Content gaps exist - major health sites cover generic advice but lack depth on the diagnostic odyssey. The rare disease patient community is actively searching and underserved.
+**Data Limitation:** No Ahrefs or SEMrush access. This analysis is based solely on SERP observation (what ranks, content gaps, competitor presence). Volume and difficulty scores are **unknown** until we have access to keyword tools.
 
-**Note:** Keyword volumes and difficulty scores are estimated based on SERP analysis. Ahrefs data not available.
+What we CAN assess from SERP analysis:
+- Who currently ranks for relevant queries
+- Whether content gaps exist (forums, outdated content ranking)
+- Competitor presence in search results
+- Types of content that rank (informational vs commercial)
 
----
-
-## Top 10 Keyword Opportunities
-
-| Keyword | Est. Volume | Est. KD | Intent | Opportunity Score |
-|---------|-------------|---------|--------|-------------------|
-| undiagnosed symptoms | 5,000-10,000 | 25-35 | Informational/Commercial | 8/10 |
-| what's wrong with me medically | 2,000-5,000 | 15-25 | Informational | 8/10 |
-| AI medical diagnosis | 1,000-3,000 | 30-40 | Commercial | 7/10 |
-| rare disease diagnosis | 1,000-2,000 | 20-30 | Informational/Commercial | 9/10 |
-| medical second opinion online | 1,000-3,000 | 35-45 | Commercial/Transactional | 7/10 |
-| doctors can't figure out what's wrong | 500-1,000 | 10-20 | Informational | 9/10 |
-| how to get diagnosed with rare disease | 500-1,000 | 15-25 | Informational | 9/10 |
-| undiagnosed chronic illness | 1,000-2,000 | 20-30 | Informational | 8/10 |
-| differential diagnosis tool | 500-1,000 | 30-40 | Commercial | 6/10 |
-| symptom checker for rare diseases | 200-500 | 10-20 | Commercial | 9/10 |
+What we CANNOT assess without tools:
+- Actual search volume
+- Keyword difficulty scores
+- CPC / commercial value
+- Related keyword suggestions
 
 ---
 
-## Keyword Clusters
+## SERP Analysis by Query Category
 
-### Cluster 1: Diagnostic Odyssey / Frustration
-**Opportunity Score:** 9/10
-**Total Est. Volume:** 10,000-20,000
-**Avg Difficulty:** Low (15-25)
-**Intent:** Informational with high commercial potential
+### Category 1: Diagnostic Frustration Queries
 
-**Keywords:**
-- undiagnosed symptoms (5,000-10,000, KD 25-35)
-- what's wrong with me medically (2,000-5,000, KD 15-25)
-- doctors can't figure out what's wrong (500-1,000, KD 10-20)
-- medically unexplained symptoms (1,000-2,000, KD 20-30)
-- no diagnosis but still sick (200-500, KD 5-15)
-- years without diagnosis (200-500, KD 10-20)
+**Queries Analyzed:**
+- "undiagnosed symptoms"
+- "what's wrong with me medically"
+- "doctors can't figure out what's wrong"
+- "medically unexplained symptoms"
 
-**Content Opportunity:** Comprehensive guides on navigating the diagnostic odyssey, what to do when doctors can't help, how to advocate for yourself. SecondLook positioned as a solution at the end.
+**What Ranks:**
+- Harvard Health, Mayo Clinic, NHS (generic advice articles)
+- Reddit threads and forum posts (content gap signal)
+- Some content from 2020-2022 (freshness opportunity)
+- Doctronic blog appearing for some queries
 
-**SERP Analysis:**
-- Harvard Health, Mayo Clinic rank for generic advice
-- Reddit threads ranking (content gap signal)
-- Few tools/products ranking - mostly informational content
-- Long-tail variations have weak competition
+**Content Gap Assessment:** YES - Major health sites provide generic advice but lack depth on the diagnostic odyssey. Forum content ranking suggests unmet informational need.
 
-### Cluster 2: Rare Disease Specific
-**Opportunity Score:** 9/10
-**Total Est. Volume:** 5,000-10,000
-**Avg Difficulty:** Low-Medium (20-30)
-**Intent:** Informational/Commercial
+**Competitor Presence:** Low - No AI diagnostic tools ranking prominently for these problem-aware queries.
 
-**Keywords:**
-- rare disease diagnosis (1,000-2,000, KD 20-30)
-- how to get diagnosed with rare disease (500-1,000, KD 15-25)
-- rare disease symptoms checklist (200-500, KD 10-20)
-- undiagnosed rare disease (500-1,000, KD 15-25)
-- rare disease specialist finder (200-500, KD 20-30)
-- rare disease misdiagnosis (200-500, KD 10-20)
-
-**Content Opportunity:** Deep content on rare disease diagnostic pathways, specific disease guides, what tests to ask for, how to work with specialists. Build authority in rare disease space.
-
-**SERP Analysis:**
-- NIH/NORD rank for disease information
-- Academic content but not patient-friendly
-- DxGPT appearing for some terms
-- Patient advocacy sites have authority
-- Opportunity for tool-focused content
-
-### Cluster 3: AI Medical Diagnosis
-**Opportunity Score:** 7/10
-**Total Est. Volume:** 5,000-15,000
-**Avg Difficulty:** Medium (30-40)
-**Intent:** Commercial/Transactional
-
-**Keywords:**
-- AI medical diagnosis (1,000-3,000, KD 30-40)
-- AI symptom checker (2,000-5,000, KD 35-45)
-- AI second opinion medical (500-1,000, KD 25-35)
-- AI doctor diagnosis (1,000-2,000, KD 30-40)
-- medical AI for patients (200-500, KD 20-30)
-
-**Content Opportunity:** Comparison content, "how AI diagnosis works," trust-building educational content. More competitive but brand-building.
-
-**SERP Analysis:**
-- Docus, Ada, Ubie ranking for head terms
-- Tech publications (TechCrunch, etc.) ranking
-- "Best AI symptom checker" listicles
-- Opportunity in long-tail: AI + rare disease
-
-### Cluster 4: Second Opinion / Confirmation
-**Opportunity Score:** 6/10
-**Total Est. Volume:** 5,000-10,000
-**Avg Difficulty:** Medium-High (35-45)
-**Intent:** Commercial/Transactional
-
-**Keywords:**
-- medical second opinion online (1,000-3,000, KD 35-45)
-- online second opinion diagnosis (500-1,000, KD 30-40)
-- second opinion for diagnosis (500-1,000, KD 30-40)
-- virtual second opinion cost (500-1,000, KD 25-35)
-- is medical second opinion worth it (200-500, KD 20-30)
-
-**Content Opportunity:** Cost comparison content, "when to get a second opinion" guides. More competitive space dominated by hospital systems.
-
-**SERP Analysis:**
-- Cleveland Clinic, Stanford, UCSF dominating
-- High domain authority competition
-- Docus appearing
-- Price-focused long-tails less competitive
-
-### Cluster 5: Chronic Illness / Complex Symptoms
-**Opportunity Score:** 8/10
-**Total Est. Volume:** 10,000-20,000
-**Avg Difficulty:** Medium (25-35)
-**Intent:** Informational
-
-**Keywords:**
-- chronic illness undiagnosed (1,000-2,000, KD 20-30)
-- multiple symptoms no diagnosis (500-1,000, KD 15-25)
-- autoimmune disease diagnosis difficulty (500-1,000, KD 20-30)
-- fibromyalgia misdiagnosis (500-1,000, KD 25-35)
-- chronic fatigue syndrome diagnosis (2,000-5,000, KD 30-40)
-
-**Content Opportunity:** Condition-specific content for patients stuck in diagnostic limbo. Community connection potential.
-
-**SERP Analysis:**
-- Patient forums (Reddit, HealthUnlocked) ranking
-- Advocacy organizations have authority
-- Medical sites have generic content
-- Opportunity for empathetic, actionable content
+**Opportunity Signal:** Strong - High relevance to target user, low tool/product competition, forum content indicates real search demand.
 
 ---
 
-## SERP Analysis Highlights
+### Category 2: Rare Disease Diagnosis
 
-### Green Flags (Opportunity Exists)
-- Reddit threads ranking for problem-aware queries ("doctors can't figure out what's wrong")
-- Content from 2020-2022 ranking (freshness opportunity)
-- Forum/community content in top 10 (content gap)
-- Few AI tools ranking for rare disease + diagnosis combinations
-- Long-tail variations have weak or no direct competition
+**Queries Analyzed:**
+- "rare disease diagnosis"
+- "how to get diagnosed with rare disease"
+- "undiagnosed rare disease"
+- "rare disease misdiagnosis"
 
-### Red Flags (Caution)
-- Hospital systems (Cleveland Clinic, Mayo) dominate "second opinion" terms
-- Generic symptom checker terms competitive (Ada, Ubie have SEO authority)
-- Some health content requires E-E-A-T (experience, expertise, authority, trust)
+**What Ranks:**
+- NIH, NORD, Orphanet (disease databases and advocacy)
+- Academic/research content
+- Patient advocacy organization sites
+- DxGPT appearing for some rare disease + AI queries
 
----
+**Content Gap Assessment:** PARTIAL - Authoritative disease information exists but patient-journey content is lacking. Most content is clinical, not empathetic/actionable.
 
-## Content Strategy Recommendations
+**Competitor Presence:** Low-Medium - DxGPT has some presence but is clinician-focused.
 
-### Priority 1: Own "Rare Disease Diagnosis" Topic
-Create comprehensive, empathetic content for the rare disease diagnostic journey:
-- "The Complete Guide to Getting Diagnosed with a Rare Disease"
-- "What to Do When Doctors Can't Figure Out What's Wrong"
-- "How to Prepare for a Rare Disease Specialist Appointment"
-- "Understanding Differential Diagnosis: A Patient's Guide"
-
-### Priority 2: Problem-Aware Long-Tail Content
-Target frustrated patients actively searching:
-- "Why Can't Doctors Find What's Wrong With Me?"
-- "Undiagnosed for Years: A Path Forward"
-- "Medical Gaslighting: When Your Symptoms Are Dismissed"
-- "The Diagnostic Odyssey: You're Not Alone"
-
-### Priority 3: Condition-Specific Entry Points
-Create content for specific rare/complex conditions:
-- "Getting an EDS Diagnosis: What You Need to Know"
-- "MCAS Symptoms and Diagnosis Challenges"
-- "Autoimmune Disease Diagnosis: Why It Takes So Long"
-- "Rare Neurological Disorders: Signs Doctors Miss"
-
-### Priority 4: AI + Trust Building
-Educational content that builds authority:
-- "How AI Can Help Diagnose Rare Diseases"
-- "AI Medical Diagnosis: What's Real and What's Hype"
-- "The Science Behind AI Differential Diagnosis"
+**Opportunity Signal:** Strong - High relevance, underserved patient-focused angle, but will need to build authority against established health organizations.
 
 ---
 
-## Data Limitations
+### Category 3: AI Medical Diagnosis
 
-- Keyword volumes are estimates based on SERP analysis and industry benchmarks
-- Actual Ahrefs/SEMrush data would refine these numbers
-- Rare disease search volume may be underestimated (patients search many variations)
-- Community forums may capture significant traffic not reflected in keyword tools
+**Queries Analyzed:**
+- "AI medical diagnosis"
+- "AI symptom checker"
+- "AI second opinion"
+- "AI doctor diagnosis"
+
+**What Ranks:**
+- Docus, Ada, Ubie (established players)
+- Tech publications and listicles ("best AI symptom checkers")
+- Healthcare news sites
+
+**Content Gap Assessment:** LIMITED - Competitive space with established players ranking.
+
+**Competitor Presence:** High - Docus, Ada, Ubie have strong SEO presence for these terms.
+
+**Opportunity Signal:** Weak for head terms, but combining "AI" + "rare disease" shows less competition.
+
+---
+
+### Category 4: Second Opinion
+
+**Queries Analyzed:**
+- "medical second opinion online"
+- "online second opinion diagnosis"
+- "virtual second opinion cost"
+
+**What Ranks:**
+- Cleveland Clinic, Stanford, UCSF, Mayo (hospital systems)
+- Docus
+- Insurance/cost comparison articles
+
+**Content Gap Assessment:** LIMITED - Hospital systems dominate with high domain authority.
+
+**Competitor Presence:** High - Major health systems have strong positions.
+
+**Opportunity Signal:** Weak for head terms. Long-tail around cost/value may be more accessible.
+
+---
+
+### Category 5: Chronic/Complex Illness
+
+**Queries Analyzed:**
+- "chronic illness undiagnosed"
+- "multiple symptoms no diagnosis"
+- "autoimmune disease diagnosis difficulty"
+
+**What Ranks:**
+- Patient forums (Reddit, HealthUnlocked)
+- Advocacy organizations
+- Medical sites with generic content
+- Bearable app (symptom tracking)
+
+**Content Gap Assessment:** YES - Forum content ranking indicates demand. Medical sites have generic content, not tailored to the "stuck patient" experience.
+
+**Competitor Presence:** Low - No AI diagnostic tools targeting this space specifically.
+
+**Opportunity Signal:** Strong - Active communities, forum content ranking, emotional/problem-aware queries.
+
+---
+
+## Content Opportunity Assessment
+
+### High Confidence Opportunities (based on SERP gaps)
+
+1. **"The Diagnostic Odyssey" - Comprehensive Guide**
+   - SERP shows: Generic advice articles, forum posts
+   - Gap: No comprehensive, empathetic guide for patients stuck for years
+   - SecondLook angle: Tool + journey support
+
+2. **Rare Disease Patient Advocacy Content**
+   - SERP shows: Clinical/academic content, advocacy orgs
+   - Gap: Actionable, patient-friendly content with tool integration
+   - SecondLook angle: "How to prepare for rare disease evaluation"
+
+3. **Condition-Specific Entry Points**
+   - SERP shows: Medical definitions, clinical criteria
+   - Gap: Patient-experience content for specific conditions (EDS, MCAS, etc.)
+   - SecondLook angle: Symptom validation + diagnostic pathway guidance
+
+### Lower Confidence (need volume data to validate)
+
+- "AI symptom checker" head terms (competitive)
+- "Medical second opinion" head terms (hospital system dominance)
+- Generic "diagnosis" terms (broad, unclear intent)
+
+---
+
+## Recommendations for Next Steps
+
+### 1. Get Ahrefs/SEMrush Access
+Without actual keyword data, we cannot prioritize content or estimate traffic potential. Recommend getting tool access before committing to content strategy.
+
+### 2. Validate with Community Research
+Join rare disease Reddit communities (r/undiagnosed, r/ehlersdanlos, r/dysautonomia) to:
+- Understand actual language patients use
+- See what questions get asked repeatedly
+- Identify high-engagement topics
+
+### 3. Start with Problem-Aware Content
+Based on SERP analysis, problem-aware queries ("doctors can't figure out what's wrong") show content gaps and forum ranking. These are likely accessible entry points regardless of exact volume.
+
+### 4. Avoid Competitive Head Terms Initially
+"AI symptom checker" and "medical second opinion" show strong competitor presence. Focus on underserved niches until domain authority builds.
+
+---
+
+## Unknown / Needs Data
+
+- [ ] Actual search volume for all keyword categories
+- [ ] Keyword difficulty scores
+- [ ] CPC data for commercial intent signals
+- [ ] Related keyword expansion
+- [ ] Competitor domain authority scores
+- [ ] Backlink requirements to rank
 
 ---
 
 *Research completed: January 2025*
+*Data limitation: No access to Ahrefs/SEMrush - SERP analysis only*

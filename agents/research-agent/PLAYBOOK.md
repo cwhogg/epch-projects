@@ -141,12 +141,20 @@ Brainstorm 20-30 keywords based on:
 - Pull volume, KD, CPC for each keyword
 - Expand with "Also rank for" suggestions
 
-**If Ahrefs unavailable:**
-- Use Google Keyword Planner (if available)
-- Manual SERP analysis
-- Note data limitations in output
+**If Ahrefs unavailable (CRITICAL):**
+- **DO NOT fabricate volume or difficulty numbers**
+- **DO NOT estimate ranges like "5,000-10,000 volume"**
+- Conduct SERP analysis ONLY:
+  - Who currently ranks?
+  - Are there content gaps (forums, outdated content)?
+  - What's the competitor presence?
+- Mark all volume/KD fields as "Unknown - no data"
+- State clearly: "Cannot assess without Ahrefs/SEMrush access"
+- SEO Opportunity score must be marked "?/10 (Unknown)"
 
 ### Step 2.3: Filter Opportunities
+
+**Only if Ahrefs data is available:**
 
 Apply filters from `/knowledge/seo/best-practices.md`:
 
@@ -154,6 +162,8 @@ Apply filters from `/knowledge/seo/best-practices.md`:
 - Volume: 200+ (or 50+ if high intent)
 - Intent: Commercial or Transactional
 - Length: 3+ words preferred
+
+**If no Ahrefs data:** Skip filtering. Cannot filter without data.
 
 ### Step 2.4: Analyze SERPs
 
@@ -186,6 +196,8 @@ Group keywords by:
 
 ### Step 2.6: Score Clusters
 
+**Only if Ahrefs data is available:**
+
 Rate each cluster 1-10:
 
 | Factor | Weight |
@@ -194,6 +206,11 @@ Rate each cluster 1-10:
 | Average difficulty | 30% |
 | Content gap size | 25% |
 | Commercial intent | 15% |
+
+**If no Ahrefs data:**
+- Do NOT assign numeric scores to clusters
+- Describe qualitative assessment only (e.g., "content gap appears to exist")
+- Mark cluster scores as "Unknown"
 
 ### Step 2.7: Write Output
 

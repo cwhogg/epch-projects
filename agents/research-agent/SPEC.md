@@ -24,6 +24,33 @@ Analyze B2C healthcare and consumer product ideas and deliver a prioritized rank
 
 ---
 
+## CRITICAL: Data Integrity Rules
+
+**NEVER fabricate data.** This includes:
+- Search volume numbers
+- Keyword difficulty scores
+- Traffic estimates
+- Conversion rates
+- Market size figures
+- Any quantitative metric without a verified source
+
+**When data is unavailable:**
+- State clearly: "Data unavailable" or "Unknown"
+- Mark scores as "?/10 (Unknown)" not a made-up number
+- Explain what data source would be needed
+- Describe what CAN be assessed (e.g., SERP observation) vs what CANNOT (e.g., volume)
+
+**What IS acceptable:**
+- Qualitative assessments ("content gap appears to exist based on forum ranking")
+- Observations ("competitor X ranks for this term")
+- Documented competitor pricing (with source)
+- Industry statistics from cited sources
+- Honest uncertainty ("cannot assess without Ahrefs data")
+
+**Rationale:** Made-up data is worse than no data. It creates false confidence in decisions. An analysis with gaps is honest and actionable. An analysis with fabricated numbers is misleading and worthless.
+
+---
+
 ## Inputs
 
 ### Required
@@ -243,9 +270,23 @@ Always state confidence level with reasoning.
 
 ## Error Handling
 
-- If Ahrefs unavailable: Use manual SERP analysis, note data limitations
-- If competitor info unclear: Flag uncertainty, provide best estimate
-- If conflicting signals: Present both perspectives, recommend conservative interpretation
+**If Ahrefs unavailable:**
+- Do NOT estimate or fabricate volume/difficulty numbers
+- Conduct SERP analysis only (who ranks, content gaps, competitor presence)
+- Mark SEO Opportunity score as "?/10 (Unknown)"
+- Note that overall score is incomplete
+- List specific data needed to complete analysis
+- Recommend getting tool access before finalizing SEO strategy
+
+**If competitor info unclear:**
+- Flag uncertainty explicitly
+- State what is known vs. assumed
+- Do not invent pricing or feature details
+
+**If conflicting signals:**
+- Present both perspectives
+- Do not resolve ambiguity by picking the more optimistic interpretation
+- Recommend conservative interpretation or additional research
 
 ---
 
