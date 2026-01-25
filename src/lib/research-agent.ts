@@ -120,6 +120,8 @@ Evidence summary (3 bullets max, be specific).`;
 
 FINAL SCORING - Be decisive and justify with evidence.
 
+ONE-LINE SUMMARY: [Write a single compelling sentence summarizing this opportunity - what it is, who it's for, and why it matters]
+
 SCORING TABLE (use EXACTLY this format - scores in second column):
 
 | Dimension | Score | Evidence-Based Reasoning |
@@ -266,13 +268,21 @@ function parseRisks(content: string): string[] {
 }
 
 function parseSummary(content: string): string {
-  // Look for recommendation section as summary
-  const recSection = content.match(/OVERALL RECOMMENDATION[:\s]*([^\n]+)/i);
-  if (recSection) return recSection[1].trim();
+  // Look for ONE-LINE SUMMARY first (new format)
+  const oneLineSummary = content.match(/ONE-LINE SUMMARY[:\s]*([^\n]+)/i);
+  if (oneLineSummary && oneLineSummary[1].trim().length > 10) {
+    return oneLineSummary[1].trim();
+  }
 
   // Try to find an executive summary or first substantial paragraph
   const summaryMatch = content.match(/(?:Summary|Overview)[:\s]*\n\n?([^\n]+)/i);
-  if (summaryMatch) return summaryMatch[1].substring(0, 500);
+  if (summaryMatch && summaryMatch[1].trim().length > 10) {
+    return summaryMatch[1].substring(0, 500);
+  }
+
+  // Fallback: grab the recommendation line
+  const recSection = content.match(/OVERALL RECOMMENDATION[:\s]*([^\n]+)/i);
+  if (recSection) return recSection[1].trim();
 
   return '';
 }
