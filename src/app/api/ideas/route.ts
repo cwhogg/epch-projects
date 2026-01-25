@@ -19,6 +19,14 @@ export async function GET() {
   }
 }
 
+// Normalize URL - add https:// if no protocol specified
+function normalizeUrl(url: string | undefined): string | undefined {
+  if (!url || !url.trim()) return undefined;
+  const trimmed = url.trim();
+  if (trimmed.match(/^https?:\/\//i)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -29,7 +37,7 @@ export async function POST(request: NextRequest) {
       description: body.description,
       targetUser: body.targetUser,
       problemSolved: body.problemSolved,
-      url: body.url || undefined,
+      url: normalizeUrl(body.url),
       githubRepo: body.githubRepo || undefined,
       documentContent: body.documentContent || undefined,
       createdAt: new Date().toISOString(),

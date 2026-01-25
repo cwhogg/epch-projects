@@ -135,11 +135,11 @@ export default function NewIdeaPage() {
           <div>
             <label className="input-label">Landing Page URL</label>
             <input
-              type="url"
+              type="text"
               value={formData.url}
               onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
               className="input"
-              placeholder="https://..."
+              placeholder="example.com or https://example.com"
             />
           </div>
         </div>
