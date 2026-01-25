@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function NewIdeaPage() {
   const router = useRouter();
@@ -35,7 +36,6 @@ export default function NewIdeaPage() {
       }
 
       const idea = await res.json();
-      // Redirect to analysis page to start the research agent
       router.push(`/ideas/${idea.id}/analyze`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -50,165 +50,229 @@ export default function NewIdeaPage() {
     try {
       const text = await file.text();
       setFormData((prev) => ({ ...prev, documentContent: text }));
-    } catch (err) {
+    } catch {
       setError('Failed to read file');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">
-        Add New Product Idea
-      </h1>
+      {/* Header */}
+      <div className="mb-8 animate-slide-up stagger-1">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm mb-4 transition-colors"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+          Back
+        </Link>
+        <h1 className="text-2xl sm:text-3xl font-display" style={{ color: 'var(--text-primary)' }}>
+          New Product Idea
+        </h1>
+        <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+          Enter details or just upload a document. Our AI will do the rest.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">
+          <div
+            className="p-4 rounded-lg animate-fade-in"
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(248, 113, 113, 0.1) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+            }}
+          >
             {error}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Product Name *
+        {/* Product Name */}
+        <div className="animate-slide-up stagger-2">
+          <label className="input-label">
+            Product Name <span style={{ color: 'var(--accent-coral)' }}>*</span>
           </label>
           <input
             type="text"
             required
             value={formData.name}
             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-            className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
             placeholder="e.g., SecondLook"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            One-Line Description
-          </label>
+        {/* Description */}
+        <div className="animate-slide-up stagger-3">
+          <label className="input-label">One-Line Description</label>
           <input
             type="text"
             value={formData.description}
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-            className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
             placeholder="e.g., AI-powered medical second opinion for rare diseases"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Target User
-          </label>
-          <input
-            type="text"
-            value={formData.targetUser}
-            onChange={(e) => setFormData((prev) => ({ ...prev, targetUser: e.target.value }))}
-            className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., Patients with undiagnosed rare diseases"
-          />
+        {/* Two column grid on larger screens */}
+        <div className="grid gap-4 sm:grid-cols-2 animate-slide-up stagger-4">
+          <div>
+            <label className="input-label">Target User</label>
+            <input
+              type="text"
+              value={formData.targetUser}
+              onChange={(e) => setFormData((prev) => ({ ...prev, targetUser: e.target.value }))}
+              className="input"
+              placeholder="e.g., Rare disease patients"
+            />
+          </div>
+          <div>
+            <label className="input-label">Landing Page URL</label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
+              className="input"
+              placeholder="https://..."
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Problem Solved
-          </label>
+        {/* Problem Solved */}
+        <div className="animate-slide-up stagger-5">
+          <label className="input-label">Problem Solved</label>
           <textarea
             value={formData.problemSolved}
             onChange={(e) => setFormData((prev) => ({ ...prev, problemSolved: e.target.value }))}
             rows={3}
-            className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., Patients struggle to get accurate diagnoses for rare diseases..."
+            className="input"
+            style={{ resize: 'vertical', minHeight: '80px' }}
+            placeholder="What problem does this solve?"
           />
         </div>
 
-        <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
-          <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">
+        {/* Document Upload Section */}
+        <div
+          className="card-static p-5 sm:p-6 animate-slide-up"
+          style={{ animationDelay: '0.3s' }}
+        >
+          <h3 className="font-display text-base mb-4" style={{ color: 'var(--text-primary)' }}>
             Additional Context
           </h3>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                Landing Page URL
-              </label>
-              <input
-                type="url"
-                value={formData.url}
-                onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.vercel.app"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                GitHub Repository
-              </label>
-              <input
-                type="url"
-                value={formData.githubRepo}
-                onChange={(e) => setFormData((prev) => ({ ...prev, githubRepo: e.target.value }))}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://github.com/user/repo"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                Upload Description Document
-              </label>
+          {/* File Upload */}
+          <div className="mb-4">
+            <label
+              className="flex flex-col items-center justify-center p-6 rounded-lg cursor-pointer transition-all"
+              style={{
+                border: '2px dashed var(--border-default)',
+                background: 'var(--bg-elevated)',
+              }}
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--text-muted)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Drop a file or click to upload
+              </span>
+              <span className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                .txt, .md, or .pdf
+              </span>
               <input
                 type="file"
                 accept=".txt,.md,.pdf"
                 onChange={handleFileUpload}
-                className="w-full text-sm text-zinc-500 dark:text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 dark:file:bg-zinc-800 file:text-zinc-700 dark:file:text-zinc-300 hover:file:bg-zinc-200 dark:hover:file:bg-zinc-700"
+                className="hidden"
               />
-              {formData.documentContent && (
-                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-                  Document loaded ({formData.documentContent.length} characters)
-                </p>
-              )}
-            </div>
+            </label>
+            {formData.documentContent && (
+              <p className="mt-2 text-sm" style={{ color: '#34d399' }}>
+                Document loaded ({formData.documentContent.length.toLocaleString()} characters)
+              </p>
+            )}
+          </div>
 
-            <div>
-              <label className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                Or paste document content
-              </label>
-              <textarea
-                value={formData.documentContent}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, documentContent: e.target.value }))
-                }
-                rows={6}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                placeholder="Paste any additional context, notes, or documentation..."
-              />
-            </div>
+          {/* Text Area */}
+          <div>
+            <label className="input-label">Or paste content</label>
+            <textarea
+              value={formData.documentContent}
+              onChange={(e) => setFormData((prev) => ({ ...prev, documentContent: e.target.value }))}
+              rows={5}
+              className="input font-mono text-sm"
+              style={{ resize: 'vertical' }}
+              placeholder="Paste notes, specs, or any additional context..."
+            />
           </div>
         </div>
 
-        <div className="flex gap-4 pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Starting Analysis...' : 'Save & Analyze'}
-          </button>
+        {/* Actions */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 animate-slide-up" style={{ animationDelay: '0.35s' }}>
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-lg font-medium border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="btn btn-secondary flex-1 sm:flex-none"
           >
             Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !formData.name.trim()}
+            className="btn btn-primary flex-1"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Analyze Idea
+              </>
+            )}
           </button>
         </div>
       </form>
 
-      <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">What happens next?</h3>
-        <p className="text-sm text-blue-700 dark:text-blue-300">
-          After clicking &quot;Save & Analyze&quot;, our AI research agent will analyze your idea across 4 dimensions: competitive landscape, SEO opportunity, willingness to pay, and differentiation potential. You can provide just a name and uploaded document - the agent will extract the details it needs.
+      {/* Info Card */}
+      <div
+        className="mt-8 p-5 rounded-lg animate-slide-up"
+        style={{
+          animationDelay: '0.4s',
+          background: 'var(--accent-coral-soft)',
+          border: '1px solid rgba(255, 107, 91, 0.2)',
+        }}
+      >
+        <h3 className="font-display font-medium mb-2" style={{ color: 'var(--accent-coral)' }}>
+          What happens next?
+        </h3>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Our AI analyzes your idea across 4 dimensions: competitive landscape, SEO opportunity,
+          willingness to pay, and differentiation potential. Just provide a name — upload a doc
+          for better results.
         </p>
       </div>
     </div>

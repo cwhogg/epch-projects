@@ -1,21 +1,10 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Research Dashboard",
-  description: "Product idea research and analysis dashboard",
+  title: 'Research Dashboard',
+  description: 'Product idea research and analysis dashboard',
 };
 
 export default function RootLayout({
@@ -25,33 +14,61 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 dark:bg-zinc-950`}
-      >
-        <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">
-              Research Dashboard
-            </Link>
-            <div className="flex gap-4">
-              <Link
-                href="/"
-                className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                Leaderboard
+      <body>
+        {/* Navigation */}
+        <nav className="sticky top-0 z-50 backdrop-blur-xl" style={{ background: 'rgba(13, 13, 15, 0.8)', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div className="container-app">
+            <div className="flex items-center justify-between h-16">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-3 group">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20V10" />
+                    <path d="M18 20V4" />
+                    <path d="M6 20v-4" />
+                  </svg>
+                </div>
+                <span className="font-display text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Research
+                </span>
               </Link>
-              <Link
-                href="/ideas/new"
-                className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 rounded-md text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200"
-              >
-                Add Idea
-              </Link>
+
+              {/* Nav Links */}
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/"
+                  className="btn-ghost rounded-lg text-sm hidden sm:flex"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/ideas/new"
+                  className="btn btn-primary text-sm"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+                  <span className="hidden sm:inline">New Idea</span>
+                </Link>
+              </div>
             </div>
           </div>
         </nav>
-        <main className="max-w-6xl mx-auto px-4 py-8">
+
+        {/* Main Content */}
+        <main className="container-app py-6 sm:py-8">
           {children}
         </main>
+
+        {/* Footer */}
+        <footer className="mt-auto py-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="container-app">
+            <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              AI-powered product research
+            </p>
+          </div>
+        </footer>
       </body>
     </html>
   );

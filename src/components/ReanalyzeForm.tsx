@@ -37,39 +37,55 @@ export default function ReanalyzeForm({ ideaId }: ReanalyzeFormProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+        className="btn btn-ghost text-sm"
       >
-        Re-analyze with new context
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 2v6h-6" />
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+          <path d="M3 22v-6h6" />
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+        </svg>
+        Re-analyze
       </button>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+    <div className="card-static p-4 w-full sm:w-auto sm:min-w-80 animate-fade-in">
+      <h3 className="font-display text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
         Add Context for Re-analysis
       </h3>
       <textarea
         value={context}
         onChange={(e) => setContext(e.target.value)}
-        placeholder="Add new information, clarifications, or focus areas for the analysis..."
+        placeholder="Add new information or focus areas..."
         rows={3}
-        className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="input text-sm mb-3"
+        autoFocus
       />
-      <div className="flex gap-2 mt-3">
+      <div className="flex gap-2">
         <button
           onClick={handleReanalyze}
           disabled={loading || !context.trim()}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary text-sm flex-1"
         >
-          {loading ? 'Starting...' : 'Re-analyze'}
+          {loading ? (
+            <>
+              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              Starting...
+            </>
+          ) : (
+            'Re-analyze'
+          )}
         </button>
         <button
           onClick={() => {
             setIsOpen(false);
             setContext('');
           }}
-          className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="btn btn-secondary text-sm"
         >
           Cancel
         </button>

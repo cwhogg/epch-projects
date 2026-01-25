@@ -22,6 +22,13 @@ interface AnalysisProgress {
   };
 }
 
+const defaultSteps = [
+  { name: 'Competitive Analysis', status: 'pending' as const },
+  { name: 'SEO & Keywords', status: 'pending' as const },
+  { name: 'Willingness to Pay', status: 'pending' as const },
+  { name: 'Scoring', status: 'pending' as const },
+];
+
 export default function AnalyzePage() {
   const params = useParams();
   const router = useRouter();
@@ -54,25 +61,22 @@ export default function AnalyzePage() {
       const data = await res.json();
       setProgress(data);
 
-      // Redirect to analysis page when complete
       if (data.status === 'complete' && data.result) {
         setTimeout(() => {
           router.push(`/analyses/${data.result.id}`);
-        }, 2000);
+        }, 1500);
       }
     } catch (err) {
       console.error('Error checking progress:', err);
     }
   }, [ideaId, router]);
 
-  // Start analysis on mount
   useEffect(() => {
     if (!started) {
       startAnalysis();
     }
   }, [started, startAnalysis]);
 
-  // Poll for progress
   useEffect(() => {
     if (!started) return;
 
@@ -80,58 +84,58 @@ export default function AnalyzePage() {
       checkProgress();
     }, 2000);
 
-    // Initial check
     checkProgress();
 
     return () => clearInterval(interval);
   }, [started, checkProgress]);
 
-  const getStepIcon = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return (
-          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
-      case 'running':
-        return (
-          <svg className="w-5 h-5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        );
-      case 'error':
-        return (
-          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        );
-      default:
-        return <div className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />;
-    }
-  };
+  const steps = progress?.steps || defaultSteps;
+  const completedCount = steps.filter((s) => s.status === 'complete').length;
+  const progressPercent = (completedCount / steps.length) * 100;
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">Analysis Error</h2>
-          <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
-          <div className="flex gap-4">
+      <div className="max-w-lg mx-auto">
+        <div
+          className="card-static p-6 sm:p-8 animate-fade-in"
+          style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.05) 100%)',
+            borderColor: 'rgba(239, 68, 68, 0.2)',
+          }}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(239, 68, 68, 0.2)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            </div>
+            <h2 className="font-display text-lg" style={{ color: 'var(--text-primary)' }}>
+              Analysis Failed
+            </h2>
+          </div>
+          <p className="text-sm mb-6" style={{ color: '#f87171' }}>{error}</p>
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
                 setError(null);
                 setStarted(false);
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="btn btn-primary"
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2v6h-6" />
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M3 22v-6h6" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+              </svg>
               Retry
             </button>
-            <Link
-              href="/"
-              className="px-4 py-2 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-            >
+            <Link href="/" className="btn btn-secondary">
               Back to Dashboard
             </Link>
           </div>
@@ -141,38 +145,133 @@ export default function AnalyzePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-8">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-          Analyzing Your Idea
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-8">
-          {progress?.currentStep || 'Starting analysis...'}
-        </p>
+    <div className="max-w-lg mx-auto">
+      <div className="card-static p-6 sm:p-8">
+        {/* Header */}
+        <div className="text-center mb-8 animate-slide-up stagger-1">
+          <div
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--accent-coral-soft)' }}
+          >
+            {progress?.status === 'complete' ? (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--accent-coral)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="animate-pulse"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            )}
+          </div>
+          <h1 className="text-xl sm:text-2xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
+            {progress?.status === 'complete' ? 'Analysis Complete!' : 'Analyzing...'}
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {progress?.status === 'complete'
+              ? 'Redirecting to results...'
+              : progress?.currentStep || 'Starting analysis...'}
+          </p>
+        </div>
 
-        {/* Progress Steps */}
-        <div className="space-y-4 mb-8">
-          {(progress?.steps || [
-            { name: 'Competitive Analysis', status: 'pending' },
-            { name: 'SEO & Keyword Research', status: 'pending' },
-            { name: 'Willingness to Pay Analysis', status: 'pending' },
-            { name: 'Scoring & Synthesis', status: 'pending' },
-          ]).map((step, index) => (
+        {/* Progress Bar */}
+        <div className="mb-6 animate-slide-up stagger-2">
+          <div
+            className="h-1.5 rounded-full overflow-hidden"
+            style={{ background: 'var(--border-default)' }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${progressPercent}%`,
+                background: progress?.status === 'complete'
+                  ? '#34d399'
+                  : 'linear-gradient(90deg, var(--accent-coral) 0%, #ff8f6b 100%)',
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>{completedCount} of {steps.length} steps</span>
+            <span>{Math.round(progressPercent)}%</span>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-3 mb-6 animate-slide-up stagger-3">
+          {steps.map((step, index) => (
             <div
               key={index}
-              className={`flex items-center gap-4 p-4 rounded-lg transition-colors ${
-                step.status === 'running'
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                  : step.status === 'complete'
-                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                  : 'bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700'
+              className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                step.status === 'running' ? 'step-active' : ''
               }`}
+              style={{
+                background:
+                  step.status === 'running'
+                    ? 'var(--accent-coral-soft)'
+                    : step.status === 'complete'
+                    ? 'rgba(52, 211, 153, 0.1)'
+                    : 'var(--bg-elevated)',
+                border: `1px solid ${
+                  step.status === 'running'
+                    ? 'rgba(255, 107, 91, 0.3)'
+                    : step.status === 'complete'
+                    ? 'rgba(52, 211, 153, 0.3)'
+                    : 'var(--border-subtle)'
+                }`,
+              }}
             >
-              {getStepIcon(step.status)}
-              <div className="flex-1">
-                <div className="font-medium text-zinc-900 dark:text-zinc-100">{step.name}</div>
+              {/* Icon */}
+              <div className="shrink-0">
+                {step.status === 'complete' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                ) : step.status === 'running' ? (
+                  <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                ) : step.status === 'error' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                ) : (
+                  <div
+                    className="w-5 h-5 rounded-full"
+                    style={{ border: '2px solid var(--border-default)' }}
+                  />
+                )}
+              </div>
+
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-sm font-medium"
+                  style={{
+                    color:
+                      step.status === 'running'
+                        ? 'var(--accent-coral)'
+                        : step.status === 'complete'
+                        ? '#34d399'
+                        : 'var(--text-secondary)',
+                  }}
+                >
+                  {step.name}
+                </div>
                 {step.detail && (
-                  <div className="text-sm text-zinc-500 dark:text-zinc-400">{step.detail}</div>
+                  <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                    {step.detail}
+                  </div>
                 )}
               </div>
             </div>
@@ -181,31 +280,38 @@ export default function AnalyzePage() {
 
         {/* Completion Message */}
         {progress?.status === 'complete' && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-            <p className="text-green-700 dark:text-green-300 font-medium">
-              Analysis complete! Redirecting to results...
+          <div
+            className="p-4 rounded-lg mb-4 animate-fade-in"
+            style={{
+              background: 'rgba(52, 211, 153, 0.1)',
+              border: '1px solid rgba(52, 211, 153, 0.3)',
+            }}
+          >
+            <p className="text-sm font-medium text-center" style={{ color: '#34d399' }}>
+              Redirecting to your analysis...
             </p>
           </div>
         )}
 
-        {/* Error Message */}
-        {progress?.status === 'error' && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-            <p className="text-red-700 dark:text-red-300">{progress.error || 'An error occurred'}</p>
-          </div>
-        )}
-
         {/* Footer */}
-        <div className="flex justify-between items-center pt-4 border-t border-zinc-200 dark:border-zinc-700">
+        <div
+          className="flex justify-between items-center pt-4 animate-slide-up"
+          style={{ borderTop: '1px solid var(--border-subtle)', animationDelay: '0.4s' }}
+        >
           <Link
             href="/"
-            className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="text-sm flex items-center gap-1 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
           >
-            ← Back to Dashboard
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Cancel
           </Link>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-            This may take 1-2 minutes
-          </div>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            ~1-2 min
+          </span>
         </div>
       </div>
     </div>
