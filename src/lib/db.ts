@@ -1,11 +1,22 @@
 import { Redis } from '@upstash/redis';
 import { ProductIdea, Analysis, LeaderboardEntry } from '@/types';
 
-// Initialize Redis client (uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env vars)
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+// Lazy-initialize Redis client to ensure env vars are available
+let redis: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redis) {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!url || !token) {
+      throw new Error('Redis not configured: missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN');
+    }
+
+    redis = new Redis({ url, token });
+  }
+  return redis;
+}
 
 // Check if Redis is configured
 export function isRedisConfigured(): boolean {
@@ -14,18 +25,18 @@ export function isRedisConfigured(): boolean {
 
 // Ideas
 export async function saveIdeaToDb(idea: ProductIdea): Promise<ProductIdea> {
-  await redis.hset('ideas', { [idea.id]: JSON.stringify(idea) });
+  await getRedis().hset('ideas', { [idea.id]: JSON.stringify(idea) });
   return idea;
 }
 
 export async function getIdeasFromDb(): Promise<ProductIdea[]> {
-  const ideas = await redis.hgetall('ideas');
+  const ideas = await getRedis().hgetall('ideas');
   if (!ideas) return [];
   return Object.values(ideas).map((v) => JSON.parse(v as string));
 }
 
 export async function getIdeaFromDb(id: string): Promise<ProductIdea | null> {
-  const idea = await redis.hget('ideas', id);
+  const idea = await getRedis().hget('ideas', id);
   if (!idea) return null;
   return JSON.parse(idea as string);
 }
@@ -40,18 +51,18 @@ export async function updateIdeaStatus(id: string, status: ProductIdea['status']
 
 // Analyses
 export async function saveAnalysisToDb(analysis: Analysis): Promise<Analysis> {
-  await redis.hset('analyses', { [analysis.id]: JSON.stringify(analysis) });
+  await getRedis().hset('analyses', { [analysis.id]: JSON.stringify(analysis) });
   return analysis;
 }
 
 export async function getAnalysesFromDb(): Promise<Analysis[]> {
-  const analyses = await redis.hgetall('analyses');
+  const analyses = await getRedis().hgetall('analyses');
   if (!analyses) return [];
   return Object.values(analyses).map((v) => JSON.parse(v as string));
 }
 
 export async function getAnalysisFromDb(id: string): Promise<Analysis | null> {
-  const analysis = await redis.hget('analyses', id);
+  const analysis = await getRedis().hget('analyses', id);
   if (!analysis) return null;
   return JSON.parse(analysis as string);
 }
@@ -67,11 +78,11 @@ export interface AnalysisProgress {
 }
 
 export async function saveProgress(ideaId: string, progress: AnalysisProgress): Promise<void> {
-  await redis.set(`progress:${ideaId}`, JSON.stringify(progress), { ex: 3600 }); // 1 hour TTL
+  await getRedis().set(`progress:${ideaId}`, JSON.stringify(progress), { ex: 3600 }); // 1 hour TTL
 }
 
 export async function getProgress(ideaId: string): Promise<AnalysisProgress | null> {
-  const progress = await redis.get(`progress:${ideaId}`);
+  const progress = await getRedis().get(`progress:${ideaId}`);
   if (!progress) return null;
   return progress as AnalysisProgress;
 }
@@ -84,11 +95,11 @@ export interface AnalysisContent {
 }
 
 export async function saveAnalysisContent(id: string, content: AnalysisContent): Promise<void> {
-  await redis.hset('analysis_content', { [id]: JSON.stringify(content) });
+  await getRedis().hset('analysis_content', { [id]: JSON.stringify(content) });
 }
 
 export async function getAnalysisContent(id: string): Promise<AnalysisContent | null> {
-  const content = await redis.hget('analysis_content', id);
+  const content = await getRedis().hget('analysis_content', id);
   if (!content) return null;
   return JSON.parse(content as string);
 }
