@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd research-dashboard && npm install && npm run build",
+  "outputDirectory": "research-dashboard/.next",
+  "framework": "nextjs",
+  "installCommand": "cd research-dashboard && npm install"
+}
