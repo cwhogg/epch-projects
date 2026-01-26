@@ -26,7 +26,7 @@ export interface Analysis {
   ideaName: string;
   scores: AnalysisScores;
   confidence: 'High' | 'Medium' | 'Low' | 'Unknown';
-  recommendation: 'Test First' | 'Test Later' | 'Don\'t Test' | 'Incomplete';
+  recommendation: 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Incomplete';
   summary: string;
   risks: string[];
   completedAt: string;

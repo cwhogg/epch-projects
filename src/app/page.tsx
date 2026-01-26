@@ -21,11 +21,11 @@ async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: A
 
 function getBadgeClass(rec: string) {
   switch (rec) {
-    case 'Test First':
+    case 'Tier 1':
       return 'badge-success';
-    case 'Test Later':
+    case 'Tier 2':
       return 'badge-warning';
-    case "Don't Test":
+    case 'Tier 3':
       return 'badge-danger';
     default:
       return 'badge-neutral';

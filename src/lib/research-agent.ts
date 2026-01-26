@@ -147,7 +147,7 @@ SCORING GUIDANCE:
 - WTP: Based on existing price points and evidence people pay, not assumptions
 - Differentiation: Is there a credible unique angle?
 
-OVERALL RECOMMENDATION: Test First / Test Later / Don't Test
+OVERALL RECOMMENDATION: Tier 1 / Tier 2 / Tier 3
 CONFIDENCE: High / Medium / Low
 
 Confidence should reflect data quality:
@@ -228,18 +228,18 @@ function parseScores(content: string): AnalysisScores {
 
 function parseRecommendation(content: string): Analysis['recommendation'] {
   // Look for explicit recommendation patterns
-  const recMatch = content.match(/(?:OVERALL\s+)?RECOMMENDATION[:\s]*(Test First|Test Later|Don't Test|Incomplete)/i);
+  const recMatch = content.match(/(?:OVERALL\s+)?RECOMMENDATION[:\s]*(Tier\s*[123]|Incomplete)/i);
   if (recMatch) {
     const rec = recMatch[1];
-    if (rec.toLowerCase().includes("don't")) return "Don't Test";
-    if (rec.toLowerCase().includes('first')) return 'Test First';
-    if (rec.toLowerCase().includes('later')) return 'Test Later';
+    if (rec.includes('1')) return 'Tier 1';
+    if (rec.includes('2')) return 'Tier 2';
+    if (rec.includes('3')) return 'Tier 3';
   }
 
   // Fallback to simple search
-  if (content.includes("Don't Test")) return "Don't Test";
-  if (content.includes('Test First')) return 'Test First';
-  if (content.includes('Test Later')) return 'Test Later';
+  if (content.includes('Tier 1')) return 'Tier 1';
+  if (content.includes('Tier 2')) return 'Tier 2';
+  if (content.includes('Tier 3')) return 'Tier 3';
   return 'Incomplete';
 }
 
