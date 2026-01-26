@@ -28,9 +28,9 @@ export default function RootLayout({
                   className="transition-transform group-hover:scale-105"
                 >
                   <circle cx="100" cy="100" r="100" fill="#F07563"/>
-                  <text x="100" y="72" textAnchor="middle" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="300" fontSize="32" fill="white" opacity="0.5">&lt;</text>
+                  <text x="100" y="65" textAnchor="middle" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="800" fontSize="48" fill="white" opacity="0.65">&#123;</text>
                   <text x="100" y="118" textAnchor="middle" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="700" fontSize="39" fill="white" letterSpacing="3">EPCH</text>
-                  <text x="100" y="152" textAnchor="middle" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="300" fontSize="32" fill="white" opacity="0.5">&gt;</text>
+                  <text x="100" y="162" textAnchor="middle" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="800" fontSize="48" fill="white" opacity="0.65">&#125;</text>
                 </svg>
                 <span className="font-display text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
                   <span className="hidden sm:inline">EPCH Project Research</span>
