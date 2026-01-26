@@ -213,7 +213,7 @@ export default async function Home() {
                       Idea
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Verdict
+                      Recommendation
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                       Confidence
