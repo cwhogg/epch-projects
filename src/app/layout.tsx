@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Research Dashboard',
+  title: 'EPCH Project Research',
   description: 'Product idea research and analysis dashboard',
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
                   </svg>
                 </div>
                 <span className="font-display text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-                  Research
+                  EPCH Project Research
                 </span>
               </Link>
 
