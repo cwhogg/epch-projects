@@ -65,8 +65,12 @@ Be specific. Generic observations like "good UI" or "established brand" are usel
 
 SEO & KEYWORD RESEARCH - Think like someone actually searching for this solution.
 
+IMPORTANT: You do NOT have access to SEO tools or search volume data. Do NOT claim "high volume" or "low competition" - you don't know this. Focus on what you CAN assess: keyword intent, likely searcher needs, and content strategy.
+
 1. Seed Keywords (15-20) in table:
-| Keyword | Intent | Who's Ranking | Content Gap |
+| Keyword | Intent Type | Likely Competitors | Content Gap Hypothesis |
+
+Intent types: Informational, Navigational, Commercial, Transactional
 
 Include:
 - Problem-aware queries ("how to [solve problem]", "[symptom] help")
@@ -75,17 +79,22 @@ Include:
 - Community queries (what people ask on Reddit, forums, Quora)
 - Long-tail specific queries
 
-2. CONTENT OPPORTUNITIES (top 3):
-   - What questions are people asking that no one answers well?
+2. CONTENT STRATEGY (top 3 opportunities):
+   - What questions are people likely asking that established players don't answer well?
    - What informational content could establish authority?
    - What comparison/review content is missing?
 
-3. Community Signals:
-   - Relevant subreddits and their activity level
-   - Forums, Facebook groups, Discord servers where target users gather
+3. Community Signals (where target users gather):
+   - Relevant subreddits and estimated activity level
+   - Forums, Facebook groups, Discord servers
    - Common complaints/wishes expressed in these communities
 
-NOTE: No search volume data available. Focus on intent and gaps, not volume.`;
+4. SEO DIFFICULTY ASSESSMENT:
+   - Who dominates this space? (e.g., WebMD, Mayo Clinic, established SaaS)
+   - Is there room for a new entrant? Why or why not?
+   - Recommended angle: Go broad vs. niche down on specific long-tail?
+
+Be honest about uncertainty. Say "likely" or "probably" rather than stating things as fact.`;
 
     case 'wtp':
       return `${baseContext}
@@ -118,7 +127,7 @@ Evidence summary (3 bullets max, be specific).`;
     case 'scoring':
       return `${baseContext}
 
-FINAL SCORING - Be decisive and justify with evidence.
+FINAL SCORING - Be decisive and justify with evidence. Be honest about what you know vs. what you're estimating.
 
 ONE-LINE SUMMARY: [Write a single compelling sentence summarizing this opportunity - what it is, who it's for, and why it matters]
 
@@ -126,14 +135,25 @@ SCORING TABLE (use EXACTLY this format - scores in second column):
 
 | Dimension | Score | Evidence-Based Reasoning |
 |-----------|-------|--------------------------|
-| SEO Opportunity | X/10 | [specific reasoning based on keyword analysis] |
+| SEO Opportunity | X/10 | [Based on competitive density and content gaps - NOT search volume which you don't have] |
 | Competitive Landscape | X/10 | [how crowded, how differentiated can you be] |
 | Willingness to Pay | X/10 | [evidence of actual spending in space] |
 | Differentiation Potential | X/10 | [what unique angle exists] |
 | Expertise Alignment | 5/10 | [assumed moderate unless context suggests otherwise] |
 
+SCORING GUIDANCE:
+- SEO: Score based on competitive density and content gaps, NOT volume claims
+- Competitive: 8-10 = wide open, 5-7 = room to differentiate, 1-4 = crowded/dominated
+- WTP: Based on existing price points and evidence people pay, not assumptions
+- Differentiation: Is there a credible unique angle?
+
 OVERALL RECOMMENDATION: Test First / Test Later / Don't Test
 CONFIDENCE: High / Medium / Low
+
+Confidence should reflect data quality:
+- High = Strong evidence from multiple sources
+- Medium = Some evidence but gaps in knowledge
+- Low = Mostly inference, limited hard data
 
 KEY RISKS (3-5, be specific not generic):
 - [Specific risk with explanation]
@@ -145,7 +165,7 @@ NEXT STEPS (if testing):
 - [Specific actionable step]
 - [Specific actionable step]
 
-Be DECISIVE. Wishy-washy analysis helps no one.`;
+Be DECISIVE but HONEST about uncertainty.`;
 
     default:
       return baseContext;
