@@ -86,16 +86,22 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
             <StatusBadge status={piece.status} />
           </div>
 
-          <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-sm font-medium mb-1">
             {isComplete ? (
               <Link
                 href={`/analyses/${analysisId}/content/${piece.id}`}
-                className="hover:underline"
+                className="underline decoration-1 underline-offset-2 transition-colors hover:text-[var(--accent-coral)]"
+                style={{ color: 'var(--text-primary)' }}
               >
                 {piece.title}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-1 -mt-0.5">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
               </Link>
             ) : (
-              piece.title
+              <span style={{ color: 'var(--text-primary)' }}>{piece.title}</span>
             )}
           </h3>
 
