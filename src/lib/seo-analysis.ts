@@ -281,10 +281,10 @@ export async function validateWithGoogleSearch(
     return { serpResults: [], validated: [] };
   }
 
-  // Pick top 8 keywords by relevance
+  // Pick top 3 keywords by relevance (balances signal quality vs. SERP API budget)
   const topKeywords = keywords
     .filter((k) => k.relevanceToMillionARR !== 'Low')
-    .slice(0, 8)
+    .slice(0, 3)
     .map((k) => k.keyword);
 
   if (topKeywords.length === 0) {
