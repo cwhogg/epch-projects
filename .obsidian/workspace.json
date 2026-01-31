@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "experiments/secondlook/analysis.md",
+                "file": "agents/content-agent/README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "analysis"
+              "title": "README"
             }
           }
         ]
@@ -186,17 +186,22 @@
   },
   "active": "16c561c426ab6012",
   "lastOpenFiles": [
-    "src/lib/seo-analysis.ts",
-    "src/lib/serp-search.ts",
-    "src/lib/openai.ts",
-    "node_modules/openai/beta/realtime/ws.mjs.map",
-    "node_modules/openai/beta/realtime/ws.mjs",
-    "node_modules/openai/beta/realtime/ws.js.map",
-    "node_modules/openai/beta/realtime/ws.js",
-    "node_modules/openai/beta/realtime/ws.d.ts.map",
-    "node_modules/openai/beta/realtime/ws.d.mts.map",
-    "node_modules/openai/beta/realtime/ws.d.ts",
-    "node_modules/openai/beta/realtime/ws.d.mts",
+    "agents/content-agent/PLAYBOOK.md",
+    "agents/content-agent/SPEC.md",
+    "src/app/api/content/[ideaId]/pieces/route.ts",
+    "src/app/analyses/[id]/content/[pieceId]/page.tsx",
+    "src/app/analyses/[id]/content/generate/page.tsx",
+    "src/app/analyses/[id]/content/page.tsx",
+    "src/components/ContentCalendarCard.tsx",
+    "src/components/ContentTypeIcon.tsx",
+    "src/app/analyses/[id]/content/generate",
+    "src/app/analyses/[id]/content/[pieceId]",
+    "src/app/analyses/[id]/content",
+    "src/app/api/content/[ideaId]/pieces/[pieceId]/route.ts",
+    "agents/research-agent/PLAYBOOK.md",
+    "agents/research-agent/SPEC.md",
+    "agents/analytics-agent/README.md",
+    "experiments/secondlook/analysis.md",
     "node_modules/openai/src/internal/qs/README.md",
     "node_modules/openai/src/internal/qs/LICENSE.md",
     "node_modules/openai/src/_vendor/partial-json-parser/README.md",
@@ -217,11 +222,6 @@
     "node_modules/markdown-table/readme.md",
     "node_modules/mdast-util-gfm-strikethrough/readme.md",
     "node_modules/mdast-util-gfm-table/readme.md",
-    "node_modules/mdast-util-gfm-task-list-item/readme.md",
-    "node_modules/mdast-util-gfm-footnote/readme.md",
-    "node_modules/mdast-util-gfm-autolink-literal/readme.md",
-    "node_modules/remark-stringify/readme.md",
-    "node_modules/micromark-extension-gfm/readme.md",
     "public/window.svg",
     "public/vercel.svg",
     "public/next.svg",
