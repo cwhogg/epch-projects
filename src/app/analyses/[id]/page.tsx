@@ -368,6 +368,27 @@ export default async function AnalysisPage({ params }: PageProps) {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <Link
+                href={`/analyses/${analysis.id}/content`}
+                className="btn btn-primary text-sm"
+              >
+                {contentCalendarExists ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    View Content{contentPieceCount > 0 ? ` (${contentPieceCount})` : ''}
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    Generate Content
+                  </>
+                )}
+              </Link>
               <ReanalyzeForm ideaId={analysis.id} />
               <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
             </div>
@@ -414,48 +435,6 @@ export default async function AnalysisPage({ params }: PageProps) {
 
       {/* SEO Deep Dive */}
       <SEODeepDive seoDataJson={content.seoData} />
-
-      {/* Content Generation CTA */}
-      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="font-display text-base flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
-              </svg>
-              Content Generation
-            </h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              {contentCalendarExists
-                ? contentPieceCount > 0
-                  ? `${contentPieceCount} content piece${contentPieceCount !== 1 ? 's' : ''} generated`
-                  : 'Content calendar ready — select pieces to generate'
-                : 'Generate blog posts, landing pages, comparisons, and FAQ pages from your research data'}
-            </p>
-          </div>
-          <Link
-            href={`/analyses/${analysis.id}/content`}
-            className="btn btn-primary text-sm shrink-0"
-          >
-            {contentCalendarExists ? (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                View Content
-              </>
-            ) : (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-                Generate Content
-              </>
-            )}
-          </Link>
-        </div>
-      </div>
 
       {/* Full Analysis */}
       <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
