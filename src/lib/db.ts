@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { ProductIdea, Analysis, LeaderboardEntry } from '@/types';
+import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress } from '@/types';
 
 // Lazy-initialize Redis client to ensure env vars are available
 let redis: Redis | null = null;
@@ -173,4 +173,37 @@ export async function getLeaderboardFromDb(): Promise<LeaderboardEntry[]> {
       topRisk: analysis.risks?.[0] || 'None identified',
     };
   });
+}
+
+// Content Calendar
+export async function saveContentCalendar(ideaId: string, calendar: ContentCalendar): Promise<void> {
+  await getRedis().set(`content_calendar:${ideaId}`, JSON.stringify(calendar));
+}
+
+export async function getContentCalendar(ideaId: string): Promise<ContentCalendar | null> {
+  const calendar = await getRedis().get(`content_calendar:${ideaId}`);
+  if (!calendar) return null;
+  return calendar as ContentCalendar;
+}
+
+// Content Pieces
+export async function saveContentPiece(ideaId: string, piece: ContentPiece): Promise<void> {
+  await getRedis().hset(`content_pieces:${ideaId}`, { [piece.id]: JSON.stringify(piece) });
+}
+
+export async function getContentPieces(ideaId: string): Promise<ContentPiece[]> {
+  const pieces = await getRedis().hgetall(`content_pieces:${ideaId}`);
+  if (!pieces) return [];
+  return Object.values(pieces).map((v) => parseValue<ContentPiece>(v));
+}
+
+// Content Progress
+export async function saveContentProgress(ideaId: string, progress: ContentProgress): Promise<void> {
+  await getRedis().set(`content_progress:${ideaId}`, JSON.stringify(progress), { ex: 3600 });
+}
+
+export async function getContentProgress(ideaId: string): Promise<ContentProgress | null> {
+  const progress = await getRedis().get(`content_progress:${ideaId}`);
+  if (!progress) return null;
+  return progress as ContentProgress;
 }

@@ -32,6 +32,7 @@ export interface Analysis {
   completedAt: string;
   hasCompetitorAnalysis: boolean;
   hasKeywordAnalysis: boolean;
+  hasContentGenerated?: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -43,4 +44,41 @@ export interface LeaderboardEntry {
   recommendation: string;
   topStrength: string;
   topRisk: string;
+}
+
+// Content Agent Types
+
+export type ContentType = 'blog-post' | 'landing-page' | 'comparison' | 'faq';
+
+export interface ContentPiece {
+  id: string;
+  ideaId: string;
+  type: ContentType;
+  title: string;
+  slug: string;
+  targetKeywords: string[];
+  contentGap?: string;
+  priority: number;
+  rationale: string;
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  markdown?: string;
+  wordCount?: number;
+  generatedAt?: string;
+}
+
+export interface ContentCalendar {
+  ideaId: string;
+  ideaName: string;
+  strategySummary: string;
+  pieces: ContentPiece[];
+  createdAt: string;
+}
+
+export interface ContentProgress {
+  ideaId: string;
+  status: 'pending' | 'running' | 'complete' | 'error';
+  currentStep: string;
+  steps: { name: string; status: 'pending' | 'running' | 'complete' | 'error'; detail?: string }[];
+  error?: string;
+  completedPieceIds: string[];
 }

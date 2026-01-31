@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysis } from '@/lib/data';
-import { getAnalysisFromDb, getAnalysisContent, isRedisConfigured } from '@/lib/db';
+import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, isRedisConfigured } from '@/lib/db';
 import MarkdownContent from '@/components/MarkdownContent';
 import ReanalyzeForm from '@/components/ReanalyzeForm';
 import DeleteButton from '@/components/DeleteButton';
@@ -26,20 +26,30 @@ interface SEOSynthesisData {
 interface AnalysisData {
   analysis: Analysis;
   content: { main: string; competitors?: string; keywords?: string; seoData?: string };
+  contentCalendarExists: boolean;
+  contentPieceCount: number;
 }
 
 async function getAnalysisData(id: string): Promise<AnalysisData | null> {
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
     if (analysis) {
-      const content = await getAnalysisContent(id);
+      const [content, calendar, pieces] = await Promise.all([
+        getAnalysisContent(id),
+        getContentCalendar(id),
+        getContentPieces(id),
+      ]);
       return {
         analysis,
         content: content || { main: 'Analysis content not available' },
+        contentCalendarExists: !!calendar,
+        contentPieceCount: pieces.filter((p) => p.status === 'complete').length,
       };
     }
   }
-  return getAnalysis(id);
+  const fallback = getAnalysis(id);
+  if (!fallback) return null;
+  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0 };
 }
 
 function getBadgeClass(rec: string) {
@@ -304,7 +314,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     notFound();
   }
 
-  const { analysis, content } = result;
+  const { analysis, content, contentCalendarExists, contentPieceCount } = result;
 
   // Get gradient color based on recommendation
   const getHeaderGradient = () => {
@@ -404,6 +414,48 @@ export default async function AnalysisPage({ params }: PageProps) {
 
       {/* SEO Deep Dive */}
       <SEODeepDive seoDataJson={content.seoData} />
+
+      {/* Content Generation CTA */}
+      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="font-display text-base flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
+              </svg>
+              Content Generation
+            </h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              {contentCalendarExists
+                ? contentPieceCount > 0
+                  ? `${contentPieceCount} content piece${contentPieceCount !== 1 ? 's' : ''} generated`
+                  : 'Content calendar ready — select pieces to generate'
+                : 'Generate blog posts, landing pages, comparisons, and FAQ pages from your research data'}
+            </p>
+          </div>
+          <Link
+            href={`/analyses/${analysis.id}/content`}
+            className="btn btn-primary text-sm shrink-0"
+          >
+            {contentCalendarExists ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                View Content
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Generate Content
+              </>
+            )}
+          </Link>
+        </div>
+      </div>
 
       {/* Full Analysis */}
       <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">

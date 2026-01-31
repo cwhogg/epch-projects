@@ -105,7 +105,10 @@ function ScoreRing({ score, label, size = 56 }: { score: number | null; label: s
 }
 
 export default async function Home() {
-  const { leaderboard, analyses } = await getData();
+  const { leaderboard, analyses: rawAnalyses } = await getData();
+  const analyses = [...rawAnalyses].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+  );
 
   return (
     <div className="space-y-8 sm:space-y-12">
@@ -324,6 +327,11 @@ export default async function Home() {
                       {analysis.hasKeywordAnalysis && (
                         <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa' }}>
                           Keywords
+                        </span>
+                      )}
+                      {analysis.hasContentGenerated && (
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                          Content
                         </span>
                       )}
                     </div>
