@@ -110,9 +110,9 @@ function parseAnalysisFromMarkdown(ideaId: string, content: string): Partial<Ana
 
   // Parse recommendation - check most specific first
   let recommendation: Analysis['recommendation'] = 'Incomplete';
-  if (content.includes("Don't Test")) recommendation = "Don't Test";
-  else if (content.includes('Test First') || content.includes('Conditionally Test First')) recommendation = 'Test First';
-  else if (content.includes('Test Later')) recommendation = 'Test Later';
+  if (content.includes('Tier 1')) recommendation = 'Tier 1';
+  else if (content.includes('Tier 2')) recommendation = 'Tier 2';
+  else if (content.includes('Tier 3')) recommendation = 'Tier 3';
 
   // Parse summary (first paragraph after Summary heading)
   let summary = '';
@@ -230,7 +230,7 @@ export function getLeaderboard(): LeaderboardEntry[] {
 
   // Sort by recommendation priority, then by available scores
   const sorted = analyses.sort((a, b) => {
-    const recPriority = { 'Test First': 0, 'Test Later': 1, 'Incomplete': 2, "Don't Test": 3 };
+    const recPriority: Record<string, number> = { 'Tier 1': 0, 'Tier 2': 1, 'Incomplete': 2, 'Tier 3': 3 };
     const aPriority = recPriority[a.recommendation] ?? 2;
     const bPriority = recPriority[b.recommendation] ?? 2;
 

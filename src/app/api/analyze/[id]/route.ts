@@ -38,6 +38,14 @@ export async function POST(
       // No body or invalid JSON, that's fine
     }
 
+    // Log optional key warnings (non-blocking)
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('OPENAI_API_KEY not set: SEO analysis will use Claude only (no cross-referencing).');
+    }
+    if (!process.env.SERPAPI_KEY) {
+      console.warn('SERPAPI_KEY not set: SEO analysis will skip Google SERP validation.');
+    }
+
     // Start analysis in background (don't await)
     runResearchAgent(idea, additionalContext).catch((error) => {
       console.error('Analysis failed:', error);

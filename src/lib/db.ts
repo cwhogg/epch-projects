@@ -109,6 +109,7 @@ export interface AnalysisContent {
   main: string;
   competitors?: string;
   keywords?: string;
+  seoData?: string; // JSON-stringified SEO pipeline data
 }
 
 export async function saveAnalysisContent(id: string, content: AnalysisContent): Promise<void> {

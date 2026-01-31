@@ -24,7 +24,11 @@ interface AnalysisProgress {
 
 const defaultSteps: AnalysisStep[] = [
   { name: 'Competitive Analysis', status: 'pending' },
-  { name: 'SEO & Keywords', status: 'pending' },
+  { name: 'SEO: Claude Analysis', status: 'pending' },
+  { name: 'SEO: OpenAI Analysis', status: 'pending' },
+  { name: 'SEO: Cross-Reference', status: 'pending' },
+  { name: 'SEO: SERP Validation', status: 'pending' },
+  { name: 'SEO: Synthesis', status: 'pending' },
   { name: 'Willingness to Pay', status: 'pending' },
   { name: 'Scoring', status: 'pending' },
 ];
@@ -225,12 +229,14 @@ export default function AnalyzePage() {
 
         {/* Steps */}
         <div className="space-y-3 mb-6 animate-slide-up stagger-3">
-          {steps.map((step, index) => (
+          {steps.map((step, index) => {
+            const isSeoSubStep = step.name.startsWith('SEO:');
+            return (
             <div
               key={index}
               className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                 step.status === 'running' ? 'step-active' : ''
-              }`}
+              } ${isSeoSubStep ? 'ml-4' : ''}`}
               style={{
                 background:
                   step.status === 'running'
@@ -274,7 +280,7 @@ export default function AnalyzePage() {
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <div
-                  className="text-sm font-medium"
+                  className={`font-medium ${isSeoSubStep ? 'text-xs' : 'text-sm'}`}
                   style={{
                     color:
                       step.status === 'running'
@@ -293,7 +299,8 @@ export default function AnalyzePage() {
                 )}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
 
         {/* Completion Message */}

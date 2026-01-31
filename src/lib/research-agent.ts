@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea, Analysis, AnalysisScores } from '@/types';
 import { saveProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, AnalysisProgress } from './db';
+import { runFullSEOPipeline, SEOPipelineResult } from './seo-analysis';
+import { isOpenAIConfigured } from './openai';
+import { isSerpConfigured } from './serp-search';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -8,7 +11,11 @@ const anthropic = new Anthropic({
 
 const ANALYSIS_STEPS = [
   { name: 'Competitive Analysis', key: 'competitors' },
-  { name: 'SEO & Keyword Research', key: 'keywords' },
+  { name: 'SEO: Claude Analysis', key: 'seo-claude' },
+  { name: 'SEO: OpenAI Analysis', key: 'seo-openai' },
+  { name: 'SEO: Cross-Reference', key: 'seo-compare' },
+  { name: 'SEO: SERP Validation', key: 'seo-serp' },
+  { name: 'SEO: Synthesis', key: 'seo-synthesis' },
   { name: 'Willingness to Pay Analysis', key: 'wtp' },
   { name: 'Scoring & Synthesis', key: 'scoring' },
 ];
@@ -320,35 +327,100 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
 
   const content: { competitors?: string; keywords?: string; wtp?: string; scoring?: string } = {};
 
-  try {
-    for (let i = 0; i < ANALYSIS_STEPS.length; i++) {
-      const step = ANALYSIS_STEPS[i];
+  // Helper to find step index by key
+  const stepIndex = (key: string) => ANALYSIS_STEPS.findIndex((s) => s.key === key);
 
-      // Update progress
-      progress.currentStep = step.name;
-      progress.steps[i].status = 'running';
-      await saveProgress(idea.id, progress);
-
-      // Call Claude with higher token limit for richer analysis
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        messages: [
-          {
-            role: 'user',
-            content: createPrompt(idea, step.key, additionalContext),
-          },
-        ],
-      });
-
-      const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
-      content[step.key as keyof typeof content] = responseText;
-
-      // Mark step complete
-      progress.steps[i].status = 'complete';
-      progress.steps[i].detail = `Done`;
+  // Helper to update step status
+  const updateStep = async (key: string, status: 'pending' | 'running' | 'complete' | 'error', detail?: string) => {
+    const idx = stepIndex(key);
+    if (idx >= 0) {
+      progress.steps[idx].status = status;
+      if (detail) progress.steps[idx].detail = detail;
+      progress.currentStep = ANALYSIS_STEPS[idx].name;
       await saveProgress(idea.id, progress);
     }
+  };
+
+  try {
+    // --- Step 1: Competitive Analysis ---
+    await updateStep('competitors', 'running');
+    const competitorResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: createPrompt(idea, 'competitors', additionalContext) }],
+    });
+    content.competitors = competitorResponse.content[0].type === 'text' ? competitorResponse.content[0].text : '';
+    await updateStep('competitors', 'complete', 'Done');
+
+    // --- Steps 2-6: SEO Pipeline (runs Claude + OpenAI in parallel internally) ---
+    // Mark OpenAI step as skipped if no key
+    if (!isOpenAIConfigured()) {
+      await updateStep('seo-openai', 'complete', 'Skipped (no API key)');
+    }
+    // Mark SERP step as skipped if no key
+    if (!isSerpConfigured()) {
+      await updateStep('seo-serp', 'complete', 'Skipped (no API key)');
+    }
+
+    let seoResult: SEOPipelineResult;
+    try {
+      seoResult = await runFullSEOPipeline(idea, additionalContext, async (stepKey, detail) => {
+        await updateStep(stepKey, 'running', detail);
+      });
+
+      // Mark all SEO steps complete
+      for (const key of ['seo-claude', 'seo-openai', 'seo-compare', 'seo-serp', 'seo-synthesis']) {
+        const idx = stepIndex(key);
+        if (idx >= 0 && progress.steps[idx].status === 'running') {
+          await updateStep(key, 'complete', progress.steps[idx].detail || 'Done');
+        }
+      }
+    } catch (seoError) {
+      console.error('SEO pipeline failed, falling back:', seoError);
+      // Mark remaining SEO steps as errored
+      for (const key of ['seo-claude', 'seo-openai', 'seo-compare', 'seo-serp', 'seo-synthesis']) {
+        const idx = stepIndex(key);
+        if (idx >= 0 && progress.steps[idx].status !== 'complete') {
+          await updateStep(key, 'error', 'Failed');
+        }
+      }
+      // Fallback: run old-style keyword analysis
+      const fallbackResponse = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: createPrompt(idea, 'keywords', additionalContext) }],
+      });
+      content.keywords = fallbackResponse.content[0].type === 'text' ? fallbackResponse.content[0].text : '';
+      seoResult = undefined as unknown as SEOPipelineResult;
+    }
+
+    // Use SEO pipeline markdown if available, otherwise fallback
+    if (seoResult) {
+      content.keywords = seoResult.markdownReport;
+    }
+
+    // --- Step 7: Willingness to Pay ---
+    await updateStep('wtp', 'running');
+    const wtpResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: createPrompt(idea, 'wtp', additionalContext) }],
+    });
+    content.wtp = wtpResponse.content[0].type === 'text' ? wtpResponse.content[0].text : '';
+    await updateStep('wtp', 'complete', 'Done');
+
+    // --- Step 8: Scoring & Synthesis (enriched with SEO data) ---
+    await updateStep('scoring', 'running');
+    const seoContext = seoResult
+      ? `\n\nSEO PIPELINE DATA (use this to inform your SEO Opportunity score):\n${buildSEOScoringContext(seoResult)}`
+      : '';
+    const scoringResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: createPrompt(idea, 'scoring', (additionalContext || '') + seoContext) }],
+    });
+    content.scoring = scoringResponse.content[0].type === 'text' ? scoringResponse.content[0].text : '';
+    await updateStep('scoring', 'complete', 'Done');
 
     // Combine into analysis document
     const fullContent = `# ${idea.name}
@@ -398,6 +470,10 @@ ${content.scoring || 'Not available'}
       main: fullContent,
       competitors: content.competitors,
       keywords: content.keywords,
+      seoData: seoResult ? JSON.stringify({
+        synthesis: seoResult.synthesis,
+        dataSources: seoResult.synthesis.dataSources,
+      }) : undefined,
     });
     await updateIdeaStatus(idea.id, 'complete');
 
@@ -416,4 +492,28 @@ ${content.scoring || 'Not available'}
     await updateIdeaStatus(idea.id, 'pending');
     throw error;
   }
+}
+
+function buildSEOScoringContext(seoResult: SEOPipelineResult): string {
+  const parts: string[] = [];
+  const syn = seoResult.synthesis;
+
+  parts.push(`Data sources: ${syn.dataSources.join(', ')}`);
+  parts.push(`Total keywords identified: ${syn.topKeywords.length}`);
+
+  if (syn.comparison) {
+    parts.push(`Keywords agreed upon by both Claude and OpenAI: ${syn.comparison.agreedKeywords.length}`);
+    parts.push(`High-confidence keywords: ${syn.comparison.agreedKeywords.slice(0, 5).join(', ')}`);
+  }
+
+  if (syn.serpValidated.length > 0) {
+    const gaps = syn.serpValidated.filter((v) => v.hasContentGap).length;
+    parts.push(`SERP-validated keywords: ${syn.serpValidated.length}`);
+    parts.push(`Content gaps found: ${gaps} of ${syn.serpValidated.length}`);
+  }
+
+  parts.push(`Room for new entrant: ${syn.difficultyAssessment.roomForNewEntrant ? 'Yes' : 'No'}`);
+  parts.push(`Dominant players: ${syn.difficultyAssessment.dominantPlayers.join(', ')}`);
+
+  return parts.join('\n');
 }
