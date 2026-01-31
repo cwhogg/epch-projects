@@ -96,29 +96,38 @@ export interface SEOPipelineResult {
 const SEO_OUTPUT_SCHEMA = `{
   "keywords": [
     {
-      "keyword": "string",
-      "intentType": "Informational | Navigational | Commercial | Transactional",
-      "estimatedVolume": "High | Medium | Low | Unknown",
-      "estimatedCompetitiveness": "High | Medium | Low | Unknown",
-      "contentGapHypothesis": "string - what content is missing that this keyword reveals",
-      "relevanceToMillionARR": "High | Medium | Low",
-      "rationale": "string - why this keyword matters for a $1M ARR niche business",
-      "opportunityScore": "number 1-10 (optional) - overall opportunity rating",
-      "contentGapType": "Format | Freshness | Depth | Angle | Audience (optional) - primary gap type",
-      "serpSignals": ["string (optional) - observable SERP signals like 'Reddit ranking', 'thin content'"]
+      "keyword": "example long-tail keyword",
+      "intentType": "Informational",
+      "estimatedVolume": "Medium",
+      "estimatedCompetitiveness": "Low",
+      "contentGapHypothesis": "What content is missing that this keyword reveals",
+      "relevanceToMillionARR": "High",
+      "rationale": "Why this keyword matters for a $1M ARR niche business",
+      "opportunityScore": 8,
+      "contentGapType": "Depth",
+      "serpSignals": ["Reddit ranking", "thin content"]
     }
   ],
   "contentStrategy": {
-    "topOpportunities": ["string - top 3 content opportunities"],
-    "recommendedAngle": "string - the recommended content angle",
-    "communitySignals": ["string - where target users gather and what they say"]
+    "topOpportunities": ["opportunity 1", "opportunity 2", "opportunity 3"],
+    "recommendedAngle": "The recommended content angle",
+    "communitySignals": ["where target users gather and what they say"]
   },
   "difficultyAssessment": {
-    "dominantPlayers": ["string - who dominates search for this niche"],
-    "roomForNewEntrant": true/false,
-    "reasoning": "string - why there is or isn't room"
+    "dominantPlayers": ["player 1", "player 2"],
+    "roomForNewEntrant": true,
+    "reasoning": "Why there is or isn't room for a new entrant"
   }
-}`;
+}
+
+Field constraints:
+- intentType: one of "Informational", "Navigational", "Commercial", "Transactional"
+- estimatedVolume: one of "High", "Medium", "Low", "Unknown"
+- estimatedCompetitiveness: one of "High", "Medium", "Low", "Unknown"
+- relevanceToMillionARR: one of "High", "Medium", "Low"
+- opportunityScore: number 1-10
+- contentGapType: one of "Format", "Freshness", "Depth", "Angle", "Audience"
+- roomForNewEntrant: boolean (true or false)`;
 
 // ---------- Claude SEO Analysis ----------
 
@@ -163,15 +172,19 @@ IMPORTANT: Do NOT fabricate search volume data. Use estimates based on your unde
 Respond ONLY with valid JSON matching this schema (no extra text, no markdown fences):
 ${SEO_OUTPUT_SCHEMA}`;
 
-  // Attempt with retry on parse failure
+  // Attempt with retry on parse failure — use assistant prefill to force JSON
   for (let attempt = 0; attempt < 2; attempt++) {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 3000,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: '{' },
+      ],
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const rawText = response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = '{' + rawText; // prepend the prefill
     const result = parseSEOJSON(text);
 
     if (result.keywords.length > 0) {
@@ -755,6 +768,16 @@ function generateMarkdownReport(
 
 // ---------- Helpers ----------
 
+function cleanJSONString(str: string): string {
+  // Remove trailing commas before } or ] (common LLM mistake)
+  let cleaned = str.replace(/,\s*([\]}])/g, '$1');
+  // Remove single-line comments (// ...)
+  cleaned = cleaned.replace(/\/\/[^\n]*/g, '');
+  // Remove multi-line comments (/* ... */)
+  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+  return cleaned;
+}
+
 function parseSEOJSON(text: string): SEOAnalysisResult {
   // Try to extract JSON from the response
   let jsonStr = text.trim();
@@ -765,21 +788,28 @@ function parseSEOJSON(text: string): SEOAnalysisResult {
     jsonStr = codeBlockMatch[1].trim();
   }
 
+  // Attempt 1: direct parse
   try {
     const parsed = JSON.parse(jsonStr);
     return validateSEOResult(parsed);
   } catch {
-    // Try to find JSON object in the text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return validateSEOResult(parsed);
-      } catch {
-        // Fall through to default
+    // Attempt 2: clean common LLM mistakes (trailing commas, comments) then parse
+    try {
+      const parsed = JSON.parse(cleanJSONString(jsonStr));
+      return validateSEOResult(parsed);
+    } catch {
+      // Attempt 3: extract JSON object from surrounding text
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(cleanJSONString(jsonMatch[0]));
+          return validateSEOResult(parsed);
+        } catch {
+          // Fall through to default
+        }
       }
     }
-    console.error('Failed to parse SEO JSON, returning defaults');
+    console.error('Failed to parse SEO JSON, returning defaults. First 300 chars:', jsonStr.substring(0, 300));
     return getDefaultSEOResult();
   }
 }
