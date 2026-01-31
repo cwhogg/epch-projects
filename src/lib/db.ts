@@ -75,7 +75,8 @@ export async function saveAnalysisToDb(analysis: Analysis): Promise<Analysis> {
 export async function getAnalysesFromDb(): Promise<Analysis[]> {
   const analyses = await getRedis().hgetall('analyses');
   if (!analyses) return [];
-  return Object.values(analyses).map((v) => parseValue<Analysis>(v));
+  const parsed = Object.values(analyses).map((v) => parseValue<Analysis>(v));
+  return parsed.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
 }
 
 export async function getAnalysisFromDb(id: string): Promise<Analysis | null> {
