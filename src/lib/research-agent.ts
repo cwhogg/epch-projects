@@ -255,12 +255,18 @@ function parseRecommendation(content: string): Analysis['recommendation'] {
 }
 
 function parseConfidence(content: string): Analysis['confidence'] {
-  const match = content.match(/CONFIDENCE[:\s]*(High|Medium|Low)/i);
-  if (match) return match[1] as Analysis['confidence'];
+  // Look for the formal CONFIDENCE declaration (near RECOMMENDATION)
+  // Search for the LAST occurrence to skip any incidental mentions in reasoning
+  const allMatches = [...content.matchAll(/CONFIDENCE[:\s]*(High|Medium|Low)/gi)];
+  if (allMatches.length > 0) {
+    const last = allMatches[allMatches.length - 1];
+    const value = last[1].charAt(0).toUpperCase() + last[1].slice(1).toLowerCase();
+    if (value === 'High' || value === 'Medium' || value === 'Low') return value;
+  }
 
-  // Fallback
-  const fallback = content.match(/Confidence.*?(High|Medium|Low)/i);
-  if (fallback) return fallback[1] as Analysis['confidence'];
+  // Fallback: look near RECOMMENDATION line
+  const nearRec = content.match(/RECOMMENDATION[:\s]*(?:Tier\s*[123]|Incomplete)[\s\S]{0,100}CONFIDENCE[:\s]*(High|Medium|Low)/i);
+  if (nearRec) return nearRec[1] as Analysis['confidence'];
 
   return 'Unknown';
 }
