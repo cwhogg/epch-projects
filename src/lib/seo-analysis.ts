@@ -449,13 +449,11 @@ export async function synthesizeSEOAnalysis(
 
   const comparisonSection = comparison
     ? `
-## LLM Cross-Reference
-- Keywords agreed on by both LLMs: ${comparison.agreedKeywords.length}
-- Claude-unique keywords: ${comparison.claudeUniqueKeywords.length}
-- OpenAI-unique keywords: ${comparison.openaiUniqueKeywords.length}
-- Agreed keywords (highest confidence): ${comparison.agreedKeywords.slice(0, 10).join(', ')}
-- Claude-unique: ${comparison.claudeUniqueKeywords.slice(0, 5).join(', ')}
-- OpenAI-unique: ${comparison.openaiUniqueKeywords.slice(0, 5).join(', ')}
+## LLM Cross-Reference (two complementary perspectives — all keywords are valuable)
+- Keywords from both LLMs: ${comparison.agreedKeywords.length} overlapping, ${comparison.claudeUniqueKeywords.length} Claude-unique, ${comparison.openaiUniqueKeywords.length} OpenAI-unique
+- Claude (strategist) keywords: ${[...comparison.agreedKeywords, ...comparison.claudeUniqueKeywords].slice(0, 10).join(', ')}
+- OpenAI (founder) keywords: ${[...comparison.agreedKeywords, ...comparison.openaiUniqueKeywords].slice(0, 10).join(', ')}
+Note: Low overlap is normal — each LLM brings a different lens (strategic vs. pain-point). Unique keywords are equally valuable.
 `
     : '';
 
@@ -494,7 +492,7 @@ ${openaiSection}${comparisonSection}${serpSection}
 Data sources used: ${dataSources.join(', ')}
 
 Write a concise synthesis narrative (3-5 paragraphs) that:
-1. Identifies the highest-confidence keyword opportunities (especially agreed-upon ones)
+1. Identifies the best keyword opportunities from ALL sources — treat Claude and OpenAI keywords as complementary perspectives, not redundant. Keywords unique to one LLM are just as valuable as overlapping ones; overlap is a minor confidence signal, not the primary filter.
 2. Highlights any content gaps validated by real SERP data
 3. Recommends a content strategy for a small team targeting $1M ARR
 4. Notes any cautions or areas where the data was limited
@@ -592,7 +590,8 @@ export async function runFullSEOPipeline(
   if (onProgress) await onProgress('seo-compare', 'Comparing LLM results...');
   const comparison = compareSEOResults(claudeResult, openaiResult);
   if (comparison && onProgress) {
-    await onProgress('seo-compare', `${comparison.agreedKeywords.length} keywords agreed upon`);
+    const totalKeywords = comparison.agreedKeywords.length + comparison.claudeUniqueKeywords.length + comparison.openaiUniqueKeywords.length;
+    await onProgress('seo-compare', `${totalKeywords} total keywords from both LLMs (${comparison.agreedKeywords.length} overlapping)`);
   }
 
   // Phase 4: SERP validation
@@ -681,11 +680,12 @@ function generateMarkdownReport(
   // Comparison
   if (synthesis.comparison) {
     parts.push(`### LLM Cross-Reference\n`);
-    parts.push(`- **Both LLMs agreed on:** ${synthesis.comparison.agreedKeywords.length} keywords`);
-    parts.push(`- **Claude-unique:** ${synthesis.comparison.claudeUniqueKeywords.length} keywords`);
-    parts.push(`- **OpenAI-unique:** ${synthesis.comparison.openaiUniqueKeywords.length} keywords`);
+    parts.push(`Two complementary perspectives — Claude (senior strategist) and OpenAI (scrappy founder) — each surface different keyword opportunities. All keywords are valuable regardless of overlap.\n`);
+    parts.push(`- **Overlapping:** ${synthesis.comparison.agreedKeywords.length} keywords (both LLMs identified)`);
+    parts.push(`- **Claude-unique:** ${synthesis.comparison.claudeUniqueKeywords.length} keywords (strategic/analytical lens)`);
+    parts.push(`- **OpenAI-unique:** ${synthesis.comparison.openaiUniqueKeywords.length} keywords (pain-point/community lens)`);
     if (synthesis.comparison.agreedKeywords.length > 0) {
-      parts.push(`\nAgreed keywords (highest confidence): ${synthesis.comparison.agreedKeywords.join(', ')}`);
+      parts.push(`\nOverlapping keywords: ${synthesis.comparison.agreedKeywords.join(', ')}`);
     }
     parts.push('');
   }

@@ -4,6 +4,7 @@ import { saveProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, 
 import { runFullSEOPipeline, SEOPipelineResult } from './seo-analysis';
 import { isOpenAIConfigured } from './openai';
 import { isSerpConfigured } from './serp-search';
+import { buildExpertiseContext } from './expertise-profile';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -134,6 +135,8 @@ Evidence summary (3 bullets max, be specific).`;
     case 'scoring':
       return `${baseContext}
 
+${buildExpertiseContext()}
+
 FINAL SCORING - Be decisive and justify with evidence. Be honest about what you know vs. what you're estimating.
 
 ONE-LINE SUMMARY: [Write a single compelling sentence summarizing this opportunity - what it is, who it's for, and why it matters]
@@ -146,13 +149,14 @@ SCORING TABLE (use EXACTLY this format - scores in second column):
 | Competitive Landscape | X/10 | [how crowded, how differentiated can you be] |
 | Willingness to Pay | X/10 | [evidence of actual spending in space] |
 | Differentiation Potential | X/10 | [what unique angle exists] |
-| Expertise Alignment | 5/10 | [assumed moderate unless context suggests otherwise] |
+| Expertise Alignment | X/10 | [Score using the EXPERTISE PROFILE above - do NOT default to 5] |
 
 SCORING GUIDANCE:
 - SEO: Score based on competitive density and content gaps, NOT volume claims
 - Competitive: 8-10 = wide open, 5-7 = room to differentiate, 1-4 = crowded/dominated
 - WTP: Based on existing price points and evidence people pay, not assumptions
 - Differentiation: Is there a credible unique angle?
+- Expertise: Use the expertise profile provided above. High (8-10) if strong domain + technical fit. Low (1-3) if major domain gaps or missing critical non-technical skills.
 
 OVERALL RECOMMENDATION: Tier 1 / Tier 2 / Tier 3
 CONFIDENCE: High / Medium / Low
