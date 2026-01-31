@@ -15,8 +15,6 @@ Step-by-step guide for analyzing product ideas.
 
 ## Phase 1: Competitive Analysis
 
-**Time estimate:** 15 minutes per idea
-
 ### Step 1.1: Find Competitors
 
 For each idea:
@@ -108,161 +106,78 @@ Create `/experiments/[idea-name]/competitors.md` with:
 
 ## Phase 2: SEO Opportunity Analysis
 
-**Time estimate:** 20 minutes per idea
+Uses the dual-LLM + SERP validation pipeline implemented in `src/lib/seo-analysis.ts`.
 
-### Step 2.1: Generate Seed Keywords
+### Step 2.1: Prepare Product Context
 
-Brainstorm 20-30 keywords based on:
+For each idea, gather:
+- Product name, description, target user, problem solved
+- Any existing URLs or document content
+- The system auto-detects the vertical (B2B SaaS, healthcare consumer, general niche) via `detectVertical()` in `src/lib/seo-knowledge.ts`
+- Knowledge context is injected into LLM prompts automatically
 
-**Product-focused:**
-- `[product type] app`
-- `[product type] tool`
-- `best [product type]`
-- `free [product type]`
+### Step 2.2: Dual-LLM Keyword Generation (Parallel)
 
-**Problem-focused:**
-- `how to [solve problem]`
-- `[problem] help`
-- `[problem] tips`
+Two LLM analyses run in parallel:
 
-**Alternative-focused:**
-- `[competitor] alternative`
-- `[competitor] vs`
-- `apps like [competitor]`
+**Claude (senior SEO strategist):**
+- Receives keyword pattern templates, SERP evaluation framework, content gap types, and community sources for the detected vertical
+- Generates 15-20 keywords with: intent type, estimated volume/competition, content gap hypothesis, opportunity score (1-10), and gap type classification
 
-**Question-based:**
-- `what is the best way to [goal]`
-- `why is [problem] hard`
-- `how do I [task]`
+**OpenAI GPT-4o-mini (scrappy founder):**
+- Receives pain-point patterns and community language sources for the detected vertical
+- Generates 15-20 keywords focused on: frustration queries, "[competitor] alternative" patterns, community-language queries, and high buying-intent searches
 
-### Step 2.2: Research Keywords
+If OpenAI is not configured, Claude runs alone.
 
-**If Ahrefs available:**
-- Pull volume, KD, CPC for each keyword
-- Expand with "Also rank for" suggestions
+### Step 2.3: Cross-Reference Results
 
-**If Ahrefs unavailable (CRITICAL):**
-- **DO NOT fabricate volume or difficulty numbers**
-- **DO NOT estimate ranges like "5,000-10,000 volume"**
-- Conduct SERP analysis ONLY:
-  - Who currently ranks?
-  - Are there content gaps (forums, outdated content)?
-  - What's the competitor presence?
-- Mark all volume/KD fields as "Unknown - no data"
-- State clearly: "Cannot assess without Ahrefs/SEMrush access"
-- SEO Opportunity score must be marked "?/10 (Unknown)"
+- Compare keyword lists using fuzzy matching (exact, containment, 60% word overlap)
+- Identify agreed keywords (both LLMs suggested) — these are highest confidence
+- Flag Claude-unique and OpenAI-unique keywords
+- Merge into single prioritized list: agreed first, then Claude-unique, then OpenAI-unique
 
-### Step 2.3: Filter Opportunities
+### Step 2.4: SERP Validation (Top 8 Keywords)
 
-**Only if Ahrefs data is available:**
+If SerpAPI is configured:
+- Query Google for top 8 keywords (filtered by relevance to $1M ARR)
+- For each SERP result, detect:
+  - Content gaps using knowledge base criteria (forum presence, PAA questions, authority domain matching)
+  - Gap types: Format, Freshness, Depth, Angle, Audience
+  - Green flags: forums ranking, thin content, PAA present, few organic results
+  - Red flags: authority domains dominating, few unique domains in top 5
 
-Apply filters from `/knowledge/seo/best-practices.md`:
+If SerpAPI is not configured, skip this step and note in report.
 
-- KD: 0-30 (prioritize 0-15)
-- Volume: 200+ (or 50+ if high intent)
-- Intent: Commercial or Transactional
-- Length: 3+ words preferred
+### Step 2.5: Content Gap Detection
 
-**If no Ahrefs data:** Skip filtering. Cannot filter without data.
+For each SERP-validated keyword:
+- **Depth gap:** Few organic results, forums ranking, thin snippets
+- **Audience gap:** Generic/big sites dominating, not specialized
+- **Angle gap:** Low-relevance snippets, homogeneous results
+- **Format gap:** All text articles but query implies interactive need
+- **Freshness gap:** Top content is outdated (checked via authority domain patterns)
 
-### Step 2.4: Analyze SERPs
+### Step 2.6: Synthesis
 
-For top 10 filtered keywords:
-
-1. Search each keyword
-2. Note top 5 results:
-   - Site name and type (brand, blog, tool)
-   - Content type (guide, listicle, tool page)
-   - Approximate word count
-   - Last updated (if visible)
-
-3. Look for green flags:
-   - Forums/Reddit in results
-   - Outdated content (2+ years old)
-   - Thin content (< 500 words)
-   - Low-authority sites ranking
-
-4. Note red flags:
-   - All major brands in top 5
-   - Top results have massive backlink profiles
-
-### Step 2.5: Cluster Keywords
-
-Group keywords by:
-
-- **Topic/theme** (e.g., "tracking habits" vs "building habits")
-- **Intent** (informational vs commercial)
-- **Content type needed** (guide vs tool vs comparison)
-
-### Step 2.6: Score Clusters
-
-**Only if Ahrefs data is available:**
-
-Rate each cluster 1-10:
-
-| Factor | Weight |
-|--------|--------|
-| Total volume | 30% |
-| Average difficulty | 30% |
-| Content gap size | 25% |
-| Commercial intent | 15% |
-
-**If no Ahrefs data:**
-- Do NOT assign numeric scores to clusters
-- Describe qualitative assessment only (e.g., "content gap appears to exist")
-- Mark cluster scores as "Unknown"
+- Claude synthesizes all data sources (Claude keywords, OpenAI keywords, SERP validation)
+- Scoring guidelines injected from knowledge base
+- Generates narrative with: highest-confidence opportunities, validated content gaps, content strategy, and cautions
+- Produces markdown report with keyword table, SERP validation section, LLM cross-reference, content strategy, and difficulty assessment
 
 ### Step 2.7: Write Output
 
-Create `/experiments/[idea-name]/keywords.md` with:
-
-```markdown
-# Keyword Research: [Idea Name]
-
-## Summary
-[2-3 sentences on SEO opportunity]
-
-## Top 10 Keywords
-
-| Keyword | Volume | KD | Intent | Opportunity Score |
-|---------|--------|----|---------|--------------------|
-| ... | ... | ... | ... | ... |
-
-## Keyword Clusters
-
-### Cluster 1: [Theme]
-**Opportunity Score:** X/10
-**Total Volume:** X,XXX
-**Avg Difficulty:** XX
-
-Keywords:
-- keyword 1 (vol, KD)
-- keyword 2 (vol, KD)
-
-**Content Opportunity:** [What to create]
-
-### Cluster 2: [Theme]
-...
-
-## SERP Analysis
-
-### [Top Keyword 1]
-- **Top Results:** [who ranks]
-- **Content Gaps:** [opportunities]
-- **Recommendation:** [what to create]
-
-## Data Limitations
-[Note any gaps in data, especially if Ahrefs unavailable]
-```
+Create `/experiments/[idea-name]/keywords.md` with the generated markdown report.
 
 ---
 
 ## CHECKPOINT 2: Human Review
 
 **Present to human:**
-- Top 10 keywords per idea
-- Cluster opportunity scores
-- SERP analysis highlights
+- Top keywords with opportunity scores and gap types
+- SERP validation results (if available)
+- LLM cross-reference summary
+- Content strategy recommendation
 
 **Ask:**
 - Do these opportunities look realistic?
@@ -274,8 +189,6 @@ Keywords:
 ---
 
 ## Phase 3: Willingness-to-Pay Analysis
-
-**Time estimate:** 10 minutes per idea
 
 ### Step 3.1: Find Paid Products
 
@@ -347,24 +260,22 @@ Add to `/experiments/[idea-name]/analysis.md`:
 
 ## Phase 4: Scoring & Synthesis
 
-**Time estimate:** 10 minutes total
-
 ### Step 4.1: Score Each Dimension
 
 For each idea, score 1-10:
 
 | Dimension | Weight | Score | Reasoning |
 |-----------|--------|-------|-----------|
-| SEO Opportunity | 50% | X | [brief reason] |
+| SEO Opportunity | 30% | X | [brief reason] |
 | Competitive Landscape | 20% | X | [brief reason] |
-| Willingness to Pay | 15% | X | [brief reason] |
-| Differentiation Potential | 10% | X | [brief reason] |
+| Willingness to Pay | 25% | X | [brief reason] |
+| Differentiation Potential | 20% | X | [brief reason] |
 | Alignment with Expertise | 5% | X | [brief reason] |
 
 ### Step 4.2: Calculate Weighted Score
 
 ```
-Overall = (SEO × 0.50) + (Competitive × 0.20) + (WTP × 0.15) + (Diff × 0.10) + (Expertise × 0.05)
+Overall = (SEO × 0.30) + (Competitive × 0.20) + (WTP × 0.25) + (Diff × 0.20) + (Expertise × 0.05)
 ```
 
 ### Step 4.3: Assign Confidence
@@ -375,9 +286,9 @@ Overall = (SEO × 0.50) + (Competitive × 0.20) + (WTP × 0.15) + (Diff × 0.10)
 
 ### Step 4.4: Make Recommendation
 
-- **Test First:** Score ≥ 7, High/Medium confidence
-- **Test Later:** Score 5-7, or high score with Low confidence
-- **Don't Test:** Score < 5, or major red flags
+- **Tier 1:** Score >= 7, High/Medium confidence
+- **Tier 2:** Score 5-7, or high score with Low confidence
+- **Tier 3:** Score < 5, or major red flags
 
 ### Step 4.5: Identify Risks
 
@@ -388,11 +299,10 @@ For each idea, list:
 
 ### Step 4.6: Define Next Steps
 
-For "Test First" recommendations:
+For Tier 1 recommendations:
 - Priority content to create (3-5 pieces)
 - Landing page recommendations
 - Success metrics to track
-- Timeline suggestion
 
 ### Step 4.7: Write Final Output
 
@@ -407,13 +317,13 @@ Create ranking summary:
 
 | Rank | Idea | Score | Confidence | Recommendation |
 |------|------|-------|------------|----------------|
-| 1 | [Name] | X.X | [H/M/L] | Test First |
-| 2 | [Name] | X.X | [H/M/L] | Test Later |
-| 3 | [Name] | X.X | [H/M/L] | Don't Test |
+| 1 | [Name] | X.X | [H/M/L] | Tier 1 |
+| 2 | [Name] | X.X | [H/M/L] | Tier 2 |
+| 3 | [Name] | X.X | [H/M/L] | Tier 3 |
 
 ## Recommendation
 
-**Test First:** [Idea Name]
+**Tier 1:** [Idea Name]
 
 **Reasoning:**
 [3-5 sentences on why this idea should be tested first]
@@ -456,4 +366,4 @@ Create ranking summary:
 
 ---
 
-*Playbook v1 — January 2025*
+*Playbook v2 — January 2026*

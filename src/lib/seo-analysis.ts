@@ -2,6 +2,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea } from '@/types';
 import { getOpenAI, isOpenAIConfigured } from './openai';
 import { SERPResult, batchSearchGoogle, isSerpConfigured } from './serp-search';
+import {
+  buildClaudeKnowledgeContext,
+  buildOpenAIKnowledgeContext,
+  buildScoringGuidelines,
+  detectVertical,
+  SERP_CRITERIA,
+  CONTENT_GAP_TYPES,
+} from './seo-knowledge';
 
 // ---------- Types ----------
 
@@ -13,6 +21,9 @@ export interface SEOKeyword {
   contentGapHypothesis: string;
   relevanceToMillionARR: 'High' | 'Medium' | 'Low';
   rationale: string;
+  opportunityScore?: number;
+  contentGapType?: string;
+  serpSignals?: string[];
 }
 
 export interface SEOContentStrategy {
@@ -57,6 +68,9 @@ export interface SERPValidatedKeyword {
   competitorDomains: string[];
   hasContentGap: boolean;
   serpInsight: string;
+  contentGapTypes?: string[];
+  greenFlags?: string[];
+  redFlags?: string[];
 }
 
 export interface SEOPipelineResult {
@@ -78,7 +92,10 @@ const SEO_OUTPUT_SCHEMA = `{
       "estimatedCompetitiveness": "High | Medium | Low | Unknown",
       "contentGapHypothesis": "string - what content is missing that this keyword reveals",
       "relevanceToMillionARR": "High | Medium | Low",
-      "rationale": "string - why this keyword matters for a $1M ARR niche business"
+      "rationale": "string - why this keyword matters for a $1M ARR niche business",
+      "opportunityScore": "number 1-10 (optional) - overall opportunity rating",
+      "contentGapType": "Format | Freshness | Depth | Angle | Audience (optional) - primary gap type",
+      "serpSignals": ["string (optional) - observable SERP signals like 'Reddit ranking', 'thin content'"]
     }
   ],
   "contentStrategy": {
@@ -103,6 +120,8 @@ export async function runClaudeSEOAnalysis(
     apiKey: process.env.ANTHROPIC_API_KEY || '',
   });
 
+  const knowledgeContext = buildClaudeKnowledgeContext(idea);
+
   const prompt = `You are a SENIOR SEO STRATEGIST with 15 years of experience in niche B2B SaaS markets.
 Your specialty: finding underserved, long-tail keyword opportunities for businesses targeting $1M ARR.
 
@@ -113,6 +132,8 @@ You approach SEO methodically:
 - Think about community signals (Reddit, forums, Quora) as keyword sources
 - Focus on keywords a small team could actually rank for
 
+${knowledgeContext}
+
 Product: ${idea.name}
 ${idea.description ? `Description: ${idea.description}` : ''}
 ${idea.targetUser ? `Target User: ${idea.targetUser}` : ''}
@@ -122,6 +143,8 @@ ${idea.documentContent ? `\nContext:\n${idea.documentContent.substring(0, 3000)}
 ${additionalContext ? `\nAdditional Context:\n${additionalContext}` : ''}
 
 Generate 15-20 niche, long-tail keywords this product should target. Focus on UNDERSERVED opportunities, not obvious high-competition terms.
+
+For each keyword, include an opportunityScore (1-10) and identify the contentGapType if applicable (Format, Freshness, Depth, Angle, or Audience).
 
 IMPORTANT: Do NOT fabricate search volume data. Use estimates based on your understanding of the niche.
 
@@ -147,6 +170,8 @@ export async function runOpenAISEOAnalysis(
   const openai = getOpenAI();
   if (!openai) return null;
 
+  const openaiKnowledgeContext = buildOpenAIKnowledgeContext(idea);
+
   const prompt = `You are a SCRAPPY FOUNDER who bootstrapped a B2B SaaS to $1M ARR.
 You know exactly what people search when they're desperate for a solution.
 
@@ -157,6 +182,8 @@ Your approach to keyword research:
 - Consider Reddit/forum language - real people don't use marketing speak
 - Find the keywords big companies ignore because they're "too niche"
 
+${openaiKnowledgeContext}
+
 Product: ${idea.name}
 ${idea.description ? `Description: ${idea.description}` : ''}
 ${idea.targetUser ? `Target User: ${idea.targetUser}` : ''}
@@ -166,6 +193,8 @@ ${idea.documentContent ? `\nContext:\n${idea.documentContent.substring(0, 3000)}
 ${additionalContext ? `\nAdditional Context:\n${additionalContext}` : ''}
 
 Generate 15-20 niche, long-tail keywords. Focus on pain-point searches that indicate HIGH buying intent from people who would pay for this product.
+
+For each keyword, include an opportunityScore (1-10) and identify the contentGapType if applicable (Format, Freshness, Depth, Angle, or Audience).
 
 IMPORTANT: Do NOT fabricate search volume numbers. Estimate based on niche understanding.
 
@@ -266,40 +295,117 @@ export async function validateWithGoogleSearch(
 
   const validated: SERPValidatedKeyword[] = serpResults.map((serp) => {
     const competitorDomains = [...new Set(serp.organicResults.map((r) => r.domain))];
-    const hasContentGap = detectContentGap(serp);
-    const serpInsight = generateSerpInsight(serp, hasContentGap);
+    const gapAnalysis = detectContentGap(serp);
+    const serpInsight = generateSerpInsight(serp, gapAnalysis.hasGap);
+    const flagAnalysis = detectSERPFlags(serp);
 
     return {
       keyword: serp.keyword,
       serpData: serp,
       competitorDomains,
-      hasContentGap,
+      hasContentGap: gapAnalysis.hasGap,
       serpInsight,
+      contentGapTypes: gapAnalysis.gapTypes,
+      greenFlags: flagAnalysis.green,
+      redFlags: flagAnalysis.red,
     };
   });
 
   return { serpResults, validated };
 }
 
-function detectContentGap(serp: SERPResult): boolean {
-  // Content gap indicators:
-  // 1. Few organic results
-  if (serp.organicResults.length < 5) return true;
-  // 2. Results are mostly generic/big sites, not specialized
-  const genericDomains = ['wikipedia.org', 'youtube.com', 'reddit.com', 'quora.com', 'medium.com'];
+interface ContentGapAnalysis {
+  hasGap: boolean;
+  gapTypes: string[];
+}
+
+function detectContentGap(serp: SERPResult): ContentGapAnalysis {
+  const gapTypes: string[] = [];
+  const criteria = SERP_CRITERIA['general-niche'];
+
+  // 1. Few organic results → Depth gap
+  if (serp.organicResults.length < 5) {
+    gapTypes.push('Depth');
+  }
+
+  // 2. Results are mostly generic/big sites, not specialized → Audience gap
   const genericCount = serp.organicResults.filter((r) =>
-    genericDomains.some((d) => r.domain.includes(d))
+    criteria.genericDomains.some((d) => r.domain.includes(d))
   ).length;
-  if (genericCount >= 3) return true;
-  // 3. Snippets don't closely match the query
+  if (genericCount >= 3) {
+    gapTypes.push('Audience');
+  }
+
+  // 3. Forum/Reddit results in top positions → Depth gap (no authoritative content)
+  const forumDomains = ['reddit.com', 'quora.com', 'stackexchange.com', 'stackoverflow.com'];
+  const forumCount = serp.organicResults.filter((r) =>
+    forumDomains.some((d) => r.domain.includes(d))
+  ).length;
+  if (forumCount >= 2) {
+    if (!gapTypes.includes('Depth')) gapTypes.push('Depth');
+  }
+
+  // 4. Snippets don't closely match the query → Angle gap
   const lowRelevanceSnippets = serp.organicResults.filter(
     (r) => r.snippet.length < 50
   ).length;
-  if (lowRelevanceSnippets >= 4) return true;
-  return false;
+  if (lowRelevanceSnippets >= 4) {
+    gapTypes.push('Angle');
+  }
+
+  // 5. People Also Ask present → potential Format or Depth gap
+  if (serp.peopleAlsoAsk.length >= 3) {
+    if (!gapTypes.includes('Depth')) gapTypes.push('Depth');
+  }
+
+  // 6. Authority domains dominating → check for Freshness or Format gaps
+  const authorityCount = serp.organicResults.filter((r) =>
+    criteria.authorityDomains.some((d) => r.domain.includes(d))
+  ).length;
+  if (authorityCount >= 3 && gapTypes.length === 0) {
+    // All authority sites, but check if there's a format gap
+    gapTypes.push('Format');
+  }
+
+  return {
+    hasGap: gapTypes.length > 0,
+    gapTypes,
+  };
+}
+
+function detectSERPFlags(serp: SERPResult): { green: string[]; red: string[] } {
+  const green: string[] = [];
+  const red: string[] = [];
+  const criteria = SERP_CRITERIA['general-niche'];
+
+  // Green flags
+  const forumDomains = ['reddit.com', 'quora.com', 'stackexchange.com'];
+  const hasForums = serp.organicResults.some((r) =>
+    forumDomains.some((d) => r.domain.includes(d))
+  );
+  if (hasForums) green.push('Forums ranking in top results');
+
+  const shortSnippets = serp.organicResults.filter((r) => r.snippet.length < 80).length;
+  if (shortSnippets >= 3) green.push('Thin content in results');
+
+  if (serp.peopleAlsoAsk.length > 0) green.push('People Also Ask present');
+
+  if (serp.organicResults.length < 7) green.push('Few organic results');
+
+  // Red flags
+  const authorityCount = serp.organicResults.slice(0, 5).filter((r) =>
+    criteria.authorityDomains.some((d) => r.domain.includes(d))
+  ).length;
+  if (authorityCount >= 3) red.push('Authority domains dominating top 5');
+
+  const uniqueDomains = new Set(serp.organicResults.slice(0, 5).map((r) => r.domain));
+  if (uniqueDomains.size <= 2) red.push('Top results dominated by few domains');
+
+  return { green, red };
 }
 
 function generateSerpInsight(serp: SERPResult, hasContentGap: boolean): string {
+  // Note: hasContentGap is now derived from ContentGapAnalysis.hasGap
   const parts: string[] = [];
 
   if (hasContentGap) {
@@ -370,13 +476,17 @@ Recommended angle: ${openaiResult.contentStrategy.recommendedAngle}
 `
     : '';
 
+  const scoringGuidelines = buildScoringGuidelines();
+
   const prompt = `You are synthesizing SEO research from multiple sources into a final report.
+
+${scoringGuidelines}
 
 Product: ${idea.name}
 ${idea.description ? `Description: ${idea.description}` : ''}
 
 ## Claude SEO Analysis (senior strategist perspective)
-Top keywords: ${claudeResult.keywords.slice(0, 10).map((k) => `${k.keyword} (${k.intentType}, relevance: ${k.relevanceToMillionARR})`).join(', ')}
+Top keywords: ${claudeResult.keywords.slice(0, 10).map((k) => `${k.keyword} (${k.intentType}, relevance: ${k.relevanceToMillionARR}${k.opportunityScore ? `, score: ${k.opportunityScore}` : ''})`).join(', ')}
 Content strategy: ${claudeResult.contentStrategy.recommendedAngle}
 Room for new entrant: ${claudeResult.difficultyAssessment.roomForNewEntrant ? 'Yes' : 'No'} - ${claudeResult.difficultyAssessment.reasoning}
 ${openaiSection}${comparisonSection}${serpSection}
@@ -530,10 +640,19 @@ function generateMarkdownReport(
 
   // Top keywords table
   parts.push(`### Top Keywords\n`);
-  parts.push(`| Keyword | Intent | Est. Volume | Est. Competition | ARR Relevance | Gap Hypothesis |`);
-  parts.push(`|---------|--------|-------------|------------------|---------------|----------------|`);
-  for (const kw of synthesis.topKeywords.slice(0, 15)) {
-    parts.push(`| ${kw.keyword} | ${kw.intentType} | ${kw.estimatedVolume} | ${kw.estimatedCompetitiveness} | ${kw.relevanceToMillionARR} | ${kw.contentGapHypothesis} |`);
+  const hasScores = synthesis.topKeywords.some((kw) => kw.opportunityScore != null);
+  if (hasScores) {
+    parts.push(`| Keyword | Intent | Est. Volume | Est. Competition | ARR Relevance | Score | Gap Type | Gap Hypothesis |`);
+    parts.push(`|---------|--------|-------------|------------------|---------------|-------|----------|----------------|`);
+    for (const kw of synthesis.topKeywords.slice(0, 15)) {
+      parts.push(`| ${kw.keyword} | ${kw.intentType} | ${kw.estimatedVolume} | ${kw.estimatedCompetitiveness} | ${kw.relevanceToMillionARR} | ${kw.opportunityScore ?? '-'} | ${kw.contentGapType ?? '-'} | ${kw.contentGapHypothesis} |`);
+    }
+  } else {
+    parts.push(`| Keyword | Intent | Est. Volume | Est. Competition | ARR Relevance | Gap Hypothesis |`);
+    parts.push(`|---------|--------|-------------|------------------|---------------|----------------|`);
+    for (const kw of synthesis.topKeywords.slice(0, 15)) {
+      parts.push(`| ${kw.keyword} | ${kw.intentType} | ${kw.estimatedVolume} | ${kw.estimatedCompetitiveness} | ${kw.relevanceToMillionARR} | ${kw.contentGapHypothesis} |`);
+    }
   }
   parts.push('');
 
@@ -541,8 +660,17 @@ function generateMarkdownReport(
   if (synthesis.serpValidated.length > 0) {
     parts.push(`### SERP Validation\n`);
     for (const v of synthesis.serpValidated) {
-      parts.push(`**"${v.keyword}"** ${v.hasContentGap ? '(Content Gap!)' : '(Competitive)'}`);
+      const gapLabel = v.hasContentGap
+        ? `(Content Gap${v.contentGapTypes?.length ? ': ' + v.contentGapTypes.join(', ') : ''}!)`
+        : '(Competitive)';
+      parts.push(`**"${v.keyword}"** ${gapLabel}`);
       parts.push(`${v.serpInsight}`);
+      if (v.greenFlags?.length) {
+        parts.push(`Green flags: ${v.greenFlags.join('; ')}`);
+      }
+      if (v.redFlags?.length) {
+        parts.push(`Red flags: ${v.redFlags.join('; ')}`);
+      }
       if (v.serpData.peopleAlsoAsk.length > 0) {
         parts.push(`People Also Ask: ${v.serpData.peopleAlsoAsk.slice(0, 3).map((q) => `"${q.question}"`).join(', ')}`);
       }
@@ -612,16 +740,30 @@ function parseSEOJSON(text: string): SEOAnalysisResult {
 }
 
 function validateSEOResult(parsed: Record<string, unknown>): SEOAnalysisResult {
-  const keywords = Array.isArray(parsed.keywords)
-    ? parsed.keywords.map((k: Record<string, unknown>) => ({
-        keyword: String(k.keyword || ''),
-        intentType: validateEnum(k.intentType, ['Informational', 'Navigational', 'Commercial', 'Transactional'], 'Informational'),
-        estimatedVolume: validateEnum(k.estimatedVolume, ['High', 'Medium', 'Low', 'Unknown'], 'Unknown'),
-        estimatedCompetitiveness: validateEnum(k.estimatedCompetitiveness, ['High', 'Medium', 'Low', 'Unknown'], 'Unknown'),
-        contentGapHypothesis: String(k.contentGapHypothesis || ''),
-        relevanceToMillionARR: validateEnum(k.relevanceToMillionARR, ['High', 'Medium', 'Low'], 'Medium'),
-        rationale: String(k.rationale || ''),
-      }))
+  const keywords: SEOKeyword[] = Array.isArray(parsed.keywords)
+    ? parsed.keywords.map((k: Record<string, unknown>) => {
+        const kw: SEOKeyword = {
+          keyword: String(k.keyword || ''),
+          intentType: validateEnum(k.intentType, ['Informational', 'Navigational', 'Commercial', 'Transactional'], 'Informational'),
+          estimatedVolume: validateEnum(k.estimatedVolume, ['High', 'Medium', 'Low', 'Unknown'], 'Unknown'),
+          estimatedCompetitiveness: validateEnum(k.estimatedCompetitiveness, ['High', 'Medium', 'Low', 'Unknown'], 'Unknown'),
+          contentGapHypothesis: String(k.contentGapHypothesis || ''),
+          relevanceToMillionARR: validateEnum(k.relevanceToMillionARR, ['High', 'Medium', 'Low'], 'Medium'),
+          rationale: String(k.rationale || ''),
+        };
+        if (k.opportunityScore != null) {
+          const score = Number(k.opportunityScore);
+          if (!isNaN(score) && score >= 1 && score <= 10) kw.opportunityScore = score;
+        }
+        if (k.contentGapType && typeof k.contentGapType === 'string') {
+          const validGapTypes = ['Format', 'Freshness', 'Depth', 'Angle', 'Audience'];
+          if (validGapTypes.includes(k.contentGapType)) kw.contentGapType = k.contentGapType;
+        }
+        if (Array.isArray(k.serpSignals)) {
+          kw.serpSignals = k.serpSignals.map(String);
+        }
+        return kw;
+      })
     : [];
 
   const cs = (parsed.contentStrategy || {}) as Record<string, unknown>;

@@ -139,7 +139,7 @@ export async function getLeaderboardFromDb(): Promise<LeaderboardEntry[]> {
 
   // Sort by recommendation priority, then by confidence
   const sorted = analyses.sort((a, b) => {
-    const recPriority: Record<string, number> = { 'Test First': 0, 'Test Later': 1, 'Incomplete': 2, "Don't Test": 3 };
+    const recPriority: Record<string, number> = { 'Tier 1': 0, 'Tier 2': 1, 'Incomplete': 2, 'Tier 3': 3 };
     const aPriority = recPriority[a.recommendation] ?? 2;
     const bPriority = recPriority[b.recommendation] ?? 2;
 

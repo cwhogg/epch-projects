@@ -1,16 +1,14 @@
 # Idea Analysis Playbook
 
-Quick-reference guide for analyzing B2C product ideas.
+Quick-reference guide for analyzing niche product ideas targeting $1M ARR.
 
 ---
 
 ## Overview
 
-**Purpose:** Evaluate product ideas for SEO opportunity, competitive landscape, and willingness to pay.
+**Purpose:** Evaluate product ideas for SEO opportunity, competitive landscape, willingness to pay, and differentiation potential.
 
-**Time:** 30-60 minutes per idea
-
-**Output:** Prioritized recommendation with supporting analysis
+**Output:** Prioritized recommendation (Tier 1 / Tier 2 / Tier 3) with supporting analysis
 
 ---
 
@@ -32,12 +30,12 @@ Each idea needs:
 
 ## Process Summary
 
-| Phase | Time | Output |
-|-------|------|--------|
-| 1. Competitive Analysis | 15 min | competitors.md |
-| 2. SEO Opportunity | 20 min | keywords.md |
-| 3. Willingness to Pay | 10 min | (in analysis.md) |
-| 4. Scoring & Synthesis | 10 min | analysis.md |
+| Phase | Output |
+|-------|--------|
+| 1. Competitive Analysis | competitors.md |
+| 2. SEO Opportunity (Dual-LLM Pipeline) | keywords.md |
+| 3. Willingness to Pay | (in analysis.md) |
+| 4. Scoring & Synthesis | analysis.md |
 
 ---
 
@@ -72,45 +70,59 @@ Pause. Present competitor findings. Get approval.
 
 ---
 
-## Phase 2: SEO Opportunity
+## Phase 2: SEO Opportunity (Dual-LLM Pipeline)
 
 ### Checklist
 
-- [ ] Generate 20-30 seed keywords
-- [ ] Pull data (Ahrefs or manual SERP analysis)
-- [ ] Filter: KD 0-30, Volume 200+, Commercial intent
-- [ ] Analyze SERPs for top 10 keywords
-- [ ] Cluster by theme and intent
-- [ ] Score clusters 1-10
+- [ ] Prepare product context (name, description, target user, problem)
+- [ ] Run dual-LLM keyword generation (Claude + OpenAI in parallel)
+- [ ] Cross-reference LLM results (identify agreed and unique keywords)
+- [ ] SERP validate top 8 keywords (if SerpAPI configured)
+- [ ] Detect content gaps (Format, Freshness, Depth, Angle, Audience)
+- [ ] Synthesize into final keyword report
 
-### Seed Keyword Patterns
+### Pipeline Steps
 
-| Type | Pattern |
-|------|---------|
-| Product | `[product type] app`, `best [product type]`, `free [product type]` |
-| Problem | `how to [solve problem]`, `[problem] help` |
-| Comparison | `[competitor] alternative`, `[product] vs` |
-| Question | `what is the best [solution]`, `how do I [task]` |
+**Step 1: Dual-LLM Generation**
+- Claude generates 15-20 keywords (senior SEO strategist perspective) with opportunity scores and gap types
+- OpenAI generates 15-20 keywords (scrappy founder perspective) with pain-point focus
+- Vertical-specific knowledge context injected into both prompts from `src/lib/seo-knowledge.ts`
 
-### Filter Criteria
+**Step 2: Cross-Reference**
+- Fuzzy match keywords across both lists
+- Agreed keywords = highest confidence
+- Merge: agreed first, then Claude-unique, then OpenAI-unique
 
-Pass if ALL true:
-- KD: 0-30
-- Volume: 200+ (or 50+ if high intent)
-- Intent: Commercial or Transactional
-- SERP: No brand dominance, content gaps exist
+**Step 3: SERP Validation**
+- Top 8 keywords validated against live Google SERPs via SerpAPI
+- Content gap detection: forum ranking, PAA presence, thin content, authority domain analysis
+- Green/red flags identified per keyword
+
+**Step 4: Synthesis**
+- All data sources combined into narrative and structured report
+- Scoring guidelines applied from knowledge base
 
 ### SERP Signals
 
 | Green Flags | Red Flags |
 |-------------|-----------|
-| Reddit/forums ranking | Major brands in all top 5 |
-| Outdated content (2+ years) | High DR sites only |
-| Thin content in results | Top results have 100+ backlinks |
-| Low DR sites ranking | All content is comprehensive |
+| Reddit/forums ranking | Authority domains in all top 5 |
+| Thin content in results | Few unique domains in top 5 |
+| People Also Ask present | All content comprehensive |
+| Few organic results | Ads/knowledge panels dominating |
+
+### Content Gap Types
+
+| Type | Signal |
+|------|--------|
+| Format | All text articles, query needs interactive tool |
+| Freshness | Top content 2+ years old |
+| Depth | Thin content, PAA unanswered, forums ranking |
+| Angle | All same perspective, no comparison content |
+| Audience | Generic content, no audience-specific versions |
 
 ### CHECKPOINT 2
-Pause. Present keyword opportunities. Get approval.
+Pause. Present keyword opportunities with scores and SERP validation. Get approval.
 
 ---
 
@@ -149,10 +161,10 @@ Pause. Present keyword opportunities. Get approval.
 
 | Dimension | Weight | Score 1-10 |
 |-----------|--------|------------|
-| SEO Opportunity | 50% | ___ |
+| SEO Opportunity | 30% | ___ |
 | Competitive Landscape | 20% | ___ |
-| Willingness to Pay | 15% | ___ |
-| Differentiation Potential | 10% | ___ |
+| Willingness to Pay | 25% | ___ |
+| Differentiation Potential | 20% | ___ |
 | Expertise Alignment | 5% | ___ |
 
 ### Scoring Guide
@@ -167,17 +179,17 @@ Pause. Present keyword opportunities. Get approval.
 ### Calculate Overall
 
 ```
-Overall = (SEO × 0.50) + (Comp × 0.20) + (WTP × 0.15) + (Diff × 0.10) + (Exp × 0.05)
+Overall = (SEO × 0.30) + (Comp × 0.20) + (WTP × 0.25) + (Diff × 0.20) + (Exp × 0.05)
 ```
 
 ### Recommendation
 
 | Overall Score | Confidence | Recommendation |
 |--------------|------------|----------------|
-| ≥ 7 | High/Medium | Test First |
-| 5-7 | Any | Test Later |
-| ≥ 7 | Low | Test Later |
-| < 5 | Any | Don't Test |
+| >= 7 | High/Medium | Tier 1 |
+| 5-7 | Any | Tier 2 |
+| >= 7 | Low | Tier 2 |
+| < 5 | Any | Tier 3 |
 
 ### CHECKPOINT 3
 Pause. Present final ranking and recommendation. Get final approval.
@@ -189,7 +201,7 @@ Pause. Present final ranking and recommendation. Get final approval.
 ### Per Idea (in `/experiments/[idea-name]/`)
 
 1. `competitors.md` — Competitor table, market maturity, differentiation
-2. `keywords.md` — Top keywords, clusters, SERP analysis
+2. `keywords.md` — Top keywords with scores, SERP validation, LLM cross-reference
 3. `analysis.md` — Full analysis with scoring and recommendation
 
 ### Summary
@@ -198,14 +210,14 @@ Prioritized ranking table with:
 - Idea name
 - Overall score
 - Confidence level
-- Recommendation
+- Recommendation (Tier 1 / Tier 2 / Tier 3)
 - Primary reasoning
 
 ---
 
 ## Post-Analysis
 
-If recommendation is "Test First":
+If recommendation is Tier 1:
 
 1. Define priority content (3-5 pieces)
 2. Specify landing page updates
@@ -214,4 +226,4 @@ If recommendation is "Test First":
 
 ---
 
-*Playbook v1 — January 2025*
+*Playbook v2 — January 2026*
