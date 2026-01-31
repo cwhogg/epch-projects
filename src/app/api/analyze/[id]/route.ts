@@ -1,6 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getIdeaFromDb, getProgress, isRedisConfigured } from '@/lib/db';
 import { runResearchAgent } from '@/lib/research-agent';
+
+// Allow up to 5 minutes for the full analysis pipeline
+export const maxDuration = 300;
 
 // POST - Start analysis
 export async function POST(
@@ -46,9 +49,13 @@ export async function POST(
       console.warn('SERPAPI_KEY not set: SEO analysis will skip Google SERP validation.');
     }
 
-    // Start analysis in background (don't await)
-    runResearchAgent(idea, additionalContext).catch((error) => {
-      console.error('Analysis failed:', error);
+    // Run analysis after the response is sent, keeping the function alive
+    after(async () => {
+      try {
+        await runResearchAgent(idea, additionalContext);
+      } catch (error) {
+        console.error('Analysis failed:', error);
+      }
     });
 
     return NextResponse.json({ message: 'Analysis started', ideaId: id });
