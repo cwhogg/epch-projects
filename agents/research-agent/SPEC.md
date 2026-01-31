@@ -190,8 +190,9 @@ Uses a dual-LLM pipeline with optional SERP validation:
    - Weighted calculation shown
 
 6. **Risks**
-   - Key concerns or uncertainties
+   - Key business and market risks (competition, acquisition cost, retention, pricing, market timing)
    - What could invalidate the opportunity
+   - Do NOT over-weight regulatory risks (FDA, HIPAA) — these are manageable in healthcare and rarely showstoppers
 
 7. **Next Steps (if Tier 1)**
    - Priority content to create

@@ -167,6 +167,8 @@ Confidence should reflect data quality:
 - Low = Mostly inference, limited hard data
 
 KEY RISKS (3-5, be specific not generic):
+- Focus on BUSINESS and MARKET risks (competition, acquisition cost, retention, pricing, market timing)
+- Do NOT over-weight regulatory risks (FDA, HIPAA, etc.) — regulatory complexity is manageable and common in healthcare; it's a speed bump, not a showstopper. Only mention regulatory risk if it's truly exceptional for this specific product.
 - [Specific risk with explanation]
 - [Specific risk with explanation]
 - [Specific risk with explanation]

@@ -131,6 +131,54 @@ Field constraints:
 
 // ---------- Claude SEO Analysis ----------
 
+// Tool definition for structured SEO output via Claude tool use
+const SEO_TOOL: Anthropic.Messages.Tool = {
+  name: 'seo_analysis_result',
+  description: 'Submit the SEO keyword analysis results',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      keywords: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            keyword: { type: 'string' },
+            intentType: { type: 'string', enum: ['Informational', 'Navigational', 'Commercial', 'Transactional'] },
+            estimatedVolume: { type: 'string', enum: ['High', 'Medium', 'Low', 'Unknown'] },
+            estimatedCompetitiveness: { type: 'string', enum: ['High', 'Medium', 'Low', 'Unknown'] },
+            contentGapHypothesis: { type: 'string' },
+            relevanceToMillionARR: { type: 'string', enum: ['High', 'Medium', 'Low'] },
+            rationale: { type: 'string' },
+            opportunityScore: { type: 'number', minimum: 1, maximum: 10 },
+            contentGapType: { type: 'string', enum: ['Format', 'Freshness', 'Depth', 'Angle', 'Audience'] },
+          },
+          required: ['keyword', 'intentType', 'estimatedVolume', 'estimatedCompetitiveness', 'contentGapHypothesis', 'relevanceToMillionARR', 'rationale'],
+        },
+      },
+      contentStrategy: {
+        type: 'object',
+        properties: {
+          topOpportunities: { type: 'array', items: { type: 'string' } },
+          recommendedAngle: { type: 'string' },
+          communitySignals: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['topOpportunities', 'recommendedAngle', 'communitySignals'],
+      },
+      difficultyAssessment: {
+        type: 'object',
+        properties: {
+          dominantPlayers: { type: 'array', items: { type: 'string' } },
+          roomForNewEntrant: { type: 'boolean' },
+          reasoning: { type: 'string' },
+        },
+        required: ['dominantPlayers', 'roomForNewEntrant', 'reasoning'],
+      },
+    },
+    required: ['keywords', 'contentStrategy', 'difficultyAssessment'],
+  },
+};
+
 export async function runClaudeSEOAnalysis(
   idea: ProductIdea,
   additionalContext?: string,
@@ -169,34 +217,30 @@ For each keyword, include an opportunityScore (1-10) and identify the contentGap
 
 IMPORTANT: Do NOT fabricate search volume data. Use estimates based on your understanding of the niche.
 
-Respond ONLY with valid JSON matching this schema (no extra text, no markdown fences):
-${SEO_OUTPUT_SCHEMA}`;
+Use the seo_analysis_result tool to submit your analysis.`;
 
-  // Attempt with retry on parse failure — use assistant prefill to force JSON
-  for (let attempt = 0; attempt < 2; attempt++) {
+  try {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
-      messages: [
-        { role: 'user', content: prompt },
-        { role: 'assistant', content: '{' },
-      ],
+      max_tokens: 4096,
+      tools: [SEO_TOOL],
+      tool_choice: { type: 'tool', name: 'seo_analysis_result' },
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    const rawText = response.content[0].type === 'text' ? response.content[0].text : '';
-    const text = '{' + rawText; // prepend the prefill
-    const result = parseSEOJSON(text);
-
-    if (result.keywords.length > 0) {
-      return result;
+    // Extract tool use result — guaranteed valid JSON by the API
+    const toolUse = response.content.find((c) => c.type === 'tool_use');
+    if (toolUse && toolUse.type === 'tool_use') {
+      const input = toolUse.input as Record<string, unknown>;
+      return validateSEOResult(input);
     }
 
-    // Parse failed — log and retry once
-    console.error(`Claude SEO attempt ${attempt + 1} returned 0 keywords. Raw response (first 500 chars): ${text.substring(0, 500)}`);
+    console.error('Claude SEO: no tool_use block in response');
+    return getDefaultSEOResult();
+  } catch (error) {
+    console.error('Claude SEO tool use failed:', error);
+    return getDefaultSEOResult();
   }
-
-  console.error('Claude SEO failed after 2 attempts, returning defaults');
-  return getDefaultSEOResult();
 }
 
 // ---------- OpenAI SEO Analysis ----------

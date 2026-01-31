@@ -297,6 +297,8 @@ For each idea, list:
 - What could invalidate the opportunity
 - Dependencies or assumptions
 
+**Risk prioritization:** Focus on business and market risks (competition, acquisition cost, retention, pricing, market timing). Do NOT over-weight regulatory risks (FDA, HIPAA) — regulatory complexity is manageable and common in healthcare. Only flag regulatory risk if it's truly exceptional for the specific product.
+
 ### Step 4.6: Define Next Steps
 
 For Tier 1 recommendations:
