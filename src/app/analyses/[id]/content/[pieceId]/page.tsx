@@ -93,7 +93,7 @@ export default function ContentPieceViewerPage() {
             {error || 'This content piece could not be loaded.'}
           </p>
           <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
-            Back to Calendar
+            Back to Content Options
           </Link>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function ContentPieceViewerPage() {
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
-          Back to Calendar
+          Back to Content Options
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

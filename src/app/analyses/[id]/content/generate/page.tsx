@@ -116,7 +116,7 @@ export default function ContentGeneratePage() {
           <p className="text-sm mb-6" style={{ color: '#f87171' }}>{error}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
-              Back to Calendar
+              Back to Content Options
             </Link>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function ContentGeneratePage() {
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {progress?.status === 'complete'
-              ? 'Redirecting to content calendar...'
+              ? 'Redirecting to content options...'
               : progress?.currentStep || 'Starting content generation...'}
           </p>
         </div>
@@ -284,7 +284,7 @@ export default function ContentGeneratePage() {
             }}
           >
             <p className="text-sm font-medium text-center" style={{ color: '#34d399' }}>
-              Redirecting to content calendar...
+              Redirecting to content options...
             </p>
           </div>
         )}
@@ -303,7 +303,7 @@ export default function ContentGeneratePage() {
               <path d="M19 12H5" />
               <path d="M12 19l-7-7 7-7" />
             </svg>
-            Back to Calendar
+            Back to Content Options
           </Link>
         </div>
       </div>

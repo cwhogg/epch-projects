@@ -110,7 +110,7 @@ export default function ContentCalendarPage() {
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
           </div>
-          <p style={{ color: 'var(--text-muted)' }}>Loading content calendar...</p>
+          <p style={{ color: 'var(--text-muted)' }}>Loading content options...</p>
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ export default function ContentCalendarPage() {
             </svg>
           </div>
           <h2 className="text-xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
-            Generate Content Calendar
+            Generate Content Options
           </h2>
           <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
             Create a prioritized content plan based on your SEO research data — blog posts, landing pages, comparisons, and FAQ pages.
@@ -168,7 +168,7 @@ export default function ContentCalendarPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
-                Generate Content Calendar
+                Generate Content Options
               </>
             )}
           </button>
@@ -200,7 +200,7 @@ export default function ContentCalendarPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display" style={{ color: 'var(--text-primary)' }}>
-              Content Calendar
+              Content Options
             </h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               {calendar.ideaName} &middot; {mergedPieces.length} pieces &middot; {completedCount} generated
@@ -212,7 +212,7 @@ export default function ContentCalendarPage() {
             className="text-xs px-3 py-1.5 rounded-lg transition-colors"
             style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
           >
-            {generating ? 'Regenerating...' : 'Regenerate Calendar'}
+            {generating ? 'Regenerating...' : 'Regenerate Options'}
           </button>
         </div>
       </div>
