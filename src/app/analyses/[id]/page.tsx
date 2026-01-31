@@ -348,13 +348,19 @@ export default async function AnalysisPage({ params }: PageProps) {
               Analyzed on {new Date(analysis.completedAt).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className={`badge ${getBadgeClass(analysis.recommendation)}`}>
-              {analysis.recommendation}
-            </span>
-            <span className="text-sm font-medium" style={getConfidenceStyle(analysis.confidence)}>
-              {analysis.confidence}
-            </span>
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex items-center gap-3">
+              <span className={`badge ${getBadgeClass(analysis.recommendation)}`}>
+                {analysis.recommendation}
+              </span>
+              <span className="text-sm font-medium" style={getConfidenceStyle(analysis.confidence)}>
+                {analysis.confidence}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ReanalyzeForm ideaId={analysis.id} />
+              <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
+            </div>
           </div>
         </div>
       </header>
@@ -399,14 +405,8 @@ export default async function AnalysisPage({ params }: PageProps) {
       {/* SEO Deep Dive */}
       <SEODeepDive seoDataJson={content.seoData} />
 
-      {/* Actions */}
-      <div className="flex flex-wrap items-center gap-3 animate-slide-up stagger-4">
-        <ReanalyzeForm ideaId={analysis.id} />
-        <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
-      </div>
-
       {/* Full Analysis */}
-      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-5">
+      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
         <h2 className="font-display text-base mb-4" style={{ color: 'var(--text-primary)' }}>
           Full Analysis
         </h2>
