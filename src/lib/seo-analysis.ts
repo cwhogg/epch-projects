@@ -73,12 +73,22 @@ export interface SERPValidatedKeyword {
   redFlags?: string[];
 }
 
+export interface SEODataQuality {
+  claudeSucceeded: boolean;
+  openaiSucceeded: boolean;
+  serpSucceeded: boolean;
+  claudeKeywordCount: number;
+  openaiKeywordCount: number;
+  serpValidatedCount: number;
+}
+
 export interface SEOPipelineResult {
   synthesis: SEOSynthesis;
   claudeRaw: SEOAnalysisResult;
   openaiRaw: SEOAnalysisResult | null;
   serpResults: SERPResult[];
   markdownReport: string;
+  dataQuality: SEODataQuality;
 }
 
 // ---------- JSON Schema for LLM Output ----------
@@ -121,6 +131,7 @@ export async function runClaudeSEOAnalysis(
   });
 
   const knowledgeContext = buildClaudeKnowledgeContext(idea);
+  const currentYear = new Date().getFullYear();
 
   const prompt = `You are a SENIOR SEO STRATEGIST with 15 years of experience in niche B2B SaaS markets.
 Your specialty: finding underserved, long-tail keyword opportunities for businesses targeting $1M ARR.
@@ -131,6 +142,7 @@ You approach SEO methodically:
 - Identify content gaps where existing players have thin or no coverage
 - Think about community signals (Reddit, forums, Quora) as keyword sources
 - Focus on keywords a small team could actually rank for
+- When including year-specific keywords, use ${currentYear} (the current year)
 
 ${knowledgeContext}
 
@@ -148,17 +160,30 @@ For each keyword, include an opportunityScore (1-10) and identify the contentGap
 
 IMPORTANT: Do NOT fabricate search volume data. Use estimates based on your understanding of the niche.
 
-Respond ONLY with valid JSON matching this schema:
+Respond ONLY with valid JSON matching this schema (no extra text, no markdown fences):
 ${SEO_OUTPUT_SCHEMA}`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 3000,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  // Attempt with retry on parse failure
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
-  return parseSEOJSON(text);
+    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const result = parseSEOJSON(text);
+
+    if (result.keywords.length > 0) {
+      return result;
+    }
+
+    // Parse failed — log and retry once
+    console.error(`Claude SEO attempt ${attempt + 1} returned 0 keywords. Raw response (first 500 chars): ${text.substring(0, 500)}`);
+  }
+
+  console.error('Claude SEO failed after 2 attempts, returning defaults');
+  return getDefaultSEOResult();
 }
 
 // ---------- OpenAI SEO Analysis ----------
@@ -171,6 +196,7 @@ export async function runOpenAISEOAnalysis(
   if (!openai) return null;
 
   const openaiKnowledgeContext = buildOpenAIKnowledgeContext(idea);
+  const currentYear = new Date().getFullYear();
 
   const prompt = `You are a SCRAPPY FOUNDER who bootstrapped a B2B SaaS to $1M ARR.
 You know exactly what people search when they're desperate for a solution.
@@ -181,6 +207,7 @@ Your approach to keyword research:
 - Focus on "alternatives to..." and "best [X] for [specific use case]" queries
 - Consider Reddit/forum language - real people don't use marketing speak
 - Find the keywords big companies ignore because they're "too niche"
+- When including year-specific keywords, use ${currentYear} (the current year)
 
 ${openaiKnowledgeContext}
 
@@ -611,7 +638,15 @@ export async function runFullSEOPipeline(
   if (onProgress) await onProgress('seo-synthesis', 'Synthesis complete');
 
   // Generate markdown report
-  const markdownReport = generateMarkdownReport(synthesis, claudeResult, openaiResult);
+  const dataQuality: SEODataQuality = {
+    claudeSucceeded: claudeResult.keywords.length > 0,
+    openaiSucceeded: openaiResult !== null && openaiResult.keywords.length > 0,
+    serpSucceeded: validated.length > 0,
+    claudeKeywordCount: claudeResult.keywords.length,
+    openaiKeywordCount: openaiResult?.keywords.length ?? 0,
+    serpValidatedCount: validated.length,
+  };
+  const markdownReport = generateMarkdownReport(synthesis, claudeResult, openaiResult, dataQuality);
 
   return {
     synthesis,
@@ -619,6 +654,7 @@ export async function runFullSEOPipeline(
     openaiRaw: openaiResult,
     serpResults,
     markdownReport,
+    dataQuality,
   };
 }
 
@@ -626,11 +662,20 @@ function generateMarkdownReport(
   synthesis: SEOSynthesis,
   claudeResult: SEOAnalysisResult,
   openaiResult: SEOAnalysisResult | null,
+  dataQuality?: SEODataQuality,
 ): string {
   const parts: string[] = [];
 
   parts.push(`## SEO & Keyword Research\n`);
   parts.push(`*Data sources: ${synthesis.dataSources.join(', ')}*\n`);
+
+  // Data quality warnings
+  if (dataQuality && !dataQuality.claudeSucceeded) {
+    parts.push(`> **⚠ Note:** Claude SEO analysis returned no keywords (parse failure). SEO scores below are based on OpenAI keywords and SERP validation only.\n`);
+  }
+  if (dataQuality && !dataQuality.openaiSucceeded && !dataQuality.claudeSucceeded) {
+    parts.push(`> **⚠ Warning:** Both LLM keyword analyses failed. SEO assessment is based on SERP validation only.\n`);
+  }
 
   // Synthesis narrative
   parts.push(`### Analysis\n`);

@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea, Analysis, AnalysisScores } from '@/types';
 import { saveProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, AnalysisProgress } from './db';
-import { runFullSEOPipeline, SEOPipelineResult } from './seo-analysis';
+import { runFullSEOPipeline, SEOPipelineResult, SEODataQuality } from './seo-analysis';
 import { isOpenAIConfigured } from './openai';
 import { isSerpConfigured } from './serp-search';
 import { buildExpertiseContext } from './expertise-profile';
@@ -501,23 +501,44 @@ ${content.scoring || 'Not available'}
 function buildSEOScoringContext(seoResult: SEOPipelineResult): string {
   const parts: string[] = [];
   const syn = seoResult.synthesis;
+  const dq = seoResult.dataQuality;
+
+  // Data quality warnings — tell the scorer what data is reliable
+  if (!dq.claudeSucceeded && !dq.openaiSucceeded) {
+    parts.push(`⚠ DATA QUALITY WARNING: Both LLM keyword analyses failed. Base your SEO score primarily on SERP validation results below.`);
+  } else if (!dq.claudeSucceeded) {
+    parts.push(`⚠ DATA QUALITY WARNING: Claude SEO analysis failed (0 keywords returned — parse error). The "Room for new entrant" and "Dominant players" fields below are UNRELIABLE defaults. Base your SEO score on the OpenAI keywords and SERP validation results instead.`);
+  } else if (!dq.openaiSucceeded) {
+    parts.push(`Note: OpenAI SEO analysis was not available. Using Claude keywords and SERP validation only.`);
+  }
 
   parts.push(`Data sources: ${syn.dataSources.join(', ')}`);
-  parts.push(`Total keywords identified: ${syn.topKeywords.length}`);
+  parts.push(`Total keywords identified: ${syn.topKeywords.length} (Claude: ${dq.claudeKeywordCount}, OpenAI: ${dq.openaiKeywordCount})`);
 
   if (syn.comparison) {
-    parts.push(`Keywords agreed upon by both Claude and OpenAI: ${syn.comparison.agreedKeywords.length}`);
-    parts.push(`High-confidence keywords: ${syn.comparison.agreedKeywords.slice(0, 5).join(', ')}`);
+    parts.push(`Keyword overlap: ${syn.comparison.agreedKeywords.length} agreed, ${syn.comparison.claudeUniqueKeywords.length} Claude-unique, ${syn.comparison.openaiUniqueKeywords.length} OpenAI-unique`);
   }
 
   if (syn.serpValidated.length > 0) {
     const gaps = syn.serpValidated.filter((v) => v.hasContentGap).length;
     parts.push(`SERP-validated keywords: ${syn.serpValidated.length}`);
-    parts.push(`Content gaps found: ${gaps} of ${syn.serpValidated.length}`);
+    parts.push(`Content gaps found: ${gaps} of ${syn.serpValidated.length} (${gaps === syn.serpValidated.length ? '100% gap rate — strong SEO signal' : `${Math.round(gaps / syn.serpValidated.length * 100)}% gap rate`})`);
+    for (const v of syn.serpValidated) {
+      const flags = [
+        ...(v.greenFlags?.map((f) => `✓ ${f}`) ?? []),
+        ...(v.redFlags?.map((f) => `✗ ${f}`) ?? []),
+      ];
+      parts.push(`  - "${v.keyword}": ${v.hasContentGap ? 'GAP' : 'competitive'}${flags.length > 0 ? ` [${flags.join(', ')}]` : ''}`);
+    }
   }
 
-  parts.push(`Room for new entrant: ${syn.difficultyAssessment.roomForNewEntrant ? 'Yes' : 'No'}`);
-  parts.push(`Dominant players: ${syn.difficultyAssessment.dominantPlayers.join(', ')}`);
+  // Only include these if Claude analysis actually succeeded (otherwise they're unreliable defaults)
+  if (dq.claudeSucceeded) {
+    parts.push(`Room for new entrant: ${syn.difficultyAssessment.roomForNewEntrant ? 'Yes' : 'No'}`);
+    if (syn.difficultyAssessment.dominantPlayers.length > 0) {
+      parts.push(`Dominant players: ${syn.difficultyAssessment.dominantPlayers.join(', ')}`);
+    }
+  }
 
   return parts.join('\n');
 }
