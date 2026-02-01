@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
             <button
               onClick={handleRunNow}
               disabled={running}
-              className="btn btn-secondary text-sm"
+              className="btn btn-primary text-sm"
             >
               {running ? (
                 <>

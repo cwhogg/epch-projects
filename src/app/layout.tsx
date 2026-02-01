@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import NavLinks from '@/components/NavLinks';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -39,30 +40,7 @@ export default function RootLayout({
               </Link>
 
               {/* Nav Links */}
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/"
-                  className="btn-ghost rounded-lg text-sm hidden sm:flex"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/analytics"
-                  className="btn-ghost rounded-lg text-sm hidden sm:flex"
-                >
-                  Analytics
-                </Link>
-                <Link
-                  href="/ideas/new"
-                  className="btn btn-primary text-sm"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                  </svg>
-                  <span className="hidden sm:inline">New Idea</span>
-                </Link>
-              </div>
+              <NavLinks />
             </div>
           </div>
         </nav>
