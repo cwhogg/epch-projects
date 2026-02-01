@@ -1,23 +1,34 @@
 import Link from 'next/link';
 import { getLeaderboard, getAnalyses } from '@/lib/data';
-import { getLeaderboardFromDb, getAnalysesFromDb, getAllGSCLinks, isRedisConfigured } from '@/lib/db';
-import { Analysis, LeaderboardEntry } from '@/types';
+import { getLeaderboardFromDb, getAnalysesFromDb, getAllGSCLinks, getAllContentCalendars, getPublishedPieces, isRedisConfigured } from '@/lib/db';
+import { Analysis, LeaderboardEntry, ContentCalendar } from '@/types';
+import { PUBLISH_TARGETS } from '@/lib/publish-targets';
 
 export const dynamic = 'force-dynamic';
 
-async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string> }> {
+async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string>; activePrograms: (ContentCalendar & { publishedCount: number; siteName: string })[] }> {
   if (isRedisConfigured()) {
-    const [leaderboard, analyses, gscLinks] = await Promise.all([
+    const [leaderboard, analyses, gscLinks, calendars, publishedKeys] = await Promise.all([
       getLeaderboardFromDb(),
       getAnalysesFromDb(),
       getAllGSCLinks(),
+      getAllContentCalendars(),
+      getPublishedPieces(),
     ]);
-    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)) };
+    const publishedSet = new Set(publishedKeys);
+    const activePrograms = calendars.map((cal) => {
+      const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
+      const target = PUBLISH_TARGETS[cal.targetId || 'secondlook'];
+      const siteName = target ? target.siteUrl.replace('https://', '') : cal.targetId || 'secondlook';
+      return { ...cal, publishedCount, siteName };
+    });
+    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)), activePrograms };
   }
   return {
     leaderboard: getLeaderboard(),
     analyses: getAnalyses(),
     gscLinkedIds: new Set(),
+    activePrograms: [],
   };
 }
 
@@ -107,7 +118,7 @@ function ScoreRing({ score, label, size = 56 }: { score: number | null; label: s
 }
 
 export default async function Home() {
-  const { leaderboard, analyses: rawAnalyses, gscLinkedIds } = await getData();
+  const { leaderboard, analyses: rawAnalyses, gscLinkedIds, activePrograms } = await getData();
   const analyses = [...rawAnalyses].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   );
@@ -131,6 +142,48 @@ export default async function Home() {
           AI-powered analysis across competition, SEO, and willingness to pay.
         </p>
       </header>
+
+      {/* Active Programs */}
+      {activePrograms.length > 0 && (
+        <section className="animate-slide-up stagger-2">
+          <h2 className="text-lg font-display mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Active Programs
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {activePrograms.map((program) => (
+              <div
+                key={program.ideaId}
+                className="card-static p-4 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                    {program.ideaName}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                      {program.publishedCount}/{program.pieces.length} published
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {program.siteName}
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href={`/analyses/${program.ideaId}/analytics`}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                  style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                >
+                  Analytics
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Empty State */}
       {leaderboard.length === 0 ? (

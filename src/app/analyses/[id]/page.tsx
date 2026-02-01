@@ -373,7 +373,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <div className="flex items-center gap-2">
               <Link
                 href={`/analyses/${analysis.id}/content`}
-                className="btn btn-primary text-sm"
+                className="btn btn-ghost text-sm"
               >
                 {contentCalendarExists ? (
                   <>
