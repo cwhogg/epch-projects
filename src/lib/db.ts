@@ -253,3 +253,79 @@ export async function getGSCPropertiesCache(): Promise<{ siteUrl: string; permis
   if (!data) return null;
   return data as { siteUrl: string; permissionLevel: string }[];
 }
+
+// Publish Tracking
+
+export interface PublishedPieceMeta {
+  slug: string;
+  commitSha: string;
+  filePath: string;
+  publishedAt: string;
+}
+
+export async function markPiecePublished(
+  ideaId: string,
+  pieceId: string,
+  meta: PublishedPieceMeta,
+): Promise<void> {
+  const key = `${ideaId}:${pieceId}`;
+  await getRedis().sadd('published_pieces', key);
+  await getRedis().hset('published_pieces_meta', { [key]: JSON.stringify(meta) });
+}
+
+export async function isPiecePublished(ideaId: string, pieceId: string): Promise<boolean> {
+  const result = await getRedis().sismember('published_pieces', `${ideaId}:${pieceId}`);
+  return result === 1;
+}
+
+export async function getPublishedPieces(): Promise<string[]> {
+  const members = await getRedis().smembers('published_pieces');
+  return members as string[];
+}
+
+export async function getPublishedPieceMeta(
+  ideaId: string,
+  pieceId: string,
+): Promise<PublishedPieceMeta | null> {
+  const meta = await getRedis().hget('published_pieces_meta', `${ideaId}:${pieceId}`);
+  if (!meta) return null;
+  return parseValue<PublishedPieceMeta>(meta);
+}
+
+export interface PublishLogEntry {
+  timestamp: string;
+  action: string;
+  ideaId?: string;
+  pieceId?: string;
+  detail: string;
+  status: 'success' | 'error' | 'skipped';
+}
+
+export async function addPublishLogEntry(entry: PublishLogEntry): Promise<void> {
+  await getRedis().lpush('publish_log', JSON.stringify(entry));
+  await getRedis().ltrim('publish_log', 0, 49); // Keep last 50
+}
+
+export async function getPublishLog(limit: number = 50): Promise<PublishLogEntry[]> {
+  const entries = await getRedis().lrange('publish_log', 0, limit - 1);
+  return entries.map((e) => parseValue<PublishLogEntry>(e));
+}
+
+export async function getAllContentCalendars(): Promise<ContentCalendar[]> {
+  const keys: string[] = [];
+  let cursor = 0;
+  do {
+    const result = await getRedis().scan(cursor, { match: 'content_calendar:*', count: 100 });
+    cursor = Number(result[0]);
+    keys.push(...result[1]);
+  } while (cursor !== 0);
+
+  const calendars: ContentCalendar[] = [];
+  for (const key of keys) {
+    const data = await getRedis().get(key);
+    if (data) {
+      calendars.push(data as ContentCalendar);
+    }
+  }
+  return calendars;
+}

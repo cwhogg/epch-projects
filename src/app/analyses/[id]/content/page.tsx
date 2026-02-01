@@ -17,6 +17,9 @@ export default function ContentCalendarPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [completedPieces, setCompletedPieces] = useState<ContentPiece[]>([]);
+  const [publishedKeys, setPublishedKeys] = useState<Set<string>>(new Set());
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<string | null>(null);
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -33,12 +36,42 @@ export default function ContentCalendarPage() {
           }
         }
       }
+      // Fetch published status
+      const statusRes = await fetch('/api/publish/status').catch(() => null);
+      if (statusRes?.ok) {
+        const statusData = await statusRes.json();
+        if (Array.isArray(statusData.publishedKeys)) {
+          setPublishedKeys(new Set(statusData.publishedKeys as string[]));
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch calendar:', err);
     } finally {
       setLoading(false);
     }
   }, [analysisId]);
+
+  const triggerPublish = async () => {
+    setPublishing(true);
+    setPublishResult(null);
+    try {
+      const res = await fetch('/api/cron/publish', { method: 'POST' });
+      const data = await res.json();
+      setPublishResult(data.detail || data.action);
+      // Refresh published keys
+      const statusRes = await fetch('/api/publish/status').catch(() => null);
+      if (statusRes?.ok) {
+        const statusData = await statusRes.json();
+        if (Array.isArray(statusData.publishedKeys)) {
+          setPublishedKeys(new Set(statusData.publishedKeys as string[]));
+        }
+      }
+    } catch (err) {
+      setPublishResult(err instanceof Error ? err.message : 'Publish failed');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const generateCalendar = async () => {
     setGenerating(true);
@@ -206,16 +239,36 @@ export default function ContentCalendarPage() {
               {calendar.ideaName} &middot; {mergedPieces.length} pieces &middot; {completedCount} generated
             </p>
           </div>
-          <button
-            onClick={generateCalendar}
-            disabled={generating}
-            className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-            style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
-          >
-            {generating ? 'Regenerating...' : 'Regenerate Options'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={triggerPublish}
+              disabled={publishing}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa', border: '1px solid rgba(96, 165, 250, 0.3)' }}
+            >
+              {publishing ? 'Publishing...' : 'Publish Next'}
+            </button>
+            <button
+              onClick={generateCalendar}
+              disabled={generating}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
+            >
+              {generating ? 'Regenerating...' : 'Regenerate Options'}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Publish Result */}
+      {publishResult && (
+        <div
+          className="p-3 rounded-lg text-sm animate-fade-in"
+          style={{ background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa' }}
+        >
+          {publishResult}
+        </div>
+      )}
 
       {/* Strategy Summary */}
       <div className="card-static p-5 animate-slide-up stagger-2">
@@ -270,6 +323,7 @@ export default function ContentCalendarPage() {
             selected={selectedIds.has(piece.id)}
             onToggle={togglePiece}
             disabled={generating}
+            published={publishedKeys.has(`${analysisId}:${piece.id}`)}
           />
         ))}
       </div>

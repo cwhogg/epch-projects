@@ -273,7 +273,7 @@ export async function generateContentPieces(
   }
 }
 
-async function generateSinglePiece(ctx: ContentContext, piece: ContentPiece): Promise<string> {
+export async function generateSinglePiece(ctx: ContentContext, piece: ContentPiece): Promise<string> {
   let prompt: string;
 
   switch (piece.type) {
