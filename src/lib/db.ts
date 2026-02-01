@@ -261,6 +261,8 @@ export interface PublishedPieceMeta {
   commitSha: string;
   filePath: string;
   publishedAt: string;
+  targetId?: string;
+  siteUrl?: string;
 }
 
 export async function markPiecePublished(

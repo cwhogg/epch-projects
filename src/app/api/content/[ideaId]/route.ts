@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isRedisConfigured, getContentCalendar } from '@/lib/db';
+import { isRedisConfigured, getContentCalendar, saveContentCalendar } from '@/lib/db';
 import { generateContentCalendar } from '@/lib/content-agent';
 
 export const maxDuration = 300;
@@ -20,7 +20,15 @@ export async function POST(
   }
 
   try {
-    const calendar = await generateContentCalendar(ideaId);
+    let targetId: string | undefined;
+    try {
+      const body = await request.json();
+      targetId = body.targetId;
+    } catch {
+      // No body or invalid JSON — that's fine, use default
+    }
+
+    const calendar = await generateContentCalendar(ideaId, targetId);
     return NextResponse.json(calendar);
   } catch (error) {
     console.error('Content calendar generation failed:', error);
@@ -51,5 +59,39 @@ export async function GET(
   } catch (error) {
     console.error('Failed to get content calendar:', error);
     return NextResponse.json({ error: 'Failed to get content calendar' }, { status: 500 });
+  }
+}
+
+// PATCH — Update calendar target site
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ ideaId: string }> }
+) {
+  const { ideaId } = await params;
+
+  if (!isRedisConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const { targetId } = body;
+
+    if (!targetId) {
+      return NextResponse.json({ error: 'targetId is required' }, { status: 400 });
+    }
+
+    const calendar = await getContentCalendar(ideaId);
+    if (!calendar) {
+      return NextResponse.json({ error: 'Calendar not found' }, { status: 404 });
+    }
+
+    calendar.targetId = targetId;
+    await saveContentCalendar(ideaId, calendar);
+
+    return NextResponse.json({ ok: true, targetId });
+  } catch (error) {
+    console.error('Failed to update calendar target:', error);
+    return NextResponse.json({ error: 'Failed to update target' }, { status: 500 });
   }
 }

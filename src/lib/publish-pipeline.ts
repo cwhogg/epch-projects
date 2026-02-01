@@ -8,7 +8,8 @@ import {
   saveContentPiece,
 } from './db';
 import { buildContentContext, generateSinglePiece } from './content-agent';
-import { commitToSecondlook } from './github-publish';
+import { commitToRepo } from './github-publish';
+import { getPublishTarget } from './publish-targets';
 
 export interface PipelineCandidate {
   calendar: ContentCalendar;
@@ -131,9 +132,14 @@ export async function runPublishPipeline(): Promise<PipelineResult> {
       action = 'generated_and_published';
     }
 
-    // Commit to secondlook repo
+    // Determine target from calendar (default to secondlook for backward compat)
+    const targetId = calendar.targetId || 'secondlook';
+    const target = getPublishTarget(targetId);
+
+    // Commit to target repo
     const commitMessage = `Publish: ${piece.title} (${piece.type})`;
-    const commitResult = await commitToSecondlook(
+    const commitResult = await commitToRepo(
+      target,
       piece.type,
       piece.slug,
       markdown,
@@ -146,11 +152,13 @@ export async function runPublishPipeline(): Promise<PipelineResult> {
       commitSha: commitResult.commitSha,
       filePath: commitResult.filePath,
       publishedAt: new Date().toISOString(),
+      targetId,
+      siteUrl: target.siteUrl,
     });
 
     const result: PipelineResult = {
       action,
-      detail: `Published "${piece.title}" to ${commitResult.filePath}`,
+      detail: `Published "${piece.title}" to ${target.id}:${commitResult.filePath}`,
       pieceId: piece.id,
       ideaId: calendar.ideaId,
       commitSha: commitResult.commitSha,

@@ -1,15 +1,5 @@
 import { ContentType } from '@/types';
-
-const REPO_OWNER = 'cwhogg';
-const REPO_NAME = 'secondlook';
-const BRANCH = 'main';
-
-const PATH_MAP: Record<ContentType, string> = {
-  'blog-post': 'content/blog',
-  'landing-page': 'content/landing-page',
-  'comparison': 'content/comparison',
-  'faq': 'content/faq',
-};
+import { PublishTarget, getPublishTarget } from './publish-targets';
 
 function getFilename(type: ContentType, slug: string): string {
   switch (type) {
@@ -30,12 +20,35 @@ function flipDraftToPublished(markdown: string): string {
   return markdown.replace(/^(status:\s*)draft\s*$/m, '$1published');
 }
 
+export function enrichFrontmatter(
+  markdown: string,
+  target: PublishTarget,
+  type: ContentType,
+  slug: string,
+): string {
+  const typeToPath: Record<ContentType, string> = {
+    'blog-post': '/blog',
+    'landing-page': '/resources',
+    'comparison': '/compare',
+    'faq': '/faq',
+  };
+  const urlPath = typeToPath[type] || '/blog';
+  const canonicalUrl = `${target.siteUrl}${urlPath}/${slug}`;
+
+  // Inject canonicalUrl into existing frontmatter
+  return markdown.replace(
+    /^(---\n[\s\S]*?)(---)/m,
+    `$1canonicalUrl: "${canonicalUrl}"\n$2`,
+  );
+}
+
 async function getExistingFileSha(
   token: string,
+  target: PublishTarget,
   filePath: string,
 ): Promise<string | null> {
   const res = await fetch(
-    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}?ref=${BRANCH}`,
+    `https://api.github.com/repos/${target.repoOwner}/${target.repoName}/contents/${filePath}?ref=${target.branch}`,
     { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' } },
   );
   if (res.status === 404) return null;
@@ -53,7 +66,8 @@ export interface CommitResult {
   htmlUrl: string;
 }
 
-export async function commitToSecondlook(
+export async function commitToRepo(
+  target: PublishTarget,
   type: ContentType,
   slug: string,
   markdown: string,
@@ -64,27 +78,28 @@ export async function commitToSecondlook(
     throw new Error('GITHUB_TOKEN not configured');
   }
 
-  const dir = PATH_MAP[type] || 'content';
+  const dir = target.pathMap[type] || 'content';
   const filename = getFilename(type, slug);
   const filePath = `${dir}/${filename}`;
 
-  const content = flipDraftToPublished(markdown);
+  let content = flipDraftToPublished(markdown);
+  content = enrichFrontmatter(content, target, type, slug);
   const encoded = Buffer.from(content, 'utf-8').toString('base64');
 
   // Check for existing file to get SHA for idempotent update
-  const existingSha = await getExistingFileSha(token, filePath);
+  const existingSha = await getExistingFileSha(token, target, filePath);
 
   const body: Record<string, string> = {
     message: commitMessage,
     content: encoded,
-    branch: BRANCH,
+    branch: target.branch,
   };
   if (existingSha) {
     body.sha = existingSha;
   }
 
   const res = await fetch(
-    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`,
+    `https://api.github.com/repos/${target.repoOwner}/${target.repoName}/contents/${filePath}`,
     {
       method: 'PUT',
       headers: {
@@ -107,4 +122,15 @@ export async function commitToSecondlook(
     filePath,
     htmlUrl: data.content.html_url as string,
   };
+}
+
+/** Backward-compat wrapper — commits to secondlook target */
+export async function commitToSecondlook(
+  type: ContentType,
+  slug: string,
+  markdown: string,
+  commitMessage: string,
+): Promise<CommitResult> {
+  const target = getPublishTarget('secondlook');
+  return commitToRepo(target, type, slug, markdown, commitMessage);
 }

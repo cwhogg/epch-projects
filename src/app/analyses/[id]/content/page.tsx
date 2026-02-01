@@ -20,6 +20,7 @@ export default function ContentCalendarPage() {
   const [publishedKeys, setPublishedKeys] = useState<Set<string>>(new Set());
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string>('secondlook');
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -27,6 +28,7 @@ export default function ContentCalendarPage() {
       const data = await res.json();
       if (data.exists && data.calendar) {
         setCalendar(data.calendar);
+        if (data.calendar.targetId) setTargetId(data.calendar.targetId);
         // Fetch completed pieces to merge status
         const piecesRes = await fetch(`/api/content/${analysisId}/pieces`).catch(() => null);
         if (piecesRes?.ok) {
@@ -77,7 +79,11 @@ export default function ContentCalendarPage() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await fetch(`/api/content/${analysisId}`, { method: 'POST' });
+      const res = await fetch(`/api/content/${analysisId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId }),
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to generate calendar');
@@ -88,6 +94,18 @@ export default function ContentCalendarPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate calendar');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleTargetChange = async (newTarget: string) => {
+    setTargetId(newTarget);
+    if (calendar) {
+      // Update existing calendar's target
+      await fetch(`/api/content/${analysisId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: newTarget }),
+      }).catch(() => {});
     }
   };
 
@@ -249,7 +267,16 @@ export default function ContentCalendarPage() {
               {calendar.ideaName} &middot; {mergedPieces.length} pieces &middot; {completedCount} generated
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <select
+              value={targetId}
+              onChange={(e) => handleTargetChange(e.target.value)}
+              className="text-xs px-2 py-1.5 rounded-lg appearance-none cursor-pointer"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+            >
+              <option value="secondlook">secondlook</option>
+              <option value="study-platform">nofone.us</option>
+            </select>
             <button
               onClick={triggerPublish}
               disabled={publishing}

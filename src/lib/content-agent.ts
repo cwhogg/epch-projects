@@ -108,7 +108,7 @@ export async function buildContentContext(ideaId: string): Promise<ContentContex
 
 // ---------- Calendar Generation ----------
 
-export async function generateContentCalendar(ideaId: string): Promise<ContentCalendar> {
+export async function generateContentCalendar(ideaId: string, targetId?: string): Promise<ContentCalendar> {
   const ctx = await buildContentContext(ideaId);
   if (!ctx) throw new Error('No analysis found for this idea');
 
@@ -163,6 +163,7 @@ export async function generateContentCalendar(ideaId: string): Promise<ContentCa
   const calendar: ContentCalendar = {
     ideaId,
     ideaName: ctx.ideaName,
+    targetId: targetId || 'secondlook',
     strategySummary: parsed.strategySummary,
     pieces,
     createdAt: new Date().toISOString(),

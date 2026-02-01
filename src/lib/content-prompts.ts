@@ -124,6 +124,7 @@ ${ctx.serpValidated.flatMap((v) => v.peopleAlsoAsk).slice(0, 8).map((q) => `   -
 YAML FRONTMATTER FORMAT:
 ---
 title: "${piece.title}"
+description: "[150-160 character SEO meta description summarizing the post's value proposition]"
 type: blog-post
 targetKeywords: [${piece.targetKeywords.map((k) => `"${k}"`).join(', ')}]
 contentGap: "${piece.contentGap || ''}"
@@ -163,6 +164,7 @@ ${ctx.serpValidated.flatMap((v) => v.peopleAlsoAsk).slice(0, 6).map((q) => `   -
 YAML FRONTMATTER FORMAT:
 ---
 title: "${piece.title}"
+description: "[150-160 character SEO meta description highlighting the key benefit]"
 type: landing-page
 targetKeywords: [${piece.targetKeywords.map((k) => `"${k}"`).join(', ')}]
 generatedAt: "${new Date().toISOString()}"
@@ -202,6 +204,7 @@ INSTRUCTIONS:
 YAML FRONTMATTER FORMAT:
 ---
 title: "${piece.title}"
+description: "[150-160 character SEO meta description for the comparison]"
 type: comparison
 targetKeywords: [${piece.targetKeywords.map((k) => `"${k}"`).join(', ')}]
 contentGap: "${piece.contentGap || ''}"
@@ -248,6 +251,7 @@ INSTRUCTIONS:
 YAML FRONTMATTER FORMAT:
 ---
 title: "${piece.title}"
+description: "[150-160 character SEO meta description for the FAQ page]"
 type: faq
 targetKeywords: [${piece.targetKeywords.map((k) => `"${k}"`).join(', ')}]
 generatedAt: "${new Date().toISOString()}"

@@ -69,6 +69,7 @@ export interface ContentPiece {
 export interface ContentCalendar {
   ideaId: string;
   ideaName: string;
+  targetId?: string; // 'secondlook' | 'study-platform', defaults to 'secondlook'
   strategySummary: string;
   pieces: ContentPiece[];
   createdAt: string;
