@@ -358,10 +358,17 @@ export default function AnalyticsPage() {
             Link GSC Property
           </h2>
           {properties.length === 0 ? (
-            <div className="flex items-center gap-3">
+            <div className="space-y-4">
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                No properties found. Ensure the service account email has been added to your GSC properties.
+                No properties found. To track search performance for a new site:
               </p>
+              <ol className="text-sm space-y-2 pl-5 list-decimal" style={{ color: 'var(--text-secondary)' }}>
+                <li>Go to <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--accent-coral)' }}>Google Search Console</a> and add your site as a property</li>
+                <li>In that property&apos;s <strong>Settings &rarr; Users and permissions</strong>, add this service account as a <strong>Full</strong> user:<br />
+                  <code className="text-xs px-1.5 py-0.5 rounded mt-1 inline-block" style={{ background: 'var(--bg-elevated)' }}>epch-research-dashboard@epch-research-dashboard.iam.gserviceaccount.com</code>
+                </li>
+                <li>Come back here and click <strong>Refresh</strong></li>
+              </ol>
               <button
                 onClick={async () => {
                   const res = await fetch('/api/gsc/properties?refresh=true');
