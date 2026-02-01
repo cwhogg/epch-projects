@@ -283,6 +283,16 @@ export async function getPublishedPieces(): Promise<string[]> {
   return members as string[];
 }
 
+export async function getAllPublishedPiecesMeta(): Promise<Record<string, PublishedPieceMeta>> {
+  const data = await getRedis().hgetall('published_pieces_meta');
+  if (!data) return {};
+  const result: Record<string, PublishedPieceMeta> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = parseValue<PublishedPieceMeta>(value);
+  }
+  return result;
+}
+
 export async function getPublishedPieceMeta(
   ideaId: string,
   pieceId: string,

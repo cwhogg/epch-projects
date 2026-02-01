@@ -145,3 +145,59 @@ export interface GSCAnalyticsSummary {
   totalPredictedKeywords: number;
   unpredictedQueries: GSCQueryRow[];
 }
+
+// Analytics Agent Types
+
+export interface PieceSnapshot {
+  ideaId: string;
+  pieceId: string;
+  slug: string;
+  title: string;
+  type: ContentType;
+  weekId: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+  topQueries: { query: string; clicks: number; impressions: number; position: number }[];
+}
+
+export type AlertSeverity = 'positive' | 'warning' | 'info';
+
+export interface PerformanceAlert {
+  pieceSlug: string;
+  pieceTitle: string;
+  severity: AlertSeverity;
+  message: string;
+  metric: string;
+  previousValue: number;
+  currentValue: number;
+}
+
+export interface WeeklyReport {
+  weekId: string;
+  generatedAt: string;
+  siteUrl: string;
+  siteSummary: {
+    totalClicks: number;
+    totalImpressions: number;
+    averagePosition: number;
+    averageCtr: number;
+    clicksChange: number | null;
+    impressionsChange: number | null;
+  };
+  pieces: Array<{
+    ideaId: string;
+    pieceId: string;
+    slug: string;
+    title: string;
+    type: ContentType;
+    current: PieceSnapshot;
+    previous: PieceSnapshot | null;
+    clicksChange: number | null;
+    impressionsChange: number | null;
+    positionChange: number | null;
+  }>;
+  unmatchedPages: GSCQueryRow[];
+  alerts: PerformanceAlert[];
+}

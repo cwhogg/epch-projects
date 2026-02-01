@@ -47,6 +47,12 @@ export default function RootLayout({
                   Dashboard
                 </Link>
                 <Link
+                  href="/analytics"
+                  className="btn-ghost rounded-lg text-sm hidden sm:flex"
+                >
+                  Analytics
+                </Link>
+                <Link
                   href="/ideas/new"
                   className="btn btn-primary text-sm"
                 >
