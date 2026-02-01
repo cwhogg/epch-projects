@@ -91,9 +91,19 @@ export default function ContentCalendarPage() {
     }
   };
 
+  const [autoGenerating, setAutoGenerating] = useState(false);
+
   useEffect(() => {
     fetchCalendar();
   }, [fetchCalendar]);
+
+  // Auto-generate calendar if none exists (skip the extra click)
+  useEffect(() => {
+    if (!loading && !calendar && !generating && !autoGenerating && !error) {
+      setAutoGenerating(true);
+      generateCalendar();
+    }
+  }, [loading, calendar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePiece = (id: string) => {
     setSelectedIds((prev) => {
@@ -169,42 +179,42 @@ export default function ContentCalendarPage() {
             className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
             style={{ background: 'var(--accent-coral-soft)' }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
-            Generate Content Options
-          </h2>
-          <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
-            Create a prioritized content plan based on your SEO research data — blog posts, landing pages, comparisons, and FAQ pages.
-          </p>
-          {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171' }}>
-              {error}
-            </div>
-          )}
-          <button
-            onClick={generateCalendar}
-            disabled={generating}
-            className="btn btn-primary"
-          >
             {generating ? (
-              <>
-                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
-                Generating Calendar...
-              </>
+              <svg className="animate-spin" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="1.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
             ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-                Generate Content Options
-              </>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
+              </svg>
             )}
-          </button>
+          </div>
+          {error ? (
+            <>
+              <h2 className="text-xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
+                Generation Failed
+              </h2>
+              <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171' }}>
+                {error}
+              </div>
+              <button
+                onClick={generateCalendar}
+                disabled={generating}
+                className="btn btn-primary"
+              >
+                Retry
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
+                Generating Content Plan...
+              </h2>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Creating a prioritized content plan based on your SEO research data.
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
