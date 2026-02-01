@@ -16,43 +16,50 @@ export interface PipelineCandidate {
   piece: ContentPiece;
 }
 
-export async function findNextPieceToPublish(): Promise<PipelineCandidate | null> {
+/**
+ * Find the next unpublished piece for each target site.
+ * Returns one candidate per target so each site gets published to independently.
+ */
+export async function findNextPiecePerTarget(): Promise<Map<string, PipelineCandidate>> {
   const calendars = await getAllContentCalendars();
-  if (calendars.length === 0) return null;
+  if (calendars.length === 0) return new Map();
 
-  // Collect all candidate pieces across calendars, sorted by priority
-  const candidates: PipelineCandidate[] = [];
+  // Group candidates by target site
+  const candidatesByTarget = new Map<string, PipelineCandidate[]>();
 
   for (const calendar of calendars) {
-    // Fetch generated pieces from Redis (they have markdown content)
+    const targetId = calendar.targetId || 'secondlook';
     const generatedPieces = await getContentPieces(calendar.ideaId);
     const generatedMap = new Map(generatedPieces.map((p) => [p.id, p]));
 
     for (const calendarPiece of calendar.pieces) {
       const piece = generatedMap.get(calendarPiece.id) || calendarPiece;
 
-      // Skip pieces that are already published
       const published = await isPiecePublished(calendar.ideaId, piece.id);
       if (published) continue;
 
-      // Skip pieces still generating
       if (piece.status === 'generating') continue;
 
-      candidates.push({ calendar, piece });
+      if (!candidatesByTarget.has(targetId)) {
+        candidatesByTarget.set(targetId, []);
+      }
+      candidatesByTarget.get(targetId)!.push({ calendar, piece });
     }
   }
 
-  if (candidates.length === 0) return null;
+  // For each target, sort and pick the best candidate
+  const result = new Map<string, PipelineCandidate>();
+  for (const [targetId, candidates] of candidatesByTarget) {
+    candidates.sort((a, b) => {
+      const aReady = a.piece.status === 'complete' ? 0 : 1;
+      const bReady = b.piece.status === 'complete' ? 0 : 1;
+      if (aReady !== bReady) return aReady - bReady;
+      return a.piece.priority - b.piece.priority;
+    });
+    result.set(targetId, candidates[0]);
+  }
 
-  // Sort: completed pieces first (they have markdown ready), then by priority
-  candidates.sort((a, b) => {
-    const aReady = a.piece.status === 'complete' ? 0 : 1;
-    const bReady = b.piece.status === 'complete' ? 0 : 1;
-    if (aReady !== bReady) return aReady - bReady;
-    return a.piece.priority - b.piece.priority;
-  });
-
-  return candidates[0];
+  return result;
 }
 
 export interface PipelineResult {
@@ -63,117 +70,139 @@ export interface PipelineResult {
   commitSha?: string;
 }
 
-export async function runPublishPipeline(): Promise<PipelineResult> {
-  try {
-    const candidate = await findNextPieceToPublish();
+export interface MultiPipelineResult {
+  action: 'published' | 'nothing_to_publish' | 'error';
+  detail: string;
+  results: PipelineResult[];
+}
 
-    if (!candidate) {
+async function publishCandidate(candidate: PipelineCandidate): Promise<PipelineResult> {
+  const { calendar, piece } = candidate;
+
+  // Double-check idempotency
+  if (await isPiecePublished(calendar.ideaId, piece.id)) {
+    return {
+      action: 'nothing_to_publish',
+      detail: `Piece ${piece.id} was published between check and execution`,
+      pieceId: piece.id,
+      ideaId: calendar.ideaId,
+    };
+  }
+
+  let markdown = piece.markdown;
+  let action: PipelineResult['action'] = 'published';
+
+  // If piece hasn't been generated yet, generate it now
+  if (!markdown || piece.status !== 'complete') {
+    const ctx = await buildContentContext(calendar.ideaId);
+    if (!ctx) {
       const result: PipelineResult = {
-        action: 'nothing_to_publish',
-        detail: 'No unpublished content pieces found',
+        action: 'error',
+        detail: `No analysis context found for idea ${calendar.ideaId}`,
+        pieceId: piece.id,
+        ideaId: calendar.ideaId,
       };
       await addPublishLogEntry({
         timestamp: new Date().toISOString(),
-        action: 'nothing_to_publish',
+        action: 'error',
+        ideaId: calendar.ideaId,
+        pieceId: piece.id,
         detail: result.detail,
-        status: 'skipped',
+        status: 'error',
       });
       return result;
     }
 
-    const { calendar, piece } = candidate;
+    markdown = await generateSinglePiece(ctx, piece);
+    const wordCount = markdown.split(/\s+/).length;
 
-    // Double-check idempotency
-    if (await isPiecePublished(calendar.ideaId, piece.id)) {
+    const completedPiece: ContentPiece = {
+      ...piece,
+      status: 'complete',
+      markdown,
+      wordCount,
+      generatedAt: new Date().toISOString(),
+    };
+    await saveContentPiece(calendar.ideaId, completedPiece);
+    action = 'generated_and_published';
+  }
+
+  const targetId = calendar.targetId || 'secondlook';
+  const target = getPublishTarget(targetId);
+
+  const commitMessage = `Publish: ${piece.title} (${piece.type})`;
+  const commitResult = await commitToRepo(
+    target,
+    piece.type,
+    piece.slug,
+    markdown,
+    commitMessage,
+  );
+
+  await markPiecePublished(calendar.ideaId, piece.id, {
+    slug: piece.slug,
+    commitSha: commitResult.commitSha,
+    filePath: commitResult.filePath,
+    publishedAt: new Date().toISOString(),
+    targetId,
+    siteUrl: target.siteUrl,
+  });
+
+  const result: PipelineResult = {
+    action,
+    detail: `Published "${piece.title}" to ${target.id}:${commitResult.filePath}`,
+    pieceId: piece.id,
+    ideaId: calendar.ideaId,
+    commitSha: commitResult.commitSha,
+  };
+
+  await addPublishLogEntry({
+    timestamp: new Date().toISOString(),
+    action: result.action,
+    ideaId: calendar.ideaId,
+    pieceId: piece.id,
+    detail: result.detail,
+    status: 'success',
+  });
+
+  return result;
+}
+
+export async function runPublishPipeline(): Promise<MultiPipelineResult> {
+  try {
+    const candidatesByTarget = await findNextPiecePerTarget();
+
+    if (candidatesByTarget.size === 0) {
+      await addPublishLogEntry({
+        timestamp: new Date().toISOString(),
+        action: 'nothing_to_publish',
+        detail: 'No unpublished content pieces found',
+        status: 'skipped',
+      });
       return {
         action: 'nothing_to_publish',
-        detail: `Piece ${piece.id} was published between check and execution`,
-        pieceId: piece.id,
-        ideaId: calendar.ideaId,
+        detail: 'No unpublished content pieces found',
+        results: [],
       };
     }
 
-    let markdown = piece.markdown;
-    let action: PipelineResult['action'] = 'published';
-
-    // If piece hasn't been generated yet, generate it now
-    if (!markdown || piece.status !== 'complete') {
-      const ctx = await buildContentContext(calendar.ideaId);
-      if (!ctx) {
-        const result: PipelineResult = {
-          action: 'error',
-          detail: `No analysis context found for idea ${calendar.ideaId}`,
-          pieceId: piece.id,
-          ideaId: calendar.ideaId,
-        };
-        await addPublishLogEntry({
-          timestamp: new Date().toISOString(),
-          action: 'error',
-          ideaId: calendar.ideaId,
-          pieceId: piece.id,
-          detail: result.detail,
-          status: 'error',
-        });
-        return result;
-      }
-
-      markdown = await generateSinglePiece(ctx, piece);
-      const wordCount = markdown.split(/\s+/).length;
-
-      // Save generated piece
-      const completedPiece: ContentPiece = {
-        ...piece,
-        status: 'complete',
-        markdown,
-        wordCount,
-        generatedAt: new Date().toISOString(),
-      };
-      await saveContentPiece(calendar.ideaId, completedPiece);
-      action = 'generated_and_published';
+    // Publish one piece per target site
+    const results: PipelineResult[] = [];
+    for (const [, candidate] of candidatesByTarget) {
+      const result = await publishCandidate(candidate);
+      results.push(result);
     }
 
-    // Determine target from calendar (default to secondlook for backward compat)
-    const targetId = calendar.targetId || 'secondlook';
-    const target = getPublishTarget(targetId);
+    const published = results.filter((r) => r.action === 'published' || r.action === 'generated_and_published');
+    const errors = results.filter((r) => r.action === 'error');
 
-    // Commit to target repo
-    const commitMessage = `Publish: ${piece.title} (${piece.type})`;
-    const commitResult = await commitToRepo(
-      target,
-      piece.type,
-      piece.slug,
-      markdown,
-      commitMessage,
-    );
+    let action: MultiPipelineResult['action'] = 'published';
+    if (published.length === 0 && errors.length > 0) action = 'error';
+    else if (published.length === 0) action = 'nothing_to_publish';
 
-    // Record as published
-    await markPiecePublished(calendar.ideaId, piece.id, {
-      slug: piece.slug,
-      commitSha: commitResult.commitSha,
-      filePath: commitResult.filePath,
-      publishedAt: new Date().toISOString(),
-      targetId,
-      siteUrl: target.siteUrl,
-    });
+    const detail = results.map((r) => r.detail).join(' | ');
 
-    const result: PipelineResult = {
-      action,
-      detail: `Published "${piece.title}" to ${target.id}:${commitResult.filePath}`,
-      pieceId: piece.id,
-      ideaId: calendar.ideaId,
-      commitSha: commitResult.commitSha,
-    };
-
-    await addPublishLogEntry({
-      timestamp: new Date().toISOString(),
-      action: result.action,
-      ideaId: calendar.ideaId,
-      pieceId: piece.id,
-      detail: result.detail,
-      status: 'success',
-    });
-
-    return result;
+    return { action, detail, results };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown error';
     await addPublishLogEntry({
@@ -182,6 +211,6 @@ export async function runPublishPipeline(): Promise<PipelineResult> {
       detail,
       status: 'error',
     });
-    return { action: 'error', detail };
+    return { action: 'error', detail, results: [] };
   }
 }

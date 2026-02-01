@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isRedisConfigured, getPublishedPieces, getPublishLog } from '@/lib/db';
-import { findNextPieceToPublish } from '@/lib/publish-pipeline';
+import { findNextPiecePerTarget } from '@/lib/publish-pipeline';
 
 export async function GET() {
   if (!isRedisConfigured()) {
@@ -8,27 +8,28 @@ export async function GET() {
   }
 
   try {
-    const [publishedKeys, recentLog, nextUp] = await Promise.all([
+    const [publishedKeys, recentLog, nextPerTarget] = await Promise.all([
       getPublishedPieces(),
       getPublishLog(20),
-      findNextPieceToPublish(),
+      findNextPiecePerTarget(),
     ]);
+
+    const nextUp = Array.from(nextPerTarget.entries()).map(([targetId, candidate]) => ({
+      targetId,
+      ideaId: candidate.calendar.ideaId,
+      ideaName: candidate.calendar.ideaName,
+      pieceId: candidate.piece.id,
+      title: candidate.piece.title,
+      type: candidate.piece.type,
+      priority: candidate.piece.priority,
+      hasMarkdown: candidate.piece.status === 'complete',
+    }));
 
     return NextResponse.json({
       totalPublished: publishedKeys.length,
       publishedKeys,
       recentLog,
-      nextUp: nextUp
-        ? {
-            ideaId: nextUp.calendar.ideaId,
-            ideaName: nextUp.calendar.ideaName,
-            pieceId: nextUp.piece.id,
-            title: nextUp.piece.title,
-            type: nextUp.piece.type,
-            priority: nextUp.piece.priority,
-            hasMarkdown: nextUp.piece.status === 'complete',
-          }
-        : null,
+      nextUp: nextUp.length > 0 ? nextUp : null,
     });
   } catch (error) {
     console.error('Failed to get publish status:', error);
