@@ -285,11 +285,11 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
 
   console.log(`[analytics] Running for week ${weekId}, site: ${siteUrl}`);
 
-  // Calculate 7-day window (with 3-day GSC delay)
+  // Calculate 28-day window (with 3-day GSC delay)
   const endDate = new Date();
   endDate.setDate(endDate.getDate() - 3);
   const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - 7);
+  startDate.setDate(startDate.getDate() - 28);
 
   const startStr = formatDate(startDate);
   const endStr = formatDate(endDate);
