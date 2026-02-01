@@ -127,16 +127,12 @@ export default function AnalyticsPage() {
     <div className="space-y-8">
       {/* Header */}
       <header className="animate-slide-up stagger-1">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl font-display" style={{ color: 'var(--text-primary)' }}>
               Analytics
             </h1>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Weekly performance tracking for published content
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
             {availableWeeks.length > 0 && (
               <select
                 value={selectedWeek}
@@ -170,7 +166,11 @@ export default function AnalyticsPage() {
                 </>
               )}
             </button>
+            </div>
           </div>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Weekly performance tracking for published content
+          </p>
         </div>
       </header>
 
