@@ -285,11 +285,11 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
 
   console.log(`[analytics] Running for week ${weekId}, site: ${siteUrl}`);
 
-  // Calculate 28-day window (with 3-day GSC delay)
+  // Calculate 7-day window (with 3-day GSC delay)
   const endDate = new Date();
   endDate.setDate(endDate.getDate() - 3);
   const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - 28);
+  startDate.setDate(startDate.getDate() - 7);
 
   const startStr = formatDate(startDate);
   const endStr = formatDate(endDate);
@@ -336,13 +336,35 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
   const prevTotalClicks = previousSnapshots.reduce((sum, s) => sum + s.clicks, 0);
   const prevTotalImpressions = previousSnapshots.reduce((sum, s) => sum + s.impressions, 0);
 
-  // Build per-piece comparison data
+  // Build per-piece comparison data — include ALL published pieces, even with no GSC data
   const prevMap = new Map<string, PieceSnapshot>();
   for (const snap of previousSnapshots) {
     prevMap.set(snap.slug, snap);
   }
 
-  const pieces = snapshots
+  const matchedSlugs = new Set(snapshots.map((s) => s.slug));
+
+  // Create zero-data snapshots for published pieces not in GSC
+  const allSnapshots = [...snapshots];
+  for (const [slug, info] of slugLookup) {
+    if (!matchedSlugs.has(slug)) {
+      allSnapshots.push({
+        ideaId: info.ideaId,
+        pieceId: info.pieceId,
+        slug,
+        title: info.title,
+        type: info.type,
+        weekId,
+        clicks: 0,
+        impressions: 0,
+        ctr: 0,
+        position: 0,
+        topQueries: [],
+      });
+    }
+  }
+
+  const pieces = allSnapshots
     .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
     .map((current) => {
       const prev = prevMap.get(current.slug) ?? null;
