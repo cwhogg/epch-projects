@@ -29,6 +29,7 @@ export async function GET() {
     return NextResponse.json({ properties, cached: false });
   } catch (error) {
     console.error('Error listing GSC properties:', error);
-    return NextResponse.json({ error: 'Failed to list GSC properties' }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to list GSC properties', detail: message }, { status: 500 });
   }
 }
