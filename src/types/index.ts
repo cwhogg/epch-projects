@@ -82,3 +82,66 @@ export interface ContentProgress {
   error?: string;
   completedPieceIds: string[];
 }
+
+// Google Search Console Types
+
+export interface GSCPropertyLink {
+  ideaId: string;
+  siteUrl: string;
+  linkedAt: string;
+  lastFetchedAt?: string;
+}
+
+export interface GSCQueryRow {
+  query: string;
+  page?: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export interface GSCDateRow {
+  date: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export interface GSCAnalyticsData {
+  ideaId: string;
+  siteUrl: string;
+  fetchedAt: string;
+  timeSeries: GSCDateRow[];
+  queryData: GSCQueryRow[];
+  pageData: GSCQueryRow[];
+  startDate: string;
+  endDate: string;
+}
+
+export interface KeywordComparison {
+  keyword: string;
+  predicted: {
+    intentType?: string;
+    estimatedVolume?: string;
+    estimatedCompetitiveness?: string;
+  } | null;
+  actual: {
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  } | null;
+}
+
+export interface GSCAnalyticsSummary {
+  totalClicks: number;
+  totalImpressions: number;
+  averageCtr: number;
+  averagePosition: number;
+  topQuery: string | null;
+  predictedKeywordsWithTraffic: number;
+  totalPredictedKeywords: number;
+  unpredictedQueries: GSCQueryRow[];
+}

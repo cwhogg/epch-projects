@@ -1,21 +1,23 @@
 import Link from 'next/link';
 import { getLeaderboard, getAnalyses } from '@/lib/data';
-import { getLeaderboardFromDb, getAnalysesFromDb, isRedisConfigured } from '@/lib/db';
+import { getLeaderboardFromDb, getAnalysesFromDb, getAllGSCLinks, isRedisConfigured } from '@/lib/db';
 import { Analysis, LeaderboardEntry } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[] }> {
+async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string> }> {
   if (isRedisConfigured()) {
-    const [leaderboard, analyses] = await Promise.all([
+    const [leaderboard, analyses, gscLinks] = await Promise.all([
       getLeaderboardFromDb(),
       getAnalysesFromDb(),
+      getAllGSCLinks(),
     ]);
-    return { leaderboard, analyses };
+    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)) };
   }
   return {
     leaderboard: getLeaderboard(),
     analyses: getAnalyses(),
+    gscLinkedIds: new Set(),
   };
 }
 
@@ -105,7 +107,7 @@ function ScoreRing({ score, label, size = 56 }: { score: number | null; label: s
 }
 
 export default async function Home() {
-  const { leaderboard, analyses: rawAnalyses } = await getData();
+  const { leaderboard, analyses: rawAnalyses, gscLinkedIds } = await getData();
   const analyses = [...rawAnalyses].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   );
@@ -332,6 +334,11 @@ export default async function Home() {
                       {analysis.hasContentGenerated && (
                         <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
                           Content
+                        </span>
+                      )}
+                      {gscLinkedIds.has(analysis.id) && (
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}>
+                          Analytics
                         </span>
                       )}
                     </div>

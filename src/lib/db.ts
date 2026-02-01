@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress } from '@/types';
+import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData } from '@/types';
 
 // Lazy-initialize Redis client to ensure env vars are available
 let redis: Redis | null = null;
@@ -59,10 +59,12 @@ export async function updateIdeaStatus(id: string, status: ProductIdea['status']
 
 export async function deleteIdeaFromDb(id: string): Promise<boolean> {
   const deleted = await getRedis().hdel('ideas', id);
-  // Also delete associated analysis and content
+  // Also delete associated analysis, content, and GSC data
   await getRedis().hdel('analyses', id);
   await getRedis().hdel('analysis_content', id);
   await getRedis().del(`progress:${id}`);
+  await getRedis().hdel('gsc_links', id);
+  await getRedis().del(`gsc_analytics:${id}`);
   return deleted > 0;
 }
 
@@ -206,4 +208,48 @@ export async function getContentProgress(ideaId: string): Promise<ContentProgres
   const progress = await getRedis().get(`content_progress:${ideaId}`);
   if (!progress) return null;
   return progress as ContentProgress;
+}
+
+// GSC Property Links
+export async function saveGSCLink(link: GSCPropertyLink): Promise<void> {
+  await getRedis().hset('gsc_links', { [link.ideaId]: JSON.stringify(link) });
+}
+
+export async function getGSCLink(ideaId: string): Promise<GSCPropertyLink | null> {
+  const link = await getRedis().hget('gsc_links', ideaId);
+  if (!link) return null;
+  return parseValue<GSCPropertyLink>(link);
+}
+
+export async function deleteGSCLink(ideaId: string): Promise<void> {
+  await getRedis().hdel('gsc_links', ideaId);
+  await getRedis().del(`gsc_analytics:${ideaId}`);
+}
+
+export async function getAllGSCLinks(): Promise<GSCPropertyLink[]> {
+  const links = await getRedis().hgetall('gsc_links');
+  if (!links) return [];
+  return Object.values(links).map((v) => parseValue<GSCPropertyLink>(v));
+}
+
+// GSC Analytics Cache
+export async function saveGSCAnalytics(ideaId: string, data: GSCAnalyticsData): Promise<void> {
+  await getRedis().set(`gsc_analytics:${ideaId}`, JSON.stringify(data), { ex: 14400 }); // 4hr TTL
+}
+
+export async function getGSCAnalytics(ideaId: string): Promise<GSCAnalyticsData | null> {
+  const data = await getRedis().get(`gsc_analytics:${ideaId}`);
+  if (!data) return null;
+  return data as GSCAnalyticsData;
+}
+
+// GSC Properties Cache
+export async function saveGSCPropertiesCache(properties: { siteUrl: string; permissionLevel: string }[]): Promise<void> {
+  await getRedis().set('gsc_properties_cache', JSON.stringify(properties), { ex: 3600 }); // 1hr TTL
+}
+
+export async function getGSCPropertiesCache(): Promise<{ siteUrl: string; permissionLevel: string }[] | null> {
+  const data = await getRedis().get('gsc_properties_cache');
+  if (!data) return null;
+  return data as { siteUrl: string; permissionLevel: string }[];
 }

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysis } from '@/lib/data';
-import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, isRedisConfigured } from '@/lib/db';
+import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, isRedisConfigured } from '@/lib/db';
 import MarkdownContent from '@/components/MarkdownContent';
 import ReanalyzeForm from '@/components/ReanalyzeForm';
 import DeleteButton from '@/components/DeleteButton';
@@ -28,28 +28,31 @@ interface AnalysisData {
   content: { main: string; competitors?: string; keywords?: string; seoData?: string };
   contentCalendarExists: boolean;
   contentPieceCount: number;
+  hasGSCLink: boolean;
 }
 
 async function getAnalysisData(id: string): Promise<AnalysisData | null> {
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
     if (analysis) {
-      const [content, calendar, pieces] = await Promise.all([
+      const [content, calendar, pieces, gscLink] = await Promise.all([
         getAnalysisContent(id),
         getContentCalendar(id),
         getContentPieces(id),
+        getGSCLink(id),
       ]);
       return {
         analysis,
         content: content || { main: 'Analysis content not available' },
         contentCalendarExists: !!calendar,
         contentPieceCount: pieces.filter((p) => p.status === 'complete').length,
+        hasGSCLink: !!gscLink,
       };
     }
   }
   const fallback = getAnalysis(id);
   if (!fallback) return null;
-  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0 };
+  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0, hasGSCLink: false };
 }
 
 function getBadgeClass(rec: string) {
@@ -314,7 +317,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     notFound();
   }
 
-  const { analysis, content, contentCalendarExists, contentPieceCount } = result;
+  const { analysis, content, contentCalendarExists, contentPieceCount, hasGSCLink } = result;
 
   // Get gradient color based on recommendation
   const getHeaderGradient = () => {
@@ -388,6 +391,15 @@ export default async function AnalysisPage({ params }: PageProps) {
                     Generate Content
                   </>
                 )}
+              </Link>
+              <Link
+                href={`/analyses/${analysis.id}/analytics`}
+                className="btn btn-ghost text-sm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                {hasGSCLink ? 'Analytics' : 'Analytics'}
               </Link>
               <ReanalyzeForm ideaId={analysis.id} />
               <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
