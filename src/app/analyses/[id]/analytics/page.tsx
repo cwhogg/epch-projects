@@ -358,9 +358,25 @@ export default function AnalyticsPage() {
             Link GSC Property
           </h2>
           {properties.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              No properties found. Ensure the service account email has been added to your GSC properties.
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                No properties found. Ensure the service account email has been added to your GSC properties.
+              </p>
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/gsc/properties?refresh=true');
+                  if (res.ok) {
+                    const { properties: props } = await res.json();
+                    setProperties(props);
+                    if (props.length > 0) setSelectedProperty(props[0].siteUrl);
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
+              >
+                Refresh
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-3">
               <select
@@ -379,6 +395,22 @@ export default function AnalyticsPage() {
                   </option>
                 ))}
               </select>
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/gsc/properties?refresh=true');
+                  if (res.ok) {
+                    const { properties: props } = await res.json();
+                    setProperties(props);
+                    if (props.length > 0 && !props.find((p: GSCProperty) => p.siteUrl === selectedProperty)) {
+                      setSelectedProperty(props[0].siteUrl);
+                    }
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
+              >
+                Refresh
+              </button>
               <button
                 onClick={handleLink}
                 disabled={linking || !selectedProperty}

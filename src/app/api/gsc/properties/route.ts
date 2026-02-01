@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isGSCConfigured, listGSCProperties } from '@/lib/gsc-client';
 import { getGSCPropertiesCache, saveGSCPropertiesCache, isRedisConfigured } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (!isGSCConfigured()) {
       return NextResponse.json(
@@ -11,8 +11,11 @@ export async function GET() {
       );
     }
 
-    // Check cache first
-    if (isRedisConfigured()) {
+    const { searchParams } = new URL(request.url);
+    const refresh = searchParams.get('refresh') === 'true';
+
+    // Check cache first (skip if refresh requested)
+    if (!refresh && isRedisConfigured()) {
       const cached = await getGSCPropertiesCache();
       if (cached) {
         return NextResponse.json({ properties: cached, cached: true });
