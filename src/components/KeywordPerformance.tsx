@@ -72,54 +72,100 @@ export default function KeywordPerformance({
             No predicted keywords found in the analysis.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ color: 'var(--text-muted)' }}>
-                  <th className="text-left py-2 pr-3 font-medium">Keyword</th>
-                  <th className="text-left py-2 pr-3 font-medium">Intent</th>
-                  <th className="text-left py-2 pr-3 font-medium">Est. Volume</th>
-                  <th className="text-right py-2 pr-3 font-medium">Clicks</th>
-                  <th className="text-right py-2 pr-3 font-medium">Impressions</th>
-                  <th className="text-right py-2 pr-3 font-medium">CTR</th>
-                  <th className="text-right py-2 pr-3 font-medium">Position</th>
-                  <th className="text-left py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisons.map((c, i) => (
-                  <tr
-                    key={i}
-                    style={{
-                      borderTop: '1px solid var(--border-subtle)',
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    <td className="py-2 pr-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+          <>
+            {/* Mobile: card list */}
+            <div className="sm:hidden divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+              {comparisons.map((c, i) => (
+                <div key={i} className="py-3 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {c.keyword}
-                    </td>
-                    <td className="py-2 pr-3">{c.predicted?.intentType || '—'}</td>
-                    <td className="py-2 pr-3">{c.predicted?.estimatedVolume || '—'}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {c.actual?.clicks.toLocaleString() ?? '—'}
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {c.actual?.impressions.toLocaleString() ?? '—'}
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {c.actual ? `${(c.actual.ctr * 100).toFixed(1)}%` : '—'}
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {c.actual ? c.actual.position.toFixed(1) : '—'}
-                    </td>
-                    <td className="py-2">
-                      <StatusBadge comparison={c} />
-                    </td>
+                    </span>
+                    <StatusBadge comparison={c} />
+                  </div>
+                  <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {c.predicted?.intentType && <span>{c.predicted.intentType}</span>}
+                    {c.predicted?.estimatedVolume && (
+                      <>
+                        <span>·</span>
+                        <span>Vol: {c.predicted.estimatedVolume}</span>
+                      </>
+                    )}
+                  </div>
+                  {c.actual && (
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Clicks: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{c.actual.clicks.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Impr: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{c.actual.impressions.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>CTR: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{(c.actual.ctr * 100).toFixed(1)}%</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Pos: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{c.actual.position.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ color: 'var(--text-muted)' }}>
+                    <th className="text-left py-2 pr-3 font-medium">Keyword</th>
+                    <th className="text-left py-2 pr-3 font-medium">Intent</th>
+                    <th className="text-left py-2 pr-3 font-medium">Est. Volume</th>
+                    <th className="text-right py-2 pr-3 font-medium">Clicks</th>
+                    <th className="text-right py-2 pr-3 font-medium">Impressions</th>
+                    <th className="text-right py-2 pr-3 font-medium">CTR</th>
+                    <th className="text-right py-2 pr-3 font-medium">Position</th>
+                    <th className="text-left py-2 font-medium">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {comparisons.map((c, i) => (
+                    <tr
+                      key={i}
+                      style={{
+                        borderTop: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      <td className="py-2 pr-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {c.keyword}
+                      </td>
+                      <td className="py-2 pr-3">{c.predicted?.intentType || '—'}</td>
+                      <td className="py-2 pr-3">{c.predicted?.estimatedVolume || '—'}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {c.actual?.clicks.toLocaleString() ?? '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {c.actual?.impressions.toLocaleString() ?? '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {c.actual ? `${(c.actual.ctr * 100).toFixed(1)}%` : '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {c.actual ? c.actual.position.toFixed(1) : '—'}
+                      </td>
+                      <td className="py-2">
+                        <StatusBadge comparison={c} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -138,7 +184,38 @@ export default function KeywordPerformance({
           <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
             Queries driving traffic that were not in your predicted keyword list.
           </p>
-          <div className="overflow-x-auto">
+
+          {/* Mobile: card list */}
+          <div className="sm:hidden divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {unexpectedWinners.map((q, i) => (
+              <div key={i} className="py-3 space-y-1.5">
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {q.query}
+                </span>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Clicks: </span>
+                    <span style={{ color: 'var(--text-primary)' }}>{q.clicks.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Impr: </span>
+                    <span style={{ color: 'var(--text-primary)' }}>{q.impressions.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>CTR: </span>
+                    <span style={{ color: 'var(--text-primary)' }}>{(q.ctr * 100).toFixed(1)}%</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Pos: </span>
+                    <span style={{ color: 'var(--text-primary)' }}>{q.position.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr style={{ color: 'var(--text-muted)' }}>

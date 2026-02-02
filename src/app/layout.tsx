@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import NavLinks from '@/components/NavLinks';
+import MobileNav from '@/components/MobileNav';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -46,18 +47,21 @@ export default function RootLayout({
         </nav>
 
         {/* Main Content */}
-        <main className="container-app py-6 sm:py-8">
+        <main className="container-app py-6 sm:py-8 pb-20 sm:pb-8">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="mt-auto py-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+        <footer className="mt-auto py-8 hidden sm:block" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container-app">
             <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               AI-powered product research
             </p>
           </div>
         </footer>
+
+        {/* Mobile Bottom Nav */}
+        <MobileNav />
       </body>
     </html>
   );

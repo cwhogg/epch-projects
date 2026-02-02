@@ -361,7 +361,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               Analyzed on {new Date(analysis.completedAt).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-3">
+          <div className="flex flex-col items-start sm:items-end gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-3">
               <span className={`badge ${getBadgeClass(analysis.recommendation)}`}>
                 {analysis.recommendation}
@@ -370,7 +370,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 {analysis.confidence}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/analyses/${analysis.id}/content`}
                 className="btn btn-ghost text-sm"
@@ -381,14 +381,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    View Content{contentPieceCount > 0 ? ` (${contentPieceCount})` : ''}
+                    Content{contentPieceCount > 0 ? ` (${contentPieceCount})` : ''}
                   </>
                 ) : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                     </svg>
-                    Generate Content
+                    Content
                   </>
                 )}
               </Link>
@@ -399,7 +399,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
-                {hasGSCLink ? 'Analytics' : 'Analytics'}
+                Analytics
               </Link>
               <ReanalyzeForm ideaId={analysis.id} />
               <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
@@ -413,7 +413,7 @@ export default async function AnalysisPage({ params }: PageProps) {
         <h2 className="font-display text-base mb-5" style={{ color: 'var(--text-primary)' }}>
           Scores
         </h2>
-        <div className="flex flex-wrap justify-center sm:justify-between gap-4 sm:gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
           <ScoreRing score={analysis.scores.seoOpportunity} label="SEO" />
           <ScoreRing score={analysis.scores.competitiveLandscape} label="Competition" />
           <ScoreRing score={analysis.scores.willingnessToPay} label="WTP" />

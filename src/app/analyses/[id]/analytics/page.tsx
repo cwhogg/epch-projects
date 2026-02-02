@@ -526,7 +526,37 @@ export default function AnalyticsPage() {
                 </svg>
                 Per-Page Performance
               </h2>
-              <div className="overflow-x-auto">
+              {/* Mobile: card list */}
+              <div className="sm:hidden divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+                {analytics.pageData.map((page, i) => (
+                  <div key={i} className="py-3 space-y-1.5">
+                    <span className="text-sm font-medium break-all" style={{ color: 'var(--text-primary)' }}>
+                      {page.query}
+                    </span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Clicks: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{page.clicks.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Impr: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{page.impressions.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>CTR: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{(page.ctr * 100).toFixed(1)}%</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Pos: </span>
+                        <span style={{ color: 'var(--text-primary)' }}>{page.position.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr style={{ color: 'var(--text-muted)' }}>

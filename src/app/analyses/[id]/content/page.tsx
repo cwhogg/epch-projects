@@ -378,7 +378,7 @@ export default function ContentCalendarPage() {
               {calendar.ideaName} &middot; {mergedPieces.length} pieces &middot; {completedCount} generated
             </p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             <div className="relative">
               <select
                 value={targetId}
@@ -427,7 +427,7 @@ export default function ContentCalendarPage() {
 
       {/* Add New Options Feedback Input */}
       {showFeedbackInput && (
-        <div className="card-static p-4 animate-fade-in flex items-center gap-2">
+        <div className="card-static p-4 animate-fade-in space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
           <input
             type="text"
             value={feedbackText}
@@ -438,24 +438,26 @@ export default function ContentCalendarPage() {
             }}
             placeholder="Optional: what kind of content do you want?"
             autoFocus
-            className="flex-1 text-sm px-3 py-1.5 rounded-lg"
+            className="w-full sm:flex-1 text-sm px-3 py-1.5 rounded-lg"
             style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
           />
-          <button
-            onClick={() => appendPieces(feedbackText || undefined)}
-            disabled={appending}
-            className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-            style={{ background: 'rgba(255, 107, 91, 0.1)', color: 'var(--accent-coral)', border: '1px solid rgba(255, 107, 91, 0.3)' }}
-          >
-            {appending ? 'Adding...' : 'Add 3 Pieces'}
-          </button>
-          <button
-            onClick={() => { setShowFeedbackInput(false); setFeedbackText(''); }}
-            className="text-xs px-2 py-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => appendPieces(feedbackText || undefined)}
+              disabled={appending}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap flex-1 sm:flex-none"
+              style={{ background: 'rgba(255, 107, 91, 0.1)', color: 'var(--accent-coral)', border: '1px solid rgba(255, 107, 91, 0.3)' }}
+            >
+              {appending ? 'Adding...' : 'Add 3 Pieces'}
+            </button>
+            <button
+              onClick={() => { setShowFeedbackInput(false); setFeedbackText(''); }}
+              className="text-xs px-2 py-1.5 rounded-lg transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 

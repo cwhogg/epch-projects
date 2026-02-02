@@ -171,16 +171,16 @@ export default function AnalyticsPage() {
       {/* Header */}
       <header className="animate-slide-up stagger-1">
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <h1 className="text-2xl sm:text-3xl font-display" style={{ color: 'var(--text-primary)' }}>
               Analytics
             </h1>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {programs.length > 1 && (
               <select
                 value={selectedProgram}
                 onChange={(e) => setSelectedProgram(e.target.value)}
-                className="input text-sm"
+                className="input text-sm flex-1 sm:flex-none min-w-0"
                 style={{ width: 'auto', padding: '0.5rem 0.75rem' }}
               >
                 <option value="all">All Programs</option>
