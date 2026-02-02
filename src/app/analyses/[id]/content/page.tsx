@@ -208,7 +208,9 @@ export default function ContentCalendarPage() {
     if (!calendar) return [];
     const merged = calendar.pieces.map((p) => {
       const completed = completedPieces.find((cp) => cp.id === p.id);
-      return completed || p;
+      // Use completed piece data but keep calendar's priority (user may have reordered)
+      if (completed) return { ...completed, priority: p.priority };
+      return p;
     });
     // Sort: pending/error first, then complete (not published), then published
     return merged.sort((a, b) => {
@@ -221,6 +223,48 @@ export default function ContentCalendarPage() {
       if (diff !== 0) return diff;
       return a.priority - b.priority;
     });
+  };
+
+  const handleMovePiece = async (pieceId: string, direction: 'up' | 'down') => {
+    const sorted = getMergedPieces();
+    const isQueuedTier = (p: ContentPiece) =>
+      p.status === 'complete' && !publishedKeys.has(`${analysisId}:${p.id}`);
+
+    const tierPieces = sorted.filter(isQueuedTier);
+    const idx = tierPieces.findIndex((p) => p.id === pieceId);
+    if (idx === -1) return;
+
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= tierPieces.length) return;
+
+    // Swap in the full sorted list
+    const fullIdx = sorted.findIndex((p) => p.id === tierPieces[idx].id);
+    const fullSwapIdx = sorted.findIndex((p) => p.id === tierPieces[swapIdx].id);
+    [sorted[fullIdx], sorted[fullSwapIdx]] = [sorted[fullSwapIdx], sorted[fullIdx]];
+
+    // Build new order and assign sequential priorities
+    const pieceOrder = sorted.map((p) => p.id);
+    const priorityMap = new Map(pieceOrder.map((id, i) => [id, i + 1]));
+
+    // Optimistic update
+    if (calendar) {
+      const updated = {
+        ...calendar,
+        pieces: calendar.pieces.map((p) => ({
+          ...p,
+          priority: priorityMap.get(p.id) ?? p.priority,
+        })),
+      };
+      updated.pieces.sort((a, b) => a.priority - b.priority);
+      setCalendar(updated);
+    }
+
+    // Persist
+    await fetch(`/api/content/${analysisId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pieceOrder }),
+    }).catch(() => {});
   };
 
   if (loading) {
@@ -454,18 +498,26 @@ export default function ContentCalendarPage() {
 
       {/* Content Pieces */}
       <div className="space-y-3 animate-slide-up stagger-3">
-        {mergedPieces.map((piece) => (
-          <ContentCalendarCard
-            key={piece.id}
-            piece={piece}
-            analysisId={analysisId}
-            selected={selectedIds.has(piece.id)}
-            onToggle={togglePiece}
-            onReject={handleReject}
-            disabled={generating || appending}
-            published={publishedKeys.has(`${analysisId}:${piece.id}`)}
-          />
-        ))}
+        {mergedPieces.map((piece) => {
+          const isQueued = piece.status === 'complete' && !publishedKeys.has(`${analysisId}:${piece.id}`);
+          const queuedPieces = isQueued ? mergedPieces.filter((p) => p.status === 'complete' && !publishedKeys.has(`${analysisId}:${p.id}`)) : [];
+          const queueIdx = isQueued ? queuedPieces.findIndex((p) => p.id === piece.id) : -1;
+
+          return (
+            <ContentCalendarCard
+              key={piece.id}
+              piece={piece}
+              analysisId={analysisId}
+              selected={selectedIds.has(piece.id)}
+              onToggle={togglePiece}
+              onReject={handleReject}
+              onMoveUp={isQueued && queueIdx > 0 ? () => handleMovePiece(piece.id, 'up') : undefined}
+              onMoveDown={isQueued && queueIdx < queuedPieces.length - 1 ? () => handleMovePiece(piece.id, 'down') : undefined}
+              disabled={generating || appending}
+              published={publishedKeys.has(`${analysisId}:${piece.id}`)}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ interface ContentCalendarCardProps {
   selected: boolean;
   onToggle: (id: string) => void;
   onReject?: (pieceId: string, reason?: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   disabled?: boolean;
   published?: boolean;
 }
@@ -60,7 +62,7 @@ function PublishedBadge({ slug, type }: { slug: string; type: string }) {
   );
 }
 
-export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, onReject, disabled, published }: ContentCalendarCardProps) {
+export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, onReject, onMoveUp, onMoveDown, disabled, published }: ContentCalendarCardProps) {
   const isComplete = piece.status === 'complete';
   const isGenerating = piece.status === 'generating';
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -171,6 +173,34 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+
+          {/* Reorder arrows for queued (complete, not published) pieces */}
+          {(onMoveUp || onMoveDown) && (
+            <div className="float-right ml-2 flex flex-col gap-0.5">
+              <button
+                onClick={onMoveUp}
+                disabled={!onMoveUp}
+                className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                style={{ background: onMoveUp ? 'var(--bg-surface)' : 'transparent', color: onMoveUp ? 'var(--text-secondary)' : 'var(--border-subtle)', cursor: onMoveUp ? 'pointer' : 'default' }}
+                title="Move up (publish sooner)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 15l-6-6-6 6" />
+                </svg>
+              </button>
+              <button
+                onClick={onMoveDown}
+                disabled={!onMoveDown}
+                className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                style={{ background: onMoveDown ? 'var(--bg-surface)' : 'transparent', color: onMoveDown ? 'var(--text-secondary)' : 'var(--border-subtle)', cursor: onMoveDown ? 'pointer' : 'default' }}
+                title="Move down (publish later)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs font-display font-semibold" style={{ color: 'var(--accent-coral)' }}>
               #{piece.priority}

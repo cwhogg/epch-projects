@@ -84,7 +84,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { targetId, active } = body;
+    const { targetId, active, pieceOrder } = body;
 
     const calendar = await getContentCalendar(ideaId);
     if (!calendar) {
@@ -93,9 +93,22 @@ export async function PATCH(
 
     if (targetId !== undefined) calendar.targetId = targetId;
     if (active !== undefined) calendar.active = active;
+
+    // Reorder pieces by the given ID order and assign sequential priorities
+    if (Array.isArray(pieceOrder)) {
+      const orderMap = new Map<string, number>(
+        pieceOrder.map((id: string, i: number) => [id, i + 1])
+      );
+      for (const p of calendar.pieces) {
+        const newPri = orderMap.get(p.id);
+        if (newPri !== undefined) p.priority = newPri;
+      }
+      calendar.pieces.sort((a, b) => a.priority - b.priority);
+    }
+
     await saveContentCalendar(ideaId, calendar);
 
-    return NextResponse.json({ ok: true, targetId: calendar.targetId, active: calendar.active });
+    return NextResponse.json({ ok: true, calendar });
   } catch (error) {
     console.error('Failed to update calendar target:', error);
     return NextResponse.json({ error: 'Failed to update target' }, { status: 500 });
