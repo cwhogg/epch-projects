@@ -17,12 +17,25 @@ async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: A
       getPublishedPieces(),
     ]);
     const publishedSet = new Set(publishedKeys);
-    const programs = calendars.map((cal) => {
-      const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
-      const target = PUBLISH_TARGETS[cal.targetId || 'secondlook'];
-      const siteName = target ? target.siteUrl.replace('https://', '') : cal.targetId || 'secondlook';
-      return { ...cal, publishedCount, siteName };
-    });
+
+    // Count published pieces per target site (across all calendars, active or not)
+    const publishedByTarget = new Map<string, number>();
+    for (const cal of calendars) {
+      const targetId = cal.targetId || 'secondlook';
+      const count = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
+      publishedByTarget.set(targetId, (publishedByTarget.get(targetId) || 0) + count);
+    }
+
+    // Only show active programs, with aggregated published count from all calendars sharing the same target
+    const programs = calendars
+      .filter((cal) => cal.active !== false)
+      .map((cal) => {
+        const targetId = cal.targetId || 'secondlook';
+        const publishedCount = publishedByTarget.get(targetId) || 0;
+        const target = PUBLISH_TARGETS[targetId];
+        const siteName = target ? target.siteUrl.replace('https://', '') : targetId;
+        return { ...cal, publishedCount, siteName };
+      });
     return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)), programs };
   }
   return {
@@ -155,40 +168,36 @@ export default async function Home() {
             Content Programs
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {programs.map((program) => {
-              const isActive = program.active !== false;
-              return (
-                <div
-                  key={program.ideaId}
-                  className="card-static p-4 flex items-center justify-between gap-3"
-                  style={{ opacity: isActive ? 1 : 0.5 }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                      {program.ideaName}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: isActive ? 'rgba(52, 211, 153, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: isActive ? '#34d399' : '#9ca3af' }}>
-                        {isActive ? `${program.publishedCount}/${program.pieces.length} published` : 'Paused'}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {program.siteName}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Link
-                      href={`/analyses/${program.ideaId}/analytics`}
-                      className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                      style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
-                    >
-                      Analytics
-                    </Link>
-                    <ProgramToggleButton ideaId={program.ideaId} active={isActive} />
+            {programs.map((program) => (
+              <div
+                key={program.ideaId}
+                className="card-static p-4 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                    {program.ideaName}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                      {program.publishedCount} published
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {program.siteName}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={`/analyses/${program.ideaId}/analytics`}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                    style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                  >
+                    Analytics
+                  </Link>
+                  <ProgramToggleButton ideaId={program.ideaId} active={true} />
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}
