@@ -60,10 +60,23 @@ export interface ContentPiece {
   contentGap?: string;
   priority: number;
   rationale: string;
-  status: 'pending' | 'generating' | 'complete' | 'error';
+  status: 'pending' | 'generating' | 'complete' | 'error' | 'rejected';
+  rejectionReason?: string;
   markdown?: string;
   wordCount?: number;
   generatedAt?: string;
+}
+
+export interface RejectedPiece {
+  id: string;
+  ideaId: string;
+  title: string;
+  slug: string;
+  type: ContentType;
+  targetKeywords: string[];
+  rationale: string;
+  rejectionReason?: string;
+  rejectedAt: string;
 }
 
 export interface ContentCalendar {
@@ -73,6 +86,8 @@ export interface ContentCalendar {
   active?: boolean; // defaults to true; set false to pause publishing
   strategySummary: string;
   pieces: ContentPiece[];
+  rejectedPieces?: RejectedPiece[];
+  nextPieceIndex?: number;
   createdAt: string;
 }
 

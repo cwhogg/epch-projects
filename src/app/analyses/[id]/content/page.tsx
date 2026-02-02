@@ -21,6 +21,9 @@ export default function ContentCalendarPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string>('secondlook');
+  const [showFeedbackInput, setShowFeedbackInput] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [appending, setAppending] = useState(false);
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -82,7 +85,7 @@ export default function ContentCalendarPage() {
       const res = await fetch(`/api/content/${analysisId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId }),
+        body: JSON.stringify({ targetId, mode: 'full' }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -94,6 +97,48 @@ export default function ContentCalendarPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate calendar');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const appendPieces = async (feedback?: string) => {
+    setAppending(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/content/${analysisId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId, mode: 'append', userFeedback: feedback }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to add new options');
+      }
+      const data = await res.json();
+      setCalendar(data);
+      setShowFeedbackInput(false);
+      setFeedbackText('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add new options');
+    } finally {
+      setAppending(false);
+    }
+  };
+
+  const handleReject = async (pieceId: string, reason?: string) => {
+    try {
+      const res = await fetch(`/api/content/${analysisId}/pieces/${pieceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', reason }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.calendar) {
+          setCalendar(data.calendar);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to reject piece:', err);
     }
   };
 
@@ -153,12 +198,19 @@ export default function ContentCalendarPage() {
     router.push(`/analyses/${analysisId}/content/generate`);
   };
 
-  // Merge calendar pieces with completed piece data
+  // Merge calendar pieces with completed piece data, sort unpublished first
   const getMergedPieces = (): ContentPiece[] => {
     if (!calendar) return [];
-    return calendar.pieces.map((p) => {
+    const merged = calendar.pieces.map((p) => {
       const completed = completedPieces.find((cp) => cp.id === p.id);
       return completed || p;
+    });
+    // Sort: unpublished pieces first (by priority), then published (by priority)
+    return merged.sort((a, b) => {
+      const aPublished = publishedKeys.has(`${analysisId}:${a.id}`);
+      const bPublished = publishedKeys.has(`${analysisId}:${b.id}`);
+      if (aPublished !== bPublished) return aPublished ? 1 : -1;
+      return a.priority - b.priority;
     });
   };
 
@@ -286,12 +338,12 @@ export default function ContentCalendarPage() {
               {publishing ? 'Publishing...' : 'Publish Next'}
             </button>
             <button
-              onClick={generateCalendar}
-              disabled={generating}
+              onClick={() => setShowFeedbackInput(true)}
+              disabled={appending}
               className="text-xs px-3 py-1.5 rounded-lg transition-colors"
               style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
             >
-              {generating ? 'Regenerating...' : 'Regenerate Options'}
+              {appending ? 'Adding...' : 'Add New Options'}
             </button>
           </div>
         </div>
@@ -304,6 +356,40 @@ export default function ContentCalendarPage() {
           style={{ background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa' }}
         >
           {publishResult}
+        </div>
+      )}
+
+      {/* Add New Options Feedback Input */}
+      {showFeedbackInput && (
+        <div className="card-static p-4 animate-fade-in flex items-center gap-2">
+          <input
+            type="text"
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') appendPieces(feedbackText || undefined);
+              if (e.key === 'Escape') { setShowFeedbackInput(false); setFeedbackText(''); }
+            }}
+            placeholder="Optional: what kind of content do you want?"
+            autoFocus
+            className="flex-1 text-sm px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
+          />
+          <button
+            onClick={() => appendPieces(feedbackText || undefined)}
+            disabled={appending}
+            className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+            style={{ background: 'rgba(255, 107, 91, 0.1)', color: 'var(--accent-coral)', border: '1px solid rgba(255, 107, 91, 0.3)' }}
+          >
+            {appending ? 'Adding...' : 'Add 3 Pieces'}
+          </button>
+          <button
+            onClick={() => { setShowFeedbackInput(false); setFeedbackText(''); }}
+            className="text-xs px-2 py-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -359,7 +445,8 @@ export default function ContentCalendarPage() {
             analysisId={analysisId}
             selected={selectedIds.has(piece.id)}
             onToggle={togglePiece}
-            disabled={generating}
+            onReject={handleReject}
+            disabled={generating || appending}
             published={publishedKeys.has(`${analysisId}:${piece.id}`)}
           />
         ))}

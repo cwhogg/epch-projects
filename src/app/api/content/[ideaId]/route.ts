@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isRedisConfigured, getContentCalendar, saveContentCalendar } from '@/lib/db';
-import { generateContentCalendar } from '@/lib/content-agent';
+import { generateContentCalendar, appendNewPieces } from '@/lib/content-agent';
 
 export const maxDuration = 300;
 
@@ -21,14 +21,23 @@ export async function POST(
 
   try {
     let targetId: string | undefined;
+    let mode: 'full' | 'append' = 'full';
+    let userFeedback: string | undefined;
     try {
       const body = await request.json();
       targetId = body.targetId;
+      if (body.mode === 'append') mode = 'append';
+      if (body.userFeedback) userFeedback = body.userFeedback;
     } catch {
       // No body or invalid JSON — that's fine, use default
     }
 
-    const calendar = await generateContentCalendar(ideaId, targetId);
+    let calendar;
+    if (mode === 'append') {
+      calendar = await appendNewPieces(ideaId, targetId, userFeedback);
+    } else {
+      calendar = await generateContentCalendar(ideaId, targetId);
+    }
     return NextResponse.json(calendar);
   } catch (error) {
     console.error('Content calendar generation failed:', error);

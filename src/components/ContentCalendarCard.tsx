@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { ContentPiece } from '@/types';
 import { ContentTypeBadge } from './ContentTypeIcon';
@@ -9,6 +10,7 @@ interface ContentCalendarCardProps {
   analysisId: string;
   selected: boolean;
   onToggle: (id: string) => void;
+  onReject?: (pieceId: string, reason?: string) => void;
   disabled?: boolean;
   published?: boolean;
 }
@@ -58,18 +60,81 @@ function PublishedBadge({ slug, type }: { slug: string; type: string }) {
   );
 }
 
-export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, disabled, published }: ContentCalendarCardProps) {
+export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, onReject, disabled, published }: ContentCalendarCardProps) {
   const isComplete = piece.status === 'complete';
   const isGenerating = piece.status === 'generating';
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isHovered, setIsHovered] = useState(false);
+
+  const canReject = !isComplete && !isGenerating && !published && onReject;
+
+  const handleReject = () => {
+    if (onReject) {
+      onReject(piece.id, rejectReason || undefined);
+      setShowRejectInput(false);
+      setRejectReason('');
+    }
+  };
 
   return (
     <div
-      className="p-4 rounded-lg transition-all"
+      className="p-4 rounded-lg transition-all relative group"
       style={{
         background: selected ? 'rgba(255, 107, 91, 0.05)' : 'var(--bg-elevated)',
         border: `1px solid ${selected ? 'rgba(255, 107, 91, 0.3)' : 'var(--border-subtle)'}`,
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Reject X button — top-right on hover */}
+      {canReject && isHovered && !showRejectInput && (
+        <button
+          onClick={() => setShowRejectInput(true)}
+          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+          style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171' }}
+          title="Reject this piece"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
+
+      {/* Inline reject reason input */}
+      {showRejectInput && (
+        <div className="mb-3 flex items-center gap-2">
+          <input
+            type="text"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleReject();
+              if (e.key === 'Escape') { setShowRejectInput(false); setRejectReason(''); }
+            }}
+            placeholder="Reason (optional)"
+            autoFocus
+            className="flex-1 text-xs px-2 py-1 rounded-md"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
+          />
+          <button
+            onClick={handleReject}
+            className="text-xs px-2 py-1 rounded-md transition-colors"
+            style={{ background: 'rgba(248, 113, 113, 0.15)', color: '#f87171' }}
+          >
+            Reject
+          </button>
+          <button
+            onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
+            className="text-xs px-2 py-1 rounded-md transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div className="flex items-start gap-3">
         {/* Checkbox */}
         <div className="pt-0.5">

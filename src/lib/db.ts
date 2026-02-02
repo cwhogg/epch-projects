@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData } from '@/types';
+import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece } from '@/types';
 
 // Lazy-initialize Redis client to ensure env vars are available
 let redis: Redis | null = null;
@@ -321,6 +321,17 @@ export async function addPublishLogEntry(entry: PublishLogEntry): Promise<void> 
 export async function getPublishLog(limit: number = 50): Promise<PublishLogEntry[]> {
   const entries = await getRedis().lrange('publish_log', 0, limit - 1);
   return entries.map((e) => parseValue<PublishLogEntry>(e));
+}
+
+// Rejected Pieces
+export async function saveRejectedPiece(ideaId: string, rejected: RejectedPiece): Promise<void> {
+  await getRedis().hset(`rejected_pieces:${ideaId}`, { [rejected.id]: JSON.stringify(rejected) });
+}
+
+export async function getRejectedPieces(ideaId: string): Promise<RejectedPiece[]> {
+  const pieces = await getRedis().hgetall(`rejected_pieces:${ideaId}`);
+  if (!pieces) return [];
+  return Object.values(pieces).map((v) => parseValue<RejectedPiece>(v));
 }
 
 export async function getAllContentCalendars(): Promise<ContentCalendar[]> {

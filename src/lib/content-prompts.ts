@@ -1,4 +1,4 @@
-import { ContentPiece } from '@/types';
+import { ContentPiece, RejectedPiece } from '@/types';
 
 export interface ContentContext {
   ideaName: string;
@@ -19,6 +19,11 @@ export interface ContentContext {
   competitors: string;
   // Expertise
   expertiseProfile: string;
+  // Append context (used for adding new pieces)
+  existingPieces?: ContentPiece[];
+  publishedPieces?: ContentPiece[];
+  rejectedPieces?: RejectedPiece[];
+  userFeedback?: string;
 }
 
 function buildBaseContext(ctx: ContentContext): string {
@@ -261,4 +266,72 @@ wordCount: [actual word count]
 ---
 
 Write the complete FAQ page now. Output ONLY the markdown starting with YAML frontmatter.`;
+}
+
+export function buildAppendCalendarPrompt(ctx: ContentContext): string {
+  const existingSection = ctx.existingPieces && ctx.existingPieces.length > 0
+    ? `EXISTING CONTENT (DO NOT DUPLICATE any of these titles, slugs, or keyword focuses):
+${ctx.existingPieces.map((p) => `- "${p.title}" (slug: ${p.slug}, type: ${p.type}, keywords: ${p.targetKeywords.join(', ')})`).join('\n')}`
+    : '';
+
+  const publishedSection = ctx.publishedPieces && ctx.publishedPieces.length > 0
+    ? `\nPUBLISHED CONTENT (already live — do not duplicate):
+${ctx.publishedPieces.map((p) => `- "${p.title}" (slug: ${p.slug})`).join('\n')}`
+    : '';
+
+  const rejectedSection = ctx.rejectedPieces && ctx.rejectedPieces.length > 0
+    ? `\nREJECTED CONTENT (DO NOT SUGGEST SIMILAR topics or angles):
+${ctx.rejectedPieces.map((p) => `- "${p.title}" (slug: ${p.slug}, keywords: ${p.targetKeywords.join(', ')})${p.rejectionReason ? ` — Rejection reason: "${p.rejectionReason}"` : ''}`).join('\n')}`
+    : '';
+
+  const userInstructions = ctx.userFeedback
+    ? `\n=== USER INSTRUCTIONS (HIGHEST PRIORITY — follow these exactly) ===
+${ctx.userFeedback}
+=== END USER INSTRUCTIONS ===`
+    : '';
+
+  return `You are a CONTENT STRATEGIST adding new content pieces to an existing calendar for a B2B SaaS product.
+
+${buildBaseContext(ctx)}
+
+${existingSection}
+${publishedSection}
+${rejectedSection}
+${userInstructions}
+
+Create exactly 3 NEW content pieces that complement the existing calendar. Each piece should be one of these types:
+- blog-post: Target informational/commercial keywords, fill content gaps, 1500-3000 words
+- landing-page: Conversion copy — hero, problem, solution, differentiation, FAQ, CTA
+- comparison: Honest "X vs Y" using real competitor data, overview table, recommendation
+- faq: From People Also Ask + related searches, schema-friendly Q&A, 2000-3000 words
+
+CRITICAL RULES:
+1. DO NOT duplicate any existing title, slug, or primary keyword focus
+2. DO NOT suggest content similar to rejected pieces
+3. Each piece must target DIFFERENT keywords from existing content
+4. Prioritize SERP-validated content gaps that aren't already covered
+
+For each piece, provide:
+- type: one of blog-post, landing-page, comparison, faq
+- title: compelling, SEO-optimized title
+- slug: URL-friendly slug
+- targetKeywords: array of 3-5 keywords this piece should target
+- contentGap: what gap in existing content this fills (if applicable)
+- priority: 1 (highest) to 10 (lowest)
+- rationale: why this piece matters and what it achieves
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "pieces": [
+    {
+      "type": "blog-post",
+      "title": "string",
+      "slug": "string",
+      "targetKeywords": ["keyword1", "keyword2"],
+      "contentGap": "string or null",
+      "priority": 1,
+      "rationale": "string"
+    }
+  ]
+}`;
 }

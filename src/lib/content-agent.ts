@@ -7,13 +7,17 @@ import {
   getAnalysisContent,
   getIdeaFromDb,
   saveContentCalendar,
+  getContentCalendar,
   saveContentPiece,
+  getContentPieces,
   saveContentProgress,
   saveAnalysisToDb,
+  getRejectedPieces,
 } from './db';
 import {
   ContentContext,
   buildCalendarPrompt,
+  buildAppendCalendarPrompt,
   buildBlogPostPrompt,
   buildLandingPagePrompt,
   buildComparisonPrompt,
@@ -168,6 +172,96 @@ export async function generateContentCalendar(ideaId: string, targetId?: string)
     pieces,
     createdAt: new Date().toISOString(),
   };
+
+  await saveContentCalendar(ideaId, calendar);
+  return calendar;
+}
+
+// ---------- Append New Pieces ----------
+
+export async function appendNewPieces(ideaId: string, targetId?: string, userFeedback?: string): Promise<ContentCalendar> {
+  const calendar = await getContentCalendar(ideaId);
+  if (!calendar) throw new Error('No existing calendar found — use full generation first');
+
+  const ctx = await buildContentContext(ideaId);
+  if (!ctx) throw new Error('No analysis found for this idea');
+
+  // Load completed pieces and rejected pieces for context
+  const completedPieces = await getContentPieces(ideaId);
+  const rejectedPieces = await getRejectedPieces(ideaId);
+
+  // Merge completed data into existing pieces for full context
+  const existingPieces = calendar.pieces.map((p) => {
+    const completed = completedPieces.find((cp) => cp.id === p.id);
+    return completed || p;
+  });
+
+  const publishedPieces = existingPieces.filter((p) => p.status === 'complete');
+
+  // Augment context with append-specific fields
+  ctx.existingPieces = existingPieces;
+  ctx.publishedPieces = publishedPieces;
+  ctx.rejectedPieces = rejectedPieces.length > 0 ? rejectedPieces : (calendar.rejectedPieces || []);
+  ctx.userFeedback = userFeedback;
+
+  const prompt = buildAppendCalendarPrompt(ctx);
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+
+  let parsed: { pieces: Array<{ type: string; title: string; slug: string; targetKeywords: string[]; contentGap?: string; priority: number; rationale: string }> };
+  try {
+    let jsonStr = text.trim();
+    const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    }
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0]);
+    } else {
+      throw new Error('Failed to parse append calendar response');
+    }
+  }
+
+  // Determine nextPieceIndex by scanning all existing + rejected IDs
+  const allIds = [
+    ...calendar.pieces.map((p) => p.id),
+    ...(calendar.rejectedPieces || []).map((p) => p.id),
+  ];
+  let maxIndex = calendar.nextPieceIndex || 0;
+  for (const id of allIds) {
+    const match = id.match(/-piece-(\d+)$/);
+    if (match) {
+      maxIndex = Math.max(maxIndex, parseInt(match[1], 10) + 1);
+    }
+  }
+
+  const validTypes: ContentType[] = ['blog-post', 'landing-page', 'comparison', 'faq'];
+
+  const newPieces: ContentPiece[] = parsed.pieces.slice(0, 3).map((p, i) => ({
+    id: `${ideaId}-piece-${maxIndex + i}`,
+    ideaId,
+    type: validTypes.includes(p.type as ContentType) ? (p.type as ContentType) : 'blog-post',
+    title: p.title,
+    slug: p.slug,
+    targetKeywords: p.targetKeywords || [],
+    contentGap: p.contentGap || undefined,
+    priority: p.priority || 5,
+    rationale: p.rationale,
+    status: 'pending',
+  }));
+
+  calendar.pieces.push(...newPieces);
+  calendar.nextPieceIndex = maxIndex + newPieces.length;
+  if (targetId) calendar.targetId = targetId;
 
   await saveContentCalendar(ideaId, calendar);
   return calendar;
