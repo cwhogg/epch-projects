@@ -24,6 +24,7 @@ export default function ContentCalendarPage() {
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [appending, setAppending] = useState(false);
+  const [targetSaved, setTargetSaved] = useState(false);
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -146,11 +147,15 @@ export default function ContentCalendarPage() {
     setTargetId(newTarget);
     if (calendar) {
       // Update existing calendar's target
-      await fetch(`/api/content/${analysisId}`, {
+      const res = await fetch(`/api/content/${analysisId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetId: newTarget }),
-      }).catch(() => {});
+      }).catch(() => null);
+      if (res?.ok) {
+        setTargetSaved(true);
+        setTimeout(() => setTargetSaved(false), 1500);
+      }
     }
   };
 
@@ -198,18 +203,22 @@ export default function ContentCalendarPage() {
     router.push(`/analyses/${analysisId}/content/generate`);
   };
 
-  // Merge calendar pieces with completed piece data, sort unpublished first
+  // Merge calendar pieces with completed piece data, sort pending first
   const getMergedPieces = (): ContentPiece[] => {
     if (!calendar) return [];
     const merged = calendar.pieces.map((p) => {
       const completed = completedPieces.find((cp) => cp.id === p.id);
       return completed || p;
     });
-    // Sort: unpublished pieces first (by priority), then published (by priority)
+    // Sort: pending/error first, then complete (not published), then published
     return merged.sort((a, b) => {
-      const aPublished = publishedKeys.has(`${analysisId}:${a.id}`);
-      const bPublished = publishedKeys.has(`${analysisId}:${b.id}`);
-      if (aPublished !== bPublished) return aPublished ? 1 : -1;
+      const rank = (p: ContentPiece) => {
+        if (publishedKeys.has(`${analysisId}:${p.id}`)) return 2; // published → bottom
+        if (p.status === 'complete') return 1; // generated but not published → middle
+        return 0; // pending/error/generating → top
+      };
+      const diff = rank(a) - rank(b);
+      if (diff !== 0) return diff;
       return a.priority - b.priority;
     });
   };
@@ -320,15 +329,22 @@ export default function ContentCalendarPage() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            <select
-              value={targetId}
-              onChange={(e) => handleTargetChange(e.target.value)}
-              className="text-xs pl-2 pr-6 py-1.5 rounded-lg cursor-pointer"
-              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239ca3af\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', WebkitAppearance: 'none', appearance: 'none' as const }}
-            >
-              <option value="secondlook">secondlook</option>
-              <option value="study-platform">nofone.us</option>
-            </select>
+            <div className="relative">
+              <select
+                value={targetId}
+                onChange={(e) => handleTargetChange(e.target.value)}
+                className="text-xs pl-2 pr-6 py-1.5 rounded-lg cursor-pointer"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: `1px solid ${targetSaved ? 'rgba(52, 211, 153, 0.5)' : 'var(--border-subtle)'}`, backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239ca3af\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', WebkitAppearance: 'none', appearance: 'none' as const, transition: 'border-color 0.2s' }}
+              >
+                <option value="secondlook">secondlook</option>
+                <option value="study-platform">nofone.us</option>
+              </select>
+              {targetSaved && (
+                <span className="absolute -bottom-5 left-0 text-xs animate-fade-in" style={{ color: '#34d399' }}>
+                  Saved
+                </span>
+              )}
+            </div>
             <button
               onClick={triggerPublish}
               disabled={publishing}
