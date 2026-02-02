@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import AnalyticsChart from '@/components/AnalyticsChart';
 import KeywordPerformance from '@/components/KeywordPerformance';
+import PerformanceTable from '@/components/PerformanceTable';
+import AlertsList from '@/components/AlertsList';
 import {
   GSCAnalyticsData,
   GSCQueryRow,
   KeywordComparison,
   GSCAnalyticsSummary,
+  WeeklyReport,
 } from '@/types';
 
 interface AnalysisInfo {
@@ -125,6 +128,55 @@ function SummaryCard({ label, value, subtitle }: { label: string; value: string;
   );
 }
 
+function WeeklySummaryCard({
+  label,
+  value,
+  change,
+  format,
+}: {
+  label: string;
+  value: number;
+  change: number | null;
+  format?: 'number' | 'position' | 'percent';
+}) {
+  const fmt = format ?? 'number';
+  let display: string;
+  if (fmt === 'percent') {
+    display = `${(value * 100).toFixed(1)}%`;
+  } else if (fmt === 'position') {
+    display = value.toFixed(1);
+  } else {
+    display = value.toLocaleString();
+  }
+
+  let changeDisplay: React.ReactNode = null;
+  if (change !== null && change !== 0) {
+    const isGood = fmt === 'position' ? change < 0 : change > 0;
+    const color = isGood ? '#34d399' : '#f87171';
+    const arrow = isGood ? '↑' : '↓';
+    const displayVal = fmt === 'percent'
+      ? `${(Math.abs(change) * 100).toFixed(1)}%`
+      : Math.abs(change).toLocaleString();
+    changeDisplay = (
+      <span className="text-sm ml-2" style={{ color }}>
+        {arrow} {displayVal}
+      </span>
+    );
+  }
+
+  return (
+    <div className="card-static p-4">
+      <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <p className="text-xl font-display" style={{ color: 'var(--text-primary)' }}>
+        {display}
+        {changeDisplay}
+      </p>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const params = useParams();
   const ideaId = params.id as string;
@@ -139,6 +191,13 @@ export default function AnalyticsPage() {
   const [linking, setLinking] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [gscConfigured, setGscConfigured] = useState(true);
+
+  // Weekly report state
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
+  const [availableWeeks, setAvailableWeeks] = useState<string[]>([]);
+  const [selectedWeek, setSelectedWeek] = useState<string>('');
+  const [reportLoading, setReportLoading] = useState(true);
+  const [runningReport, setRunningReport] = useState(false);
 
   // Fetch analysis info (name + SEO data) and GSC link status
   useEffect(() => {
@@ -245,6 +304,79 @@ export default function AnalyticsPage() {
       setRefreshing(false);
     }
   }, [ideaId]);
+
+  // Fetch weekly report data
+  const fetchWeeklyReport = useCallback(async (week?: string) => {
+    setReportLoading(true);
+    try {
+      const url = week
+        ? `/api/analytics/report?week=${encodeURIComponent(week)}`
+        : '/api/analytics/report';
+      const res = await fetch(url);
+      if (res.status === 404) {
+        const data = await res.json();
+        setWeeklyReport(null);
+        setAvailableWeeks(data.availableWeeks || []);
+        return;
+      }
+      if (!res.ok) return;
+      const data = await res.json();
+      setWeeklyReport(data.report);
+      setAvailableWeeks(data.availableWeeks || []);
+      if (!week) setSelectedWeek(data.report.weekId);
+    } catch {
+      // silently fail — GSC data is the primary source
+    } finally {
+      setReportLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWeeklyReport();
+  }, [fetchWeeklyReport]);
+
+  async function handleRunReport() {
+    setRunningReport(true);
+    try {
+      const res = await fetch('/api/cron/analytics', { method: 'POST' });
+      if (res.ok) await fetchWeeklyReport();
+    } catch {
+      // silently fail
+    } finally {
+      setRunningReport(false);
+    }
+  }
+
+  function handleWeekChange(week: string) {
+    setSelectedWeek(week);
+    fetchWeeklyReport(week);
+  }
+
+  // Filter weekly report pieces to this idea
+  const ideaPieces = weeklyReport?.pieces.filter((p) => p.ideaId === ideaId) ?? [];
+  const ideaAlerts = weeklyReport?.alerts.filter((a) => {
+    // Match alerts to this idea's pieces by slug
+    const ideaSlugs = new Set(ideaPieces.map((p) => p.slug));
+    return ideaSlugs.has(a.pieceSlug);
+  }) ?? [];
+
+  // Compute per-idea summary from weekly report
+  const ideaSummary = ideaPieces.length > 0
+    ? {
+        totalClicks: ideaPieces.reduce((sum, p) => sum + p.current.clicks, 0),
+        totalImpressions: ideaPieces.reduce((sum, p) => sum + p.current.impressions, 0),
+        averagePosition: Math.round((ideaPieces.reduce((sum, p) => sum + p.current.position, 0) / ideaPieces.length) * 10) / 10,
+        averageCtr: ideaPieces.reduce((sum, p) => sum + p.current.impressions, 0) > 0
+          ? Math.round((ideaPieces.reduce((sum, p) => sum + p.current.clicks, 0) / ideaPieces.reduce((sum, p) => sum + p.current.impressions, 0)) * 10000) / 10000
+          : 0,
+        clicksChange: ideaPieces.some((p) => p.clicksChange !== null)
+          ? ideaPieces.reduce((sum, p) => sum + (p.clicksChange ?? 0), 0)
+          : null as number | null,
+        impressionsChange: ideaPieces.some((p) => p.impressionsChange !== null)
+          ? ideaPieces.reduce((sum, p) => sum + (p.impressionsChange ?? 0), 0)
+          : null as number | null,
+      }
+    : null;
 
   // Build keyword comparisons
   const predictedKeywords = analysisInfo?.seoData?.synthesis?.topKeywords || [];
@@ -599,6 +731,127 @@ export default function AnalyticsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Weekly Report — Per-Piece Performance */}
+      {!reportLoading && ideaPieces.length > 0 && ideaSummary && (
+        <>
+          {/* Divider between GSC and weekly report sections */}
+          <div className="pt-2">
+            <div style={{ borderTop: '1px solid var(--border-default)' }} />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-lg font-display flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20V10" />
+                <path d="M18 20V4" />
+                <path d="M6 20v-4" />
+              </svg>
+              Weekly Performance
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {availableWeeks.length > 0 && (
+                <select
+                  value={selectedWeek}
+                  onChange={(e) => handleWeekChange(e.target.value)}
+                  className="input text-sm"
+                  style={{ width: 'auto', padding: '0.5rem 0.75rem' }}
+                >
+                  {availableWeeks.map((w) => (
+                    <option key={w} value={w}>{w}</option>
+                  ))}
+                </select>
+              )}
+              <button
+                onClick={handleRunReport}
+                disabled={runningReport}
+                className="btn btn-ghost text-sm"
+              >
+                {runningReport ? (
+                  <>
+                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Running...
+                  </>
+                ) : (
+                  'Run Report'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Weekly Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <WeeklySummaryCard
+              label="Weekly Clicks"
+              value={ideaSummary.totalClicks}
+              change={ideaSummary.clicksChange}
+            />
+            <WeeklySummaryCard
+              label="Weekly Impressions"
+              value={ideaSummary.totalImpressions}
+              change={ideaSummary.impressionsChange}
+            />
+            <WeeklySummaryCard
+              label="Avg Position"
+              value={ideaSummary.averagePosition}
+              change={null}
+              format="position"
+            />
+            <WeeklySummaryCard
+              label="Avg CTR"
+              value={ideaSummary.averageCtr}
+              change={null}
+              format="percent"
+            />
+          </div>
+
+          {/* Alerts for this idea */}
+          {ideaAlerts.length > 0 && (
+            <section>
+              <h3 className="text-base font-display mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                Alerts
+              </h3>
+              <AlertsList alerts={ideaAlerts} />
+            </section>
+          )}
+
+          {/* Per-Piece Performance Table */}
+          <section>
+            <h3 className="text-base font-display mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-violet)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              Per-Piece Performance
+            </h3>
+            <PerformanceTable pieces={ideaPieces} />
+          </section>
+
+          {/* Report metadata */}
+          <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+            Report for week {weeklyReport!.weekId} — generated {new Date(weeklyReport!.generatedAt).toLocaleString()}
+          </p>
+        </>
+      )}
+
+      {/* No weekly report data prompt */}
+      {!reportLoading && ideaPieces.length === 0 && !weeklyReport && (
+        <div className="card-static p-6 text-center">
+          <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+            No weekly performance report yet. Run the analytics agent to track per-piece performance.
+          </p>
+          <button onClick={handleRunReport} disabled={runningReport} className="btn btn-ghost text-sm">
+            {runningReport ? 'Running...' : 'Run Report'}
+          </button>
+        </div>
       )}
     </div>
   );

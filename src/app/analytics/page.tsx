@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { WeeklyReport } from '@/types';
 import PerformanceTable from '@/components/PerformanceTable';
 import AlertsList from '@/components/AlertsList';
@@ -66,10 +67,10 @@ interface ProgramOption {
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [availableWeeks, setAvailableWeeks] = useState<string[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
-  const [selectedProgram, setSelectedProgram] = useState<string>('all');
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -138,33 +139,16 @@ export default function AnalyticsPage() {
     fetchReport(week);
   }
 
-  // Filter report data by selected program
-  const filteredReport = report && selectedProgram !== 'all'
-    ? {
-        ...report,
-        pieces: report.pieces.filter((p) => p.ideaId === selectedProgram),
-      }
-    : report;
+  function handleProgramChange(value: string) {
+    if (value !== 'all') {
+      // Navigate to the per-idea analytics page
+      router.push(`/analyses/${value}/analytics`);
+      return;
+    }
+  }
 
-  // Recompute summary for filtered data
-  const filteredSummary = filteredReport && selectedProgram !== 'all'
-    ? {
-        totalClicks: filteredReport.pieces.reduce((sum, p) => sum + p.current.clicks, 0),
-        totalImpressions: filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0),
-        averagePosition: filteredReport.pieces.length > 0
-          ? Math.round((filteredReport.pieces.reduce((sum, p) => sum + p.current.position, 0) / filteredReport.pieces.length) * 10) / 10
-          : 0,
-        averageCtr: filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0) > 0
-          ? Math.round((filteredReport.pieces.reduce((sum, p) => sum + p.current.clicks, 0) / filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0)) * 10000) / 10000
-          : 0,
-        clicksChange: filteredReport.pieces.some((p) => p.clicksChange !== null)
-          ? filteredReport.pieces.reduce((sum, p) => sum + (p.clicksChange ?? 0), 0)
-          : null,
-        impressionsChange: filteredReport.pieces.some((p) => p.impressionsChange !== null)
-          ? filteredReport.pieces.reduce((sum, p) => sum + (p.impressionsChange ?? 0), 0)
-          : null,
-      }
-    : filteredReport?.siteSummary ?? null;
+  const filteredReport = report;
+  const filteredSummary = filteredReport?.siteSummary ?? null;
 
   return (
     <div className="space-y-8">
@@ -178,8 +162,8 @@ export default function AnalyticsPage() {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {programs.length > 1 && (
               <select
-                value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
+                value="all"
+                onChange={(e) => handleProgramChange(e.target.value)}
                 className="input text-sm flex-1 sm:flex-none min-w-0"
                 style={{ width: 'auto', padding: '0.5rem 0.75rem' }}
               >
