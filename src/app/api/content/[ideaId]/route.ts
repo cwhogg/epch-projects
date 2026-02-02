@@ -75,21 +75,18 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { targetId } = body;
-
-    if (!targetId) {
-      return NextResponse.json({ error: 'targetId is required' }, { status: 400 });
-    }
+    const { targetId, active } = body;
 
     const calendar = await getContentCalendar(ideaId);
     if (!calendar) {
       return NextResponse.json({ error: 'Calendar not found' }, { status: 404 });
     }
 
-    calendar.targetId = targetId;
+    if (targetId !== undefined) calendar.targetId = targetId;
+    if (active !== undefined) calendar.active = active;
     await saveContentCalendar(ideaId, calendar);
 
-    return NextResponse.json({ ok: true, targetId });
+    return NextResponse.json({ ok: true, targetId: calendar.targetId, active: calendar.active });
   } catch (error) {
     console.error('Failed to update calendar target:', error);
     return NextResponse.json({ error: 'Failed to update target' }, { status: 500 });

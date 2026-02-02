@@ -28,6 +28,9 @@ export async function findNextPiecePerTarget(): Promise<Map<string, PipelineCand
   const candidatesByTarget = new Map<string, PipelineCandidate[]>();
 
   for (const calendar of calendars) {
+    // Skip inactive calendars
+    if (calendar.active === false) continue;
+
     const targetId = calendar.targetId || 'secondlook';
     const generatedPieces = await getContentPieces(calendar.ideaId);
     const generatedMap = new Map(generatedPieces.map((p) => [p.id, p]));

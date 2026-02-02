@@ -3,10 +3,11 @@ import { getLeaderboard, getAnalyses } from '@/lib/data';
 import { getLeaderboardFromDb, getAnalysesFromDb, getAllGSCLinks, getAllContentCalendars, getPublishedPieces, isRedisConfigured } from '@/lib/db';
 import { Analysis, LeaderboardEntry, ContentCalendar } from '@/types';
 import { PUBLISH_TARGETS } from '@/lib/publish-targets';
+import ProgramToggleButton from '@/components/ProgramToggleButton';
 
 export const dynamic = 'force-dynamic';
 
-async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string>; activePrograms: (ContentCalendar & { publishedCount: number; siteName: string })[] }> {
+async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string>; programs: (ContentCalendar & { publishedCount: number; siteName: string })[] }> {
   if (isRedisConfigured()) {
     const [leaderboard, analyses, gscLinks, calendars, publishedKeys] = await Promise.all([
       getLeaderboardFromDb(),
@@ -16,19 +17,19 @@ async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: A
       getPublishedPieces(),
     ]);
     const publishedSet = new Set(publishedKeys);
-    const activePrograms = calendars.map((cal) => {
+    const programs = calendars.map((cal) => {
       const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
       const target = PUBLISH_TARGETS[cal.targetId || 'secondlook'];
       const siteName = target ? target.siteUrl.replace('https://', '') : cal.targetId || 'secondlook';
       return { ...cal, publishedCount, siteName };
     });
-    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)), activePrograms };
+    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)), programs };
   }
   return {
     leaderboard: getLeaderboard(),
     analyses: getAnalyses(),
     gscLinkedIds: new Set(),
-    activePrograms: [],
+    programs: [],
   };
 }
 
@@ -118,7 +119,7 @@ function ScoreRing({ score, label, size = 56 }: { score: number | null; label: s
 }
 
 export default async function Home() {
-  const { leaderboard, analyses: rawAnalyses, gscLinkedIds, activePrograms } = await getData();
+  const { leaderboard, analyses: rawAnalyses, gscLinkedIds, programs } = await getData();
   const analyses = [...rawAnalyses].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   );
@@ -143,44 +144,51 @@ export default async function Home() {
         </p>
       </header>
 
-      {/* Active Programs */}
-      {activePrograms.length > 0 && (
+      {/* Programs */}
+      {programs.length > 0 && (
         <section className="animate-slide-up stagger-2">
           <h2 className="text-lg font-display mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            Active Programs
+            Content Programs
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {activePrograms.map((program) => (
-              <div
-                key={program.ideaId}
-                className="card-static p-4 flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                    {program.ideaName}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
-                      {program.publishedCount}/{program.pieces.length} published
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {program.siteName}
-                    </span>
+            {programs.map((program) => {
+              const isActive = program.active !== false;
+              return (
+                <div
+                  key={program.ideaId}
+                  className="card-static p-4 flex items-center justify-between gap-3"
+                  style={{ opacity: isActive ? 1 : 0.5 }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                      {program.ideaName}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: isActive ? 'rgba(52, 211, 153, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: isActive ? '#34d399' : '#9ca3af' }}>
+                        {isActive ? `${program.publishedCount}/${program.pieces.length} published` : 'Paused'}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {program.siteName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/analyses/${program.ideaId}/analytics`}
+                      className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                      style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                    >
+                      Analytics
+                    </Link>
+                    <ProgramToggleButton ideaId={program.ideaId} active={isActive} />
                   </div>
                 </div>
-                <Link
-                  href={`/analyses/${program.ideaId}/analytics`}
-                  className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                  style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
-                >
-                  Analytics
-                </Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
