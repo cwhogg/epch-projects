@@ -13,6 +13,7 @@ interface ContentCalendarCardProps {
   onReject?: (pieceId: string, reason?: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  queueRank?: number;
   disabled?: boolean;
   published?: boolean;
 }
@@ -44,7 +45,7 @@ function StatusBadge({ status, published }: { status: ContentPiece['status']; pu
   );
 }
 
-export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, onReject, onMoveUp, onMoveDown, disabled, published }: ContentCalendarCardProps) {
+export default function ContentCalendarCard({ piece, analysisId, selected, onToggle, onReject, onMoveUp, onMoveDown, queueRank, disabled, published }: ContentCalendarCardProps) {
   const isComplete = piece.status === 'complete';
   const isGenerating = piece.status === 'generating';
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -184,9 +185,11 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
             </div>
           )}
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-display font-semibold" style={{ color: 'var(--accent-coral)' }}>
-              #{piece.priority}
-            </span>
+            {queueRank !== undefined && (
+              <span className="text-xs font-display font-semibold" style={{ color: 'var(--accent-coral)' }}>
+                #{queueRank}
+              </span>
+            )}
             <ContentTypeBadge type={piece.type} />
             <StatusBadge status={piece.status} published={published} />
           </div>
