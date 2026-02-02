@@ -29,14 +29,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST — Manual trigger from dashboard (no auth check)
-export async function POST() {
+// POST — Manual trigger from dashboard/content page (no auth check)
+// Accepts optional { ideaId } to scope publish to a single project
+export async function POST(request: NextRequest) {
   if (!isRedisConfigured()) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
   try {
-    const result = await runPublishPipeline();
+    let ideaId: string | undefined;
+    try {
+      const body = await request.json();
+      ideaId = body.ideaId;
+    } catch {
+      // No body — publish globally (cron-style)
+    }
+
+    const result = await runPublishPipeline(ideaId);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Manual publish failed:', error);

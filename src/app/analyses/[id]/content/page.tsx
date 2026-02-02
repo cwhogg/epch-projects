@@ -61,7 +61,11 @@ export default function ContentCalendarPage() {
     setPublishing(true);
     setPublishResult(null);
     try {
-      const res = await fetch('/api/cron/publish', { method: 'POST' });
+      const res = await fetch('/api/cron/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ideaId: analysisId }),
+      });
       const data = await res.json();
       setPublishResult(data.detail || data.action);
       // Refresh published keys

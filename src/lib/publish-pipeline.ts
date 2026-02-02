@@ -20,8 +20,9 @@ export interface PipelineCandidate {
  * Find the next unpublished piece for each target site.
  * Returns one candidate per target so each site gets published to independently.
  */
-export async function findNextPiecePerTarget(): Promise<Map<string, PipelineCandidate>> {
-  const calendars = await getAllContentCalendars();
+export async function findNextPiecePerTarget(ideaId?: string): Promise<Map<string, PipelineCandidate>> {
+  const allCalendars = await getAllContentCalendars();
+  const calendars = ideaId ? allCalendars.filter((c) => c.ideaId === ideaId) : allCalendars;
   if (calendars.length === 0) return new Map();
 
   // Group candidates by target site
@@ -174,9 +175,9 @@ async function publishCandidate(candidate: PipelineCandidate): Promise<PipelineR
   return result;
 }
 
-export async function runPublishPipeline(): Promise<MultiPipelineResult> {
+export async function runPublishPipeline(ideaId?: string): Promise<MultiPipelineResult> {
   try {
-    const candidatesByTarget = await findNextPiecePerTarget();
+    const candidatesByTarget = await findNextPiecePerTarget(ideaId);
 
     if (candidatesByTarget.size === 0) {
       await addPublishLogEntry({
