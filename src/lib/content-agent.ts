@@ -19,7 +19,6 @@ import {
   buildCalendarPrompt,
   buildAppendCalendarPrompt,
   buildBlogPostPrompt,
-  buildLandingPagePrompt,
   buildComparisonPrompt,
   buildFAQPrompt,
 } from './content-prompts';
@@ -146,7 +145,7 @@ export async function generateContentCalendar(ideaId: string, targetId?: string)
     }
   }
 
-  const validTypes: ContentType[] = ['blog-post', 'landing-page', 'comparison', 'faq'];
+  const validTypes: ContentType[] = ['blog-post', 'comparison', 'faq'];
 
   const pieces: ContentPiece[] = parsed.pieces.map((p, index) => ({
     id: `${ideaId}-piece-${index}`,
@@ -244,7 +243,7 @@ export async function appendNewPieces(ideaId: string, targetId?: string, userFee
     }
   }
 
-  const validTypes: ContentType[] = ['blog-post', 'landing-page', 'comparison', 'faq'];
+  const validTypes: ContentType[] = ['blog-post', 'comparison', 'faq'];
 
   const newPieces: ContentPiece[] = parsed.pieces.slice(0, 3).map((p, i) => ({
     id: `${ideaId}-piece-${maxIndex + i}`,
@@ -375,9 +374,6 @@ export async function generateSinglePiece(ctx: ContentContext, piece: ContentPie
     case 'blog-post':
       prompt = buildBlogPostPrompt(ctx, piece);
       break;
-    case 'landing-page':
-      prompt = buildLandingPagePrompt(ctx, piece);
-      break;
     case 'comparison':
       prompt = buildComparisonPrompt(ctx, piece);
       break;
@@ -421,8 +417,6 @@ function getFilename(piece: ContentPiece): string {
   switch (piece.type) {
     case 'blog-post':
       return `blog-${piece.slug}.md`;
-    case 'landing-page':
-      return `landing-page.md`;
     case 'comparison':
       return `comparison-${piece.slug}.md`;
     case 'faq':

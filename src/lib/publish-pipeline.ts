@@ -43,6 +43,9 @@ export async function findNextPiecePerTarget(): Promise<Map<string, PipelineCand
 
       if (piece.status === 'generating') continue;
 
+      // Skip deprecated landing-page type
+      if ((piece.type as string) === 'landing-page') continue;
+
       if (!candidatesByTarget.has(targetId)) {
         candidatesByTarget.set(targetId, []);
       }

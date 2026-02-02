@@ -18,7 +18,6 @@ export const PUBLISH_TARGETS: Record<string, PublishTarget> = {
     siteUrl: 'https://secondlook.vercel.app',
     pathMap: {
       'blog-post': 'content/blog',
-      'landing-page': 'content/landing-page',
       'comparison': 'content/comparison',
       'faq': 'content/faq',
     },
@@ -31,7 +30,6 @@ export const PUBLISH_TARGETS: Record<string, PublishTarget> = {
     siteUrl: 'https://nofone.us',
     pathMap: {
       'blog-post': 'content/blog',
-      'landing-page': 'content/landing-page',
       'comparison': 'content/comparison',
       'faq': 'content/faq',
     },

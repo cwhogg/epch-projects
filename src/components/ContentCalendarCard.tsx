@@ -17,48 +17,30 @@ interface ContentCalendarCardProps {
   published?: boolean;
 }
 
-function StatusBadge({ status }: { status: ContentPiece['status'] }) {
-  const styles: Record<string, { bg: string; color: string; label: string }> = {
-    pending: { bg: 'var(--bg-elevated)', color: 'var(--text-muted)', label: 'Pending' },
-    generating: { bg: 'rgba(255, 107, 91, 0.15)', color: 'var(--accent-coral)', label: 'Generating...' },
-    complete: { bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399', label: 'Complete' },
-    error: { bg: 'rgba(248, 113, 113, 0.15)', color: '#f87171', label: 'Error' },
-  };
-  const s = styles[status] || styles.pending;
+function StatusBadge({ status, published }: { status: ContentPiece['status']; published?: boolean }) {
+  let bg: string;
+  let color: string;
+  let label: string;
+
+  if (published) {
+    bg = 'rgba(96, 165, 250, 0.15)'; color = '#60a5fa'; label = 'Published';
+  } else if (status === 'complete') {
+    bg = 'rgba(52, 211, 153, 0.15)'; color = '#34d399'; label = 'Generated';
+  } else if (status === 'generating') {
+    bg = 'rgba(255, 107, 91, 0.15)'; color = 'var(--accent-coral)'; label = 'Generating...';
+  } else if (status === 'error') {
+    bg = 'rgba(248, 113, 113, 0.15)'; color = '#f87171'; label = 'Error';
+  } else {
+    bg = 'var(--bg-elevated)'; color = 'var(--text-muted)'; label = 'Not Generated';
+  }
+
   return (
     <span
       className="text-xs px-2 py-0.5 rounded-full"
-      style={{ background: s.bg, color: s.color }}
+      style={{ background: bg, color }}
     >
-      {s.label}
+      {label}
     </span>
-  );
-}
-
-function PublishedBadge({ slug, type }: { slug: string; type: string }) {
-  const pathMap: Record<string, string> = {
-    'blog-post': 'blog',
-    'landing-page': 'landing-page',
-    'comparison': 'comparison',
-    'faq': 'faq',
-  };
-  const dir = pathMap[type] || type;
-  const liveUrl = `https://secondlook.vercel.app/${dir}/${slug}`;
-  return (
-    <a
-      href={liveUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 transition-opacity hover:opacity-80"
-      style={{ background: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa' }}
-    >
-      Published
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" y1="14" x2="21" y2="3" />
-      </svg>
-    </a>
   );
 }
 
@@ -206,8 +188,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
               #{piece.priority}
             </span>
             <ContentTypeBadge type={piece.type} />
-            <StatusBadge status={piece.status} />
-            {published && <PublishedBadge slug={piece.slug} type={piece.type} />}
+            <StatusBadge status={piece.status} published={published} />
           </div>
 
           <h3 className="text-sm font-medium mb-1">

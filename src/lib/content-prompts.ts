@@ -66,7 +66,6 @@ ${buildBaseContext(ctx)}
 
 Create a prioritized content calendar of 6-10 content pieces. Each piece should be one of these types:
 - blog-post: Target informational/commercial keywords, fill content gaps, 1500-3000 words
-- landing-page: Conversion copy — hero, problem, solution, differentiation, FAQ, CTA
 - comparison: Honest "X vs Y" using real competitor data, overview table, recommendation
 - faq: From People Also Ask + related searches, schema-friendly Q&A, 2000-3000 words
 
@@ -74,10 +73,9 @@ PRIORITIZATION RULES:
 1. Blog posts targeting SERP-validated content gaps (highest confidence — real data backs these)
 2. FAQ page from People Also Ask data (quick win, targets many long-tail queries)
 3. Comparison articles using competitor data + "X vs Y" keywords (high commercial intent)
-4. Landing page copy (conversion-focused, use after organic traffic grows)
 
 For each piece, provide:
-- type: one of blog-post, landing-page, comparison, faq
+- type: one of blog-post, comparison, faq
 - title: compelling, SEO-optimized title
 - slug: URL-friendly slug (e.g., "ultimate-guide-to-remote-patient-monitoring")
 - targetKeywords: array of 3-5 keywords this piece should target
@@ -140,45 +138,6 @@ wordCount: [actual word count]
 ---
 
 Write the complete blog post now. Output ONLY the markdown content starting with the YAML frontmatter.`;
-}
-
-export function buildLandingPagePrompt(ctx: ContentContext, piece: ContentPiece): string {
-  return `You are a CONVERSION COPYWRITER creating landing page copy for a B2B SaaS product.
-
-${buildBaseContext(ctx)}
-
-CONTENT PIECE BRIEF:
-- Title: ${piece.title}
-- Target Keywords: ${piece.targetKeywords.join(', ')}
-- Rationale: ${piece.rationale}
-
-INSTRUCTIONS:
-Write landing page copy in markdown with these sections:
-
-1. **Hero Section** — Compelling headline + subheadline + CTA. Address the core pain point immediately.
-2. **Problem Section** — Describe the problem in vivid, specific terms the target user recognizes
-3. **Solution Section** — How ${ctx.ideaName} solves it, with 3-4 key benefits
-4. **Differentiation Section** — Why ${ctx.ideaName} over alternatives. Use real competitor weaknesses:
-${ctx.competitors.substring(0, 1000)}
-5. **How It Works** — 3-4 simple steps
-6. **Social Proof / Trust Signals** — Placeholder for testimonials, metrics, logos
-7. **FAQ Section** — Use real People Also Ask questions:
-${ctx.serpValidated.flatMap((v) => v.peopleAlsoAsk).slice(0, 6).map((q) => `   - ${q}`).join('\n')}
-8. **Final CTA** — Strong close with urgency/value proposition
-
-YAML FRONTMATTER FORMAT:
----
-title: "${piece.title}"
-description: "[150-160 character SEO meta description highlighting the key benefit]"
-type: landing-page
-targetKeywords: [${piece.targetKeywords.map((k) => `"${k}"`).join(', ')}]
-generatedAt: "${new Date().toISOString()}"
-ideaName: "${ctx.ideaName}"
-status: draft
-wordCount: [actual word count]
----
-
-Write the complete landing page copy now. Output ONLY the markdown starting with YAML frontmatter.`;
 }
 
 export function buildComparisonPrompt(ctx: ContentContext, piece: ContentPiece): string {
@@ -301,7 +260,6 @@ ${userInstructions}
 
 Create exactly 3 NEW content pieces that complement the existing calendar. Each piece should be one of these types:
 - blog-post: Target informational/commercial keywords, fill content gaps, 1500-3000 words
-- landing-page: Conversion copy — hero, problem, solution, differentiation, FAQ, CTA
 - comparison: Honest "X vs Y" using real competitor data, overview table, recommendation
 - faq: From People Also Ask + related searches, schema-friendly Q&A, 2000-3000 words
 
@@ -312,7 +270,7 @@ CRITICAL RULES:
 4. Prioritize SERP-validated content gaps that aren't already covered
 
 For each piece, provide:
-- type: one of blog-post, landing-page, comparison, faq
+- type: one of blog-post, comparison, faq
 - title: compelling, SEO-optimized title
 - slug: URL-friendly slug
 - targetKeywords: array of 3-5 keywords this piece should target

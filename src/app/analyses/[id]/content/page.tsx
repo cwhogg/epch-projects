@@ -206,12 +206,14 @@ export default function ContentCalendarPage() {
   // Merge calendar pieces with completed piece data, sort pending first
   const getMergedPieces = (): ContentPiece[] => {
     if (!calendar) return [];
-    const merged = calendar.pieces.map((p) => {
-      const completed = completedPieces.find((cp) => cp.id === p.id);
-      // Use completed piece data but keep calendar's priority (user may have reordered)
-      if (completed) return { ...completed, priority: p.priority };
-      return p;
-    });
+    const merged = calendar.pieces
+      .filter((p) => (p.type as string) !== 'landing-page') // skip deprecated type
+      .map((p) => {
+        const completed = completedPieces.find((cp) => cp.id === p.id);
+        // Use completed piece data but keep calendar's priority (user may have reordered)
+        if (completed) return { ...completed, priority: p.priority };
+        return p;
+      });
     // Sort: pending/error first, then complete (not published), then published
     return merged.sort((a, b) => {
       const rank = (p: ContentPiece) => {

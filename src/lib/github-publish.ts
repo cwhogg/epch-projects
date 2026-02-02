@@ -5,8 +5,6 @@ function getFilename(type: ContentType, slug: string): string {
   switch (type) {
     case 'blog-post':
       return `blog-${slug}.md`;
-    case 'landing-page':
-      return `landing-page-${slug}.md`;
     case 'comparison':
       return `comparison-${slug}.md`;
     case 'faq':
@@ -28,7 +26,6 @@ export function enrichFrontmatter(
 ): string {
   const typeToPath: Record<ContentType, string> = {
     'blog-post': '/blog',
-    'landing-page': '/resources',
     'comparison': '/compare',
     'faq': '/faq',
   };

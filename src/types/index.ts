@@ -48,7 +48,7 @@ export interface LeaderboardEntry {
 
 // Content Agent Types
 
-export type ContentType = 'blog-post' | 'landing-page' | 'comparison' | 'faq';
+export type ContentType = 'blog-post' | 'comparison' | 'faq';
 
 export interface ContentPiece {
   id: string;

@@ -6,11 +6,6 @@ const icons: Record<ContentType, { path: string; color: string; label: string }>
     color: '#818cf8',
     label: 'Blog Post',
   },
-  'landing-page': {
-    path: 'M3 3h18v18H3V3zm2 2v14h14V5H5zm2 2h10v3H7V7zm0 5h4v5H7v-5zm6 0h4v2h-4v-2zm0 3h4v2h-4v-2z',
-    color: '#34d399',
-    label: 'Landing Page',
-  },
   comparison: {
     path: 'M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4V3zm6 0h4a2 2 0 012 2v14a2 2 0 01-2 2h-4V3zm-2 0h-2v18h2V3z',
     color: '#fbbf24',
