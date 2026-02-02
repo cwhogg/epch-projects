@@ -60,13 +60,28 @@ function SummaryCard({
   );
 }
 
+interface ProgramOption {
+  ideaId: string;
+  ideaName: string;
+}
+
 export default function AnalyticsPage() {
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [availableWeeks, setAvailableWeeks] = useState<string[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
+  const [selectedProgram, setSelectedProgram] = useState<string>('all');
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch program list for the filter
+  useEffect(() => {
+    fetch('/api/content/programs')
+      .then((res) => res.ok ? res.json() : [])
+      .then((data: ProgramOption[]) => setPrograms(data))
+      .catch(() => {});
+  }, []);
 
   const fetchReport = useCallback(async (week?: string) => {
     setLoading(true);
@@ -123,6 +138,34 @@ export default function AnalyticsPage() {
     fetchReport(week);
   }
 
+  // Filter report data by selected program
+  const filteredReport = report && selectedProgram !== 'all'
+    ? {
+        ...report,
+        pieces: report.pieces.filter((p) => p.ideaId === selectedProgram),
+      }
+    : report;
+
+  // Recompute summary for filtered data
+  const filteredSummary = filteredReport && selectedProgram !== 'all'
+    ? {
+        totalClicks: filteredReport.pieces.reduce((sum, p) => sum + p.current.clicks, 0),
+        totalImpressions: filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0),
+        averagePosition: filteredReport.pieces.length > 0
+          ? Math.round((filteredReport.pieces.reduce((sum, p) => sum + p.current.position, 0) / filteredReport.pieces.length) * 10) / 10
+          : 0,
+        averageCtr: filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0) > 0
+          ? Math.round((filteredReport.pieces.reduce((sum, p) => sum + p.current.clicks, 0) / filteredReport.pieces.reduce((sum, p) => sum + p.current.impressions, 0)) * 10000) / 10000
+          : 0,
+        clicksChange: filteredReport.pieces.some((p) => p.clicksChange !== null)
+          ? filteredReport.pieces.reduce((sum, p) => sum + (p.clicksChange ?? 0), 0)
+          : null,
+        impressionsChange: filteredReport.pieces.some((p) => p.impressionsChange !== null)
+          ? filteredReport.pieces.reduce((sum, p) => sum + (p.impressionsChange ?? 0), 0)
+          : null,
+      }
+    : filteredReport?.siteSummary ?? null;
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -133,6 +176,19 @@ export default function AnalyticsPage() {
               Analytics
             </h1>
             <div className="flex items-center gap-3 shrink-0">
+            {programs.length > 1 && (
+              <select
+                value={selectedProgram}
+                onChange={(e) => setSelectedProgram(e.target.value)}
+                className="input text-sm"
+                style={{ width: 'auto', padding: '0.5rem 0.75rem' }}
+              >
+                <option value="all">All Programs</option>
+                {programs.map((p) => (
+                  <option key={p.ideaId} value={p.ideaId}>{p.ideaName}</option>
+                ))}
+              </select>
+            )}
             {availableWeeks.length > 0 && (
               <select
                 value={selectedWeek}
@@ -207,30 +263,30 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {report && (
+      {filteredReport && filteredSummary && (
         <>
           {/* Summary Cards */}
           <section className="animate-slide-up stagger-2">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <SummaryCard
                 label="Total Clicks"
-                value={report.siteSummary.totalClicks}
-                change={report.siteSummary.clicksChange}
+                value={filteredSummary.totalClicks}
+                change={filteredSummary.clicksChange}
               />
               <SummaryCard
                 label="Impressions"
-                value={report.siteSummary.totalImpressions}
-                change={report.siteSummary.impressionsChange}
+                value={filteredSummary.totalImpressions}
+                change={filteredSummary.impressionsChange}
               />
               <SummaryCard
                 label="Avg Position"
-                value={report.siteSummary.averagePosition}
+                value={filteredSummary.averagePosition}
                 change={null}
                 format="position"
               />
               <SummaryCard
                 label="Avg CTR"
-                value={report.siteSummary.averageCtr}
+                value={filteredSummary.averageCtr}
                 change={null}
                 format="percent"
               />
@@ -238,7 +294,7 @@ export default function AnalyticsPage() {
           </section>
 
           {/* Alerts */}
-          {report.alerts.length > 0 && (
+          {filteredReport.alerts.length > 0 && (
             <section className="animate-slide-up stagger-3">
               <h2 className="text-lg font-display mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -248,7 +304,7 @@ export default function AnalyticsPage() {
                 </svg>
                 Alerts
               </h2>
-              <AlertsList alerts={report.alerts} />
+              <AlertsList alerts={filteredReport.alerts} />
             </section>
           )}
 
@@ -262,11 +318,11 @@ export default function AnalyticsPage() {
               </svg>
               Per-Piece Performance
             </h2>
-            <PerformanceTable pieces={report.pieces} />
+            <PerformanceTable pieces={filteredReport.pieces} />
           </section>
 
           {/* Unmatched Pages */}
-          {report.unmatchedPages.length > 0 && (
+          {filteredReport.unmatchedPages.length > 0 && (
             <section className="animate-slide-up stagger-5">
               <h2 className="text-lg font-display mb-4" style={{ color: 'var(--text-primary)' }}>
                 Unmatched Pages
@@ -287,7 +343,7 @@ export default function AnalyticsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.unmatchedPages.map((page, i) => (
+                    {filteredReport.unmatchedPages.map((page, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <td className="px-4 py-2 truncate max-w-xs" style={{ color: 'var(--text-secondary)' }}>
                           {page.query}
@@ -308,7 +364,7 @@ export default function AnalyticsPage() {
 
           {/* Report metadata */}
           <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-            Report for week {report.weekId} — generated {new Date(report.generatedAt).toLocaleString()}
+            Report for week {filteredReport.weekId} — generated {new Date(filteredReport.generatedAt).toLocaleString()}
           </p>
         </>
       )}
