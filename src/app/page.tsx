@@ -26,15 +26,19 @@ async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: A
       publishedByTarget.set(targetId, (publishedByTarget.get(targetId) || 0) + count);
     }
 
-    // Only show active programs, with aggregated published count from all calendars sharing the same target
+    // Show all programs, active first then paused
     const programs = calendars
-      .filter((cal) => cal.active !== false)
       .map((cal) => {
         const targetId = cal.targetId || 'secondlook';
         const publishedCount = publishedByTarget.get(targetId) || 0;
         const target = PUBLISH_TARGETS[targetId];
         const siteName = target ? target.siteUrl.replace('https://', '') : targetId;
         return { ...cal, publishedCount, siteName };
+      })
+      .sort((a, b) => {
+        const aActive = a.active !== false ? 0 : 1;
+        const bActive = b.active !== false ? 0 : 1;
+        return aActive - bActive;
       });
     return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)), programs };
   }
@@ -168,36 +172,46 @@ export default async function Home() {
             Content Programs
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {programs.map((program) => (
-              <div
-                key={program.ideaId}
-                className="card-static p-4 flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                    {program.ideaName}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
-                      {program.publishedCount} published
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {program.siteName}
-                    </span>
+            {programs.map((program) => {
+              const isActive = program.active !== false;
+              return (
+                <div
+                  key={program.ideaId}
+                  className="card-static p-4 flex items-center justify-between gap-3"
+                  style={{ opacity: isActive ? 1 : 0.5 }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                      {program.ideaName}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      {isActive ? (
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                          {program.publishedCount} published
+                        </span>
+                      ) : (
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(113, 113, 122, 0.15)', color: 'var(--text-muted)' }}>
+                          Paused
+                        </span>
+                      )}
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {program.siteName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/analyses/${program.ideaId}/analytics`}
+                      className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                      style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                    >
+                      Analytics
+                    </Link>
+                    <ProgramToggleButton ideaId={program.ideaId} active={isActive} />
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Link
-                    href={`/analyses/${program.ideaId}/analytics`}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                    style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
-                  >
-                    Analytics
-                  </Link>
-                  <ProgramToggleButton ideaId={program.ideaId} active={true} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
