@@ -37,7 +37,9 @@ export async function findNextPiecePerTarget(ideaId?: string): Promise<Map<strin
     const generatedMap = new Map(generatedPieces.map((p) => [p.id, p]));
 
     for (const calendarPiece of calendar.pieces) {
-      const piece = generatedMap.get(calendarPiece.id) || calendarPiece;
+      const generated = generatedMap.get(calendarPiece.id);
+      // Use generated piece data but keep calendar's priority (user may have reordered)
+      const piece = generated ? { ...generated, priority: calendarPiece.priority } : calendarPiece;
 
       const published = await isPiecePublished(calendar.ideaId, piece.id);
       if (published) continue;
