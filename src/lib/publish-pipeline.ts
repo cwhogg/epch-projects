@@ -137,7 +137,7 @@ async function publishCandidate(candidate: PipelineCandidate): Promise<PipelineR
   }
 
   const targetId = calendar.targetId || 'secondlook';
-  const target = getPublishTarget(targetId);
+  const target = await getPublishTarget(targetId);
 
   const commitMessage = `Publish: ${piece.title} (${piece.type})`;
   const commitResult = await commitToRepo(

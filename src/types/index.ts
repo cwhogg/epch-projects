@@ -163,6 +163,65 @@ export interface GSCAnalyticsSummary {
   unpredictedQueries: GSCQueryRow[];
 }
 
+// Painted Door (Website Agent) Types
+
+export interface BrandIdentity {
+  siteName: string;
+  tagline: string;
+  seoDescription: string;
+  targetDemographic: string;
+  voice: { tone: string; personality: string; examples: string[] };
+  colors: {
+    primary: string;
+    primaryLight: string;
+    background: string;
+    backgroundElevated: string;
+    textPrimary: string;
+    textSecondary: string;
+    textMuted: string;
+    accent: string;
+    border: string;
+  };
+  typography: { headingFont: string; bodyFont: string; monoFont: string };
+  landingPage: {
+    heroHeadline: string;
+    heroSubheadline: string;
+    ctaText: string;
+    valueProps: { title: string; description: string }[];
+    socialProofApproach: string;
+  };
+}
+
+export interface PaintedDoorSite {
+  id: string;
+  ideaId: string;
+  ideaName: string;
+  brand: BrandIdentity;
+  repoOwner: string;
+  repoName: string;
+  repoUrl: string;
+  siteUrl: string;
+  vercelProjectId: string;
+  status: 'generating' | 'pushing' | 'deploying' | 'live' | 'failed';
+  error?: string;
+  createdAt: string;
+  deployedAt?: string;
+  signupCount: number;
+}
+
+export interface PaintedDoorProgress {
+  ideaId: string;
+  status: 'pending' | 'running' | 'complete' | 'error';
+  currentStep: string;
+  steps: {
+    name: string;
+    status: 'pending' | 'running' | 'complete' | 'error';
+    detail?: string;
+  }[];
+  error?: string;
+  result?: PaintedDoorSite;
+}
+
 // Analytics Agent Types
 
 export interface PieceSnapshot {

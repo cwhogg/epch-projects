@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysis } from '@/lib/data';
 import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, isRedisConfigured } from '@/lib/db';
+import { getPaintedDoorSite } from '@/lib/painted-door-db';
 import MarkdownContent from '@/components/MarkdownContent';
 import ReanalyzeForm from '@/components/ReanalyzeForm';
 import DeleteButton from '@/components/DeleteButton';
@@ -29,17 +30,19 @@ interface AnalysisData {
   contentCalendarExists: boolean;
   contentPieceCount: number;
   hasGSCLink: boolean;
+  paintedDoorSite: { siteUrl: string; status: string } | null;
 }
 
 async function getAnalysisData(id: string): Promise<AnalysisData | null> {
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
     if (analysis) {
-      const [content, calendar, pieces, gscLink] = await Promise.all([
+      const [content, calendar, pieces, gscLink, pdSite] = await Promise.all([
         getAnalysisContent(id),
         getContentCalendar(id),
         getContentPieces(id),
         getGSCLink(id),
+        getPaintedDoorSite(id).catch(() => null),
       ]);
       return {
         analysis,
@@ -47,12 +50,13 @@ async function getAnalysisData(id: string): Promise<AnalysisData | null> {
         contentCalendarExists: !!calendar,
         contentPieceCount: pieces.filter((p) => p.status === 'complete').length,
         hasGSCLink: !!gscLink,
+        paintedDoorSite: pdSite ? { siteUrl: pdSite.siteUrl, status: pdSite.status } : null,
       };
     }
   }
   const fallback = getAnalysis(id);
   if (!fallback) return null;
-  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0, hasGSCLink: false };
+  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0, hasGSCLink: false, paintedDoorSite: null };
 }
 
 function getBadgeClass(rec: string) {
@@ -317,7 +321,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     notFound();
   }
 
-  const { analysis, content, contentCalendarExists, contentPieceCount, hasGSCLink } = result;
+  const { analysis, content, contentCalendarExists, contentPieceCount, hasGSCLink, paintedDoorSite } = result;
 
   // Get gradient color based on recommendation
   const getHeaderGradient = () => {
@@ -371,6 +375,30 @@ export default async function AnalysisPage({ params }: PageProps) {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/analyses/${analysis.id}/painted-door`}
+                className="btn btn-ghost text-sm"
+              >
+                {paintedDoorSite?.status === 'live' ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    View Site
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5" />
+                      <path d="M2 12l10 5 10-5" />
+                    </svg>
+                    Launch Site
+                  </>
+                )}
+              </Link>
               <Link
                 href={`/analyses/${analysis.id}/content`}
                 className="btn btn-ghost text-sm"

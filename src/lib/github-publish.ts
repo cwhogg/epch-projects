@@ -128,6 +128,6 @@ export async function commitToSecondlook(
   markdown: string,
   commitMessage: string,
 ): Promise<CommitResult> {
-  const target = getPublishTarget('secondlook');
+  const target = await getPublishTarget('secondlook');
   return commitToRepo(target, type, slug, markdown, commitMessage);
 }

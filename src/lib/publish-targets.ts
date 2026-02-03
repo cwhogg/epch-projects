@@ -36,10 +36,27 @@ export const PUBLISH_TARGETS: Record<string, PublishTarget> = {
   },
 };
 
-export function getPublishTarget(targetId: string): PublishTarget {
+export async function getPublishTarget(targetId: string): Promise<PublishTarget> {
+  // Check hardcoded targets first
   const target = PUBLISH_TARGETS[targetId];
-  if (!target) {
-    throw new Error(`Unknown publish target: ${targetId}`);
+  if (target) return target;
+
+  // Fall back to dynamic targets in Redis
+  const { getDynamicPublishTarget } = await import('./painted-door-db');
+  const dynamic = await getDynamicPublishTarget(targetId);
+  if (dynamic) return dynamic;
+
+  throw new Error(`Unknown publish target: ${targetId}`);
+}
+
+export async function getAllPublishTargets(): Promise<PublishTarget[]> {
+  const staticTargets = Object.values(PUBLISH_TARGETS);
+  try {
+    const { getAllDynamicPublishTargets } = await import('./painted-door-db');
+    const dynamicTargets = await getAllDynamicPublishTargets();
+    return [...staticTargets, ...dynamicTargets];
+  } catch {
+    // Redis not configured — return static targets only
+    return staticTargets;
   }
-  return target;
 }
