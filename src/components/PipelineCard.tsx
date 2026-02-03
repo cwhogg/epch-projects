@@ -49,7 +49,7 @@ export default function PipelineCard({
       </h3>
 
       {/* Description */}
-      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--text-muted)' }}>
         {description}
       </p>
 

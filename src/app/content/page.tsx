@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getAllContentCalendars, getPublishedPieces, isRedisConfigured } from '@/lib/db';
 import { ContentCalendar } from '@/types';
 import { PUBLISH_TARGETS } from '@/lib/publish-targets';
+import ProgramToggleButton from '@/components/ProgramToggleButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,13 @@ async function getData(): Promise<{ calendars: (ContentCalendar & { generatedCou
     const generatedCount = cal.pieces.filter((p) => p.status === 'complete').length;
     const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
     return { ...cal, generatedCount, publishedCount, siteName };
+  });
+
+  // Sort: active first, paused last
+  enriched.sort((a, b) => {
+    const aActive = a.active !== false ? 0 : 1;
+    const bActive = b.active !== false ? 0 : 1;
+    return aActive - bActive;
   });
 
   return { calendars: enriched };
@@ -75,59 +83,66 @@ export default async function ContentPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-slide-up stagger-2">
-          {calendars.map((cal, index) => (
-            <Link
-              key={cal.ideaId}
-              href={`/analyses/${cal.ideaId}/content`}
-              className="card block p-5"
-              style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <h3 className="font-display font-medium text-base" style={{ color: 'var(--text-primary)' }}>
-                  {cal.ideaName}
-                </h3>
-                <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  {cal.siteName}
-                </span>
-              </div>
+          {calendars.map((cal, index) => {
+            const isActive = cal.active !== false;
+            return (
+              <div
+                key={cal.ideaId}
+                className="card p-5 flex flex-col"
+                style={{ animationDelay: `${0.1 + index * 0.05}s`, opacity: isActive ? 1 : 0.5 }}
+              >
+                <Link href={`/analyses/${cal.ideaId}/content`} className="block flex-1">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <h3 className="font-display font-medium text-base" style={{ color: 'var(--text-primary)' }}>
+                      {cal.ideaName}
+                    </h3>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
+                      {cal.siteName}
+                    </span>
+                  </div>
 
-              {/* Counts */}
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
-                  {cal.pieces.length} pieces
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }}>
-                  {cal.generatedCount} generated
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa' }}>
-                  {cal.publishedCount} published
-                </span>
-              </div>
+                  {/* Counts */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
+                      {cal.pieces.length} pieces
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }}>
+                      {cal.generatedCount} generated
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa' }}>
+                      {cal.publishedCount} published
+                    </span>
+                  </div>
 
-              {/* Strategy summary */}
-              {cal.strategySummary && (
-                <p className="text-sm line-clamp-2" style={{ color: 'var(--text-muted)' }}>
-                  {cal.strategySummary}
-                </p>
-              )}
+                  {/* Strategy summary */}
+                  {cal.strategySummary && (
+                    <p className="text-sm line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                      {cal.strategySummary}
+                    </p>
+                  )}
+                </Link>
 
-              {/* Active status */}
-              <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                {cal.active !== false ? (
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
-                    Active
+                {/* Footer with toggle */}
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <div className="flex items-center gap-2">
+                    {isActive ? (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(113, 113, 122, 0.15)', color: 'var(--text-muted)' }}>
+                        Paused
+                      </span>
+                    )}
+                    <ProgramToggleButton ideaId={cal.ideaId} active={isActive} />
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {new Date(cal.createdAt).toLocaleDateString()}
                   </span>
-                ) : (
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(113, 113, 122, 0.15)', color: 'var(--text-muted)' }}>
-                    Paused
-                  </span>
-                )}
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {new Date(cal.createdAt).toLocaleDateString()}
-                </span>
+                </div>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
