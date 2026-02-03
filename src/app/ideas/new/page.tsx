@@ -60,7 +60,7 @@ export default function NewIdeaPage() {
       {/* Header */}
       <div className="mb-8 animate-slide-up stagger-1">
         <Link
-          href="/"
+          href="/analysis"
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -228,7 +228,7 @@ export default function NewIdeaPage() {
         <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 animate-slide-up" style={{ animationDelay: '0.35s' }}>
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/analysis')}
             className="btn btn-secondary flex-1 sm:flex-none"
           >
             Cancel

@@ -341,7 +341,7 @@ export default async function AnalysisPage({ params }: PageProps) {
         style={{ background: getHeaderGradient() }}
       >
         <Link
-          href="/"
+          href="/analysis"
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >
