@@ -104,7 +104,7 @@ async function createGitHubRepo(name: string, description: string): Promise<{ ow
         name: repoName,
         description,
         private: false,
-        auto_init: false,
+        auto_init: true, // Required for Git Data API to work
       }),
     });
 
@@ -144,6 +144,13 @@ async function pushFilesToGitHub(
 
   const baseUrl = `https://api.github.com/repos/${owner}/${repoName}`;
 
+  // 0. Wait for GitHub to initialize the repo (auto_init creates README async)
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const checkRes = await fetch(`${baseUrl}/git/ref/heads/main`, { headers });
+    if (checkRes.ok) break;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
   // 1. Create blobs for each file
   const blobShas: { path: string; sha: string }[] = [];
   for (const [filePath, content] of Object.entries(files)) {
@@ -179,13 +186,23 @@ async function pushFilesToGitHub(
   }
   const treeData = await treeRes.json();
 
-  // 3. Create commit (no parent — initial commit)
+  // 3. Get the current commit SHA (from auto_init)
+  const refGetRes = await fetch(`${baseUrl}/git/ref/heads/main`, { headers });
+  if (!refGetRes.ok) {
+    const errBody = await refGetRes.text();
+    throw new Error(`Failed to get main ref: ${refGetRes.status} ${errBody}`);
+  }
+  const refData = await refGetRes.json();
+  const parentSha = refData.object.sha;
+
+  // 4. Create commit with parent
   const commitRes = await fetch(`${baseUrl}/git/commits`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
       message: 'Initial commit: painted door test site',
       tree: treeData.sha,
+      parents: [parentSha],
     }),
   });
   if (!commitRes.ok) {
@@ -194,18 +211,17 @@ async function pushFilesToGitHub(
   }
   const commitData = await commitRes.json();
 
-  // 4. Create ref (main branch)
-  const refRes = await fetch(`${baseUrl}/git/refs`, {
-    method: 'POST',
+  // 5. Update ref to point to new commit
+  const refRes = await fetch(`${baseUrl}/git/refs/heads/main`, {
+    method: 'PATCH',
     headers,
     body: JSON.stringify({
-      ref: 'refs/heads/main',
       sha: commitData.sha,
     }),
   });
   if (!refRes.ok) {
     const errBody = await refRes.text();
-    throw new Error(`Failed to create ref: ${refRes.status} ${errBody}`);
+    throw new Error(`Failed to update ref: ${refRes.status} ${errBody}`);
   }
 
   return commitData.sha;
