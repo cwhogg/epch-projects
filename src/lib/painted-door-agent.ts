@@ -267,6 +267,38 @@ async function createVercelProject(
   return { projectId: data.id };
 }
 
+async function triggerDeployment(
+  projectId: string,
+  repoOwner: string,
+  repoName: string,
+): Promise<void> {
+  const token = process.env.VERCEL_TOKEN;
+  if (!token) throw new Error('VERCEL_TOKEN not configured');
+
+  const res = await fetch('https://api.vercel.com/v13/deployments', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: repoName,
+      project: projectId,
+      gitSource: {
+        type: 'github',
+        repo: `${repoOwner}/${repoName}`,
+        ref: 'main',
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    // Non-fatal — the auto-deploy may still kick in
+    const errBody = await res.text();
+    console.warn(`Explicit deploy trigger failed (${res.status}): ${errBody}`);
+  }
+}
+
 async function waitForDeployment(
   projectId: string,
   timeoutMs: number = 300000,
@@ -436,6 +468,9 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
 
     // --- Step 7: Wait for Deploy ---
     await updateStep(ideaId, progress, 6, 'running');
+
+    // Explicitly trigger a deployment in case auto-deploy doesn't fire
+    await triggerDeployment(vercel.projectId, repo.owner, repo.name);
 
     const siteUrl = await waitForDeployment(vercel.projectId);
 
