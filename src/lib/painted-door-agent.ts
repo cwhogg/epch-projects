@@ -267,36 +267,57 @@ async function createVercelProject(
   return { projectId: data.id };
 }
 
-async function triggerDeployment(
-  projectId: string,
+/**
+ * Push an empty commit to trigger Vercel's GitHub webhook.
+ * Files are pushed before the Vercel project exists, so the initial push
+ * doesn't trigger a deploy. This empty commit fires the webhook after
+ * the project + integration are set up.
+ */
+async function triggerDeployViaGitPush(
   repoOwner: string,
   repoName: string,
 ): Promise<void> {
-  const token = process.env.VERCEL_TOKEN;
-  if (!token) throw new Error('VERCEL_TOKEN not configured');
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error('GITHUB_TOKEN not configured');
 
-  const res = await fetch('https://api.vercel.com/v13/deployments', {
+  const baseUrl = `https://api.github.com/repos/${repoOwner}/${repoName}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+
+  // Get current HEAD
+  const refRes = await fetch(`${baseUrl}/git/ref/heads/main`, { headers });
+  if (!refRes.ok) throw new Error(`Failed to get main ref: ${refRes.status}`);
+  const refData = await refRes.json();
+  const parentSha = refData.object.sha;
+
+  // Get the tree from the parent commit
+  const commitRes = await fetch(`${baseUrl}/git/commits/${parentSha}`, { headers });
+  if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
+  const commitData = await commitRes.json();
+
+  // Create new commit with same tree (empty commit)
+  const newCommitRes = await fetch(`${baseUrl}/git/commits`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
-      name: repoName,
-      project: projectId,
-      gitSource: {
-        type: 'github',
-        repo: `${repoOwner}/${repoName}`,
-        ref: 'main',
-      },
+      message: 'Trigger initial deployment',
+      tree: commitData.tree.sha,
+      parents: [parentSha],
     }),
   });
+  if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
+  const newCommit = await newCommitRes.json();
 
-  if (!res.ok) {
-    // Non-fatal — the auto-deploy may still kick in
-    const errBody = await res.text();
-    console.warn(`Explicit deploy trigger failed (${res.status}): ${errBody}`);
-  }
+  // Update ref
+  const updateRes = await fetch(`${baseUrl}/git/refs/heads/main`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ sha: newCommit.sha }),
+  });
+  if (!updateRes.ok) throw new Error(`Failed to update ref: ${updateRes.status}`);
 }
 
 async function waitForDeployment(
@@ -469,8 +490,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     // --- Step 7: Wait for Deploy ---
     await updateStep(ideaId, progress, 6, 'running');
 
-    // Explicitly trigger a deployment in case auto-deploy doesn't fire
-    await triggerDeployment(vercel.projectId, repo.owner, repo.name);
+    // Push empty commit to trigger Vercel's GitHub webhook
+    await triggerDeployViaGitPush(repo.owner, repo.name);
 
     const siteUrl = await waitForDeployment(vercel.projectId);
 

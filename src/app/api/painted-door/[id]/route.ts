@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
-import { getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress } from '@/lib/painted-door-db';
+import { getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
 
 export const maxDuration = 300;
 
@@ -78,9 +78,9 @@ export async function GET(
   try {
     const progress = await getPaintedDoorProgress(id);
     if (!progress) {
-      // Check if a site already exists (completed previously, progress expired)
+      // Check if a fully deployed site already exists (progress expired)
       const site = await getPaintedDoorSite(id);
-      if (site) {
+      if (site && site.siteUrl && site.status === 'live') {
         return NextResponse.json({
           ideaId: id,
           status: 'complete',
@@ -105,5 +105,6 @@ export async function DELETE(
 ) {
   const { id } = await params;
   await deletePaintedDoorProgress(id);
+  await deletePaintedDoorSite(id);
   return NextResponse.json({ message: 'Progress reset', ideaId: id });
 }

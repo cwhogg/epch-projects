@@ -58,6 +58,10 @@ export async function deletePaintedDoorProgress(ideaId: string): Promise<void> {
   await getRedis().del(`painted_door_progress:${ideaId}`);
 }
 
+export async function deletePaintedDoorSite(ideaId: string): Promise<void> {
+  await getRedis().hdel('painted_door_sites', ideaId);
+}
+
 // ---------- Dynamic Publish Targets ----------
 
 export async function saveDynamicPublishTarget(target: PublishTarget): Promise<void> {
