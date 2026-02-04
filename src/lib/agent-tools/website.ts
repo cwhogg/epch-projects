@@ -625,6 +625,48 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
             issues.push('globals.css: Missing Tailwind v4 import');
             suggestions.push('Add @import "tailwindcss" at the top of globals.css');
           }
+
+          // Check that custom colors are registered in @theme, not just :root
+          const applyMatches = css.matchAll(/@apply\s+[^;]*\b(bg|text|border|ring|shadow|outline|decoration|from|to|via)-([\w-]+)/g);
+          const builtinColors = new Set([
+            'white', 'black', 'transparent', 'current', 'inherit',
+            'slate', 'gray', 'zinc', 'neutral', 'stone',
+            'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
+            'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
+          ]);
+          const hasThemeBlock = css.includes('@theme');
+          const themeColors = new Set<string>();
+          if (hasThemeBlock) {
+            const themeMatch = css.match(/@theme\s*\{([^}]*)\}/);
+            if (themeMatch) {
+              const colorVars = themeMatch[1].matchAll(/--color-([\w-]+)/g);
+              for (const m of colorVars) themeColors.add(m[1]);
+            }
+          }
+
+          for (const match of applyMatches) {
+            const colorName = match[2].split('-')[0]; // handle bg-primary-500 → primary
+            if (!builtinColors.has(colorName) && !themeColors.has(match[2]) && !themeColors.has(colorName)) {
+              issues.push(`globals.css: @apply uses "${match[1]}-${match[2]}" but "${colorName}" is not registered in @theme`);
+              suggestions.push(`Add --color-${colorName}: #hexval; inside a @theme { } block in globals.css`);
+              break; // One warning is enough to flag the pattern
+            }
+          }
+
+          if (!hasThemeBlock && /:root\s*\{[^}]*--color-/.test(css)) {
+            issues.push('globals.css: Custom colors defined in :root instead of @theme — Tailwind v4 utility classes (bg-primary, text-accent, etc.) will not work');
+            suggestions.push('Move --color-* variables from :root into a @theme { } block');
+          }
+        }
+
+        // Check postcss.config.mjs exists
+        const postcssConfig = allFiles['postcss.config.mjs'] || allFiles['postcss.config.js'] || '';
+        if (!postcssConfig) {
+          issues.push('Missing postcss.config.mjs — required for Tailwind v4');
+          suggestions.push('Add postcss.config.mjs with @tailwindcss/postcss plugin');
+        } else if (!postcssConfig.includes('@tailwindcss/postcss')) {
+          issues.push('postcss.config: Missing @tailwindcss/postcss plugin');
+          suggestions.push('Add @tailwindcss/postcss to the plugins in postcss.config.mjs');
         }
 
         // Check for use client directive where needed

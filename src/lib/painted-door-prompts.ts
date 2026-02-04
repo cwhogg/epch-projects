@@ -171,11 +171,23 @@ Generate these files as a JSON object where keys are file paths and values are f
    - Dark theme using brand colors
 
 2. **app/globals.css** — Complete Tailwind CSS v4 design system:
-   - CSS custom properties for all brand color tokens
+   - Use @import "tailwindcss" as the FIRST line (Tailwind v4 syntax, NOT @tailwind directives)
+   - Register ALL custom colors in a @theme block so they work as utility classes. Example globals.css structure:
+     @import "tailwindcss";
+     @theme {
+       --color-primary: #hexval;
+       --color-secondary: #hexval;
+       --color-accent: #hexval;
+       --color-background: #hexval;
+       --color-surface: #hexval;
+       --color-text: #hexval;
+       --color-text-muted: #hexval;
+     }
+     This makes bg-primary, text-secondary, border-accent etc. available as Tailwind utility classes automatically.
+   - DO NOT use @apply with custom class names — only use @apply with standard Tailwind utilities (bg-white, text-sm, flex, etc.) or @theme-registered colors (bg-primary, text-accent, etc.)
+   - For component styles, prefer using the @theme colors directly as utility classes in TSX rather than @apply
    - Typography classes using brand fonts
-   - Component styles (buttons, cards, inputs, badges)
    - Responsive design utilities
-   - Use @import "tailwindcss" (Tailwind v4 syntax, NOT @tailwind directives)
 
 3. **app/page.tsx** — Landing page with:
    - Hero section with headline, subheadline, CTA
@@ -212,6 +224,8 @@ CRITICAL RULES:
 - Do NOT use any placeholder images or external image URLs
 - The signup route must use @upstash/redis (import { Redis } from '@upstash/redis')
 - globals.css MUST use @import "tailwindcss" (Tailwind v4), NOT @tailwind base/components/utilities
+- globals.css MUST define custom colors inside @theme { } block — NOT as :root CSS variables. This is required for bg-primary, text-accent, etc. to work as Tailwind utility classes.
+- Do NOT use @apply with any class name that isn't a built-in Tailwind utility or a @theme-registered color. Using @apply bg-primary WITHOUT registering --color-primary in @theme will CRASH the build.
 
 ## SEO REQUIREMENTS — CRITICAL
 
