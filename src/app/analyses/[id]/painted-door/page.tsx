@@ -54,6 +54,21 @@ export default function PaintedDoorProgressPage() {
     }
   }, [analysisId, pollProgress]);
 
+  const resetProgress = useCallback(async () => {
+    try {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      await fetch(`/api/painted-door/${analysisId}`, { method: 'DELETE' });
+      setProgress(null);
+      setTriggered(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset');
+    }
+  }, [analysisId]);
+
   useEffect(() => {
     // Check if already in progress or completed
     const checkExisting = async () => {
@@ -304,12 +319,31 @@ export default function PaintedDoorProgressPage() {
 
       {/* Retry on error */}
       {progress?.status === 'error' && (
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-3">
           <button
             onClick={() => triggerGeneration()}
             className="btn btn-primary"
           >
             Retry
+          </button>
+          <button
+            onClick={resetProgress}
+            className="btn btn-ghost"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
+      {/* Reset when stuck */}
+      {progress?.status === 'running' && (
+        <div className="flex justify-center">
+          <button
+            onClick={resetProgress}
+            className="text-xs transition-colors hover:text-[var(--accent-coral)]"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Stuck? Reset and try again
           </button>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
-import { getPaintedDoorProgress, getPaintedDoorSite } from '@/lib/painted-door-db';
+import { getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress } from '@/lib/painted-door-db';
 
 export const maxDuration = 300;
 
@@ -96,4 +96,14 @@ export async function GET(
     console.error('Error getting painted door progress:', error);
     return NextResponse.json({ error: 'Failed to get progress' }, { status: 500 });
   }
+}
+
+// DELETE — reset stuck progress so it can be re-triggered
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  await deletePaintedDoorProgress(id);
+  return NextResponse.json({ message: 'Progress reset', ideaId: id });
 }
