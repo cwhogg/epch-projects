@@ -32,8 +32,14 @@ export function enrichFrontmatter(
   const urlPath = typeToPath[type] || '/blog';
   const canonicalUrl = `${target.siteUrl}${urlPath}/${slug}`;
 
+  // Replace generatedAt with publish date so posts appear on different days
+  let enriched = markdown.replace(
+    /^generatedAt:.*$/m,
+    `date: "${new Date().toISOString()}"`,
+  );
+
   // Inject canonicalUrl into existing frontmatter
-  return markdown.replace(
+  return enriched.replace(
     /^(---\n[\s\S]*?)(---)/m,
     `$1canonicalUrl: "${canonicalUrl}"\n$2`,
   );
