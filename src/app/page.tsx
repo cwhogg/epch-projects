@@ -140,7 +140,7 @@ export default async function Home() {
           }}
         />
         <h1 className="text-2xl sm:text-3xl font-display relative" style={{ color: 'var(--text-primary)' }}>
-          Product Pipeline
+          Product Concept Testing Pipeline
         </h1>
         <p className="mt-2 text-sm sm:text-base relative" style={{ color: 'var(--text-secondary)' }}>
           From idea to optimized SEO test — track every stage of development.
