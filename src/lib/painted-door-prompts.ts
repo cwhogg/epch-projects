@@ -90,6 +90,14 @@ CRITICAL RULES:
 - Colors must be accessible (sufficient contrast ratios)
 - Fonts must be from Google Fonts
 
+SEO REQUIREMENTS:
+- seoDescription: Must naturally include the #1 target keyword AND one secondary keyword. Write for click-through rate — compelling, specific, 150-160 chars.
+- heroHeadline: Must contain the primary target keyword. It should read naturally to humans while being optimized for search.
+- heroSubheadline: Incorporate 1-2 secondary keywords naturally.
+- tagline: Should reinforce the core search intent users have.
+- Value prop titles: Each should target a different secondary keyword or People Also Ask question where possible.
+- ctaText: Use action-oriented language matching the dominant search intent (transactional → "Get Started Free", informational → "Learn How It Works").
+
 Respond with ONLY valid JSON matching this exact schema:
 {
   "siteName": "string (the brand name — can differ from product name)",
@@ -205,6 +213,42 @@ CRITICAL RULES:
 - The signup route must use @upstash/redis (import { Redis } from '@upstash/redis')
 - globals.css MUST use @import "tailwindcss" (Tailwind v4), NOT @tailwind base/components/utilities
 
+## SEO REQUIREMENTS — CRITICAL
+
+The landing page is the most important page for search ranking. Follow these rules:
+
+### Metadata (in layout.tsx)
+- Title tag format: "{Primary Keyword} — {Brand Name}" (under 60 chars)
+- Use the seoDescription as the meta description
+- Include Open Graph tags (og:title, og:description, og:type, og:url, og:site_name)
+- Include Twitter Card tags (twitter:card=summary_large_image, twitter:title, twitter:description)
+- Set canonical URL via metadata.alternates.canonical
+
+### Heading Hierarchy (in page.tsx)
+- Exactly ONE H1 per page containing the primary target keyword
+- H2 headings for each major section (value props, FAQ, etc.) — incorporate secondary keywords
+- H2/H3 subheadings should use natural variations of target keywords and People Also Ask questions
+
+### Structured Data (in page.tsx)
+- Add Organization schema (JSON-LD) with brand name and site URL
+- Add WebSite schema with search potential
+- If there are FAQ/PAA questions, add FAQPage schema with real Q&A from People Also Ask data
+
+### Semantic HTML
+- Use <main>, <section>, <article>, <header>, <footer> elements properly
+- Each value prop section should be wrapped in <section> with aria-label
+- Links should have descriptive anchor text (not "click here")
+
+### Internal Linking
+- Include nav links to /blog, /compare, and /faq sections in footer or navigation
+- Use keyword-rich anchor text for internal links
+
+### Landing Page Content
+- FAQ section is MANDATORY — use People Also Ask questions from SERP data as FAQ items
+- FAQs should be wrapped in FAQPage JSON-LD schema
+- Each FAQ answer should be 2-3 sentences, naturally incorporating related keywords
+- Include at least 4-6 FAQ items
+
 Respond with ONLY valid JSON:
 { "files": { "app/layout.tsx": "file content...", "app/globals.css": "file content...", ... } }`;
 }
@@ -213,7 +257,11 @@ export function buildContentPagesPrompt(
   brand: BrandIdentity,
   layoutContent: string,
   cssContent: string,
+  idea: ProductIdea,
+  ctx: ContentContext,
 ): string {
+  const vertical = detectVertical(idea);
+
   return `You are a senior Next.js developer. Generate the content pages and configuration files for a website.
 
 ## BRAND IDENTITY
@@ -230,6 +278,35 @@ ${layoutContent.slice(0, 2000)}
 \`\`\`css
 ${cssContent.slice(0, 1500)}
 \`\`\`
+
+${buildSEOContext(ctx, vertical)}
+
+## SEO REQUIREMENTS FOR CONTENT PAGES
+
+### Blog pages (app/blog/[slug]/page.tsx)
+- generateMetadata must pull title and description from frontmatter
+- Title format: "{Post Title} | {Brand Name}" (under 60 chars)
+- Add Article schema (JSON-LD) with headline, datePublished, author, description
+- Include canonical URL from frontmatter or auto-generated
+- H1 = post title, subheadings from content
+
+### Comparison pages (app/compare/[slug]/page.tsx)
+- generateMetadata with comparison-specific title: "{Product A} vs {Product B} | {Brand Name}"
+- Add Article schema for comparison content
+
+### FAQ pages (app/faq/[slug]/page.tsx)
+- generateMetadata with question-focused titles
+- Add FAQPage schema (JSON-LD) extracting Q&A pairs from content
+- Structure content with proper question (H2/H3) and answer (paragraph) hierarchy
+
+### Blog listing (app/blog/page.tsx)
+- generateMetadata with keyword: "{Topic} Blog — Tips & Guides | {Brand Name}"
+- Include a brief keyword-rich intro paragraph (2-3 sentences) above the post list
+
+### All content pages
+- Include internal links back to landing page and to other content sections
+- Footer with links to /, /blog, /compare, /faq
+- Use descriptive anchor text with keyword variations
 
 ## FILES TO GENERATE
 

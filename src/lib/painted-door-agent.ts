@@ -422,6 +422,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
       brand,
       coreFiles['app/layout.tsx'] || '',
       coreFiles['app/globals.css'] || '',
+      idea,
+      ctx,
     );
     const contentResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
