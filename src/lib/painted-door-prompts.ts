@@ -299,6 +299,10 @@ CRITICAL RULES:
 - Use "type": "module" in package.json
 - tsconfig should use "moduleResolution": "bundler"
 - Do NOT import from @/ paths — use relative paths since there's no src/ directory
+- Next.js 15 REQUIRES params to be a Promise in dynamic routes. Use this pattern:
+  type Props = { params: Promise<{ slug: string }> }
+  export default async function Page({ params }: Props) { const { slug } = await params; ... }
+  Do NOT use { params: { slug: string } } — that will cause a build error.
 
 Respond with ONLY valid JSON:
 { "files": { "lib/content.ts": "file content...", "app/blog/page.tsx": "file content...", ... } }`;
