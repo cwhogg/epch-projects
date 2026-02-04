@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured, getContentCalendar, getContentProgress } from '@/lib/db';
-import { generateContentPieces } from '@/lib/content-agent';
+import { generateContentPiecesAuto } from '@/lib/content-agent';
 
 export const maxDuration = 300;
 
@@ -40,8 +40,12 @@ export async function POST(
     // Run generation after response is sent
     after(async () => {
       try {
-        await generateContentPieces(calendar, pieceIds);
+        await generateContentPiecesAuto(calendar, pieceIds);
       } catch (error) {
+        if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+          console.log(`[content] Agent paused for ${ideaId}, will resume on next request`);
+          return;
+        }
         console.error('Content generation failed:', error);
       }
     });

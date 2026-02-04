@@ -14,6 +14,18 @@ import {
   GSCQueryRow,
   ContentType,
 } from '@/types';
+import {
+  runAgent,
+  resumeAgent,
+  getAgentState,
+  deleteAgentState,
+  saveActiveRun,
+  getActiveRunId,
+  clearActiveRun,
+} from '@/lib/agent-runtime';
+import { createAnalyticsTools } from '@/lib/agent-tools/analytics';
+import { createPlanTools, createScratchpadTools } from '@/lib/agent-tools/common';
+import type { AgentConfig } from '@/types';
 
 // Returns ISO week string like "2026-W05"
 export function getWeekId(date?: Date): string {
@@ -415,4 +427,109 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
   console.log(`[analytics] Report saved for week ${weekId}`);
 
   return report;
+}
+
+// ---------------------------------------------------------------------------
+// V2: Agentic analytics with tool use and LLM-powered insights
+// ---------------------------------------------------------------------------
+
+const ANALYTICS_SYSTEM_PROMPT = `You are an analytics agent that tracks SEO performance for content marketing sites using Google Search Console data.
+
+Your job:
+1. Create a plan for your analysis
+2. Fetch GSC page-level and query-level data
+3. Load published content pieces to match against GSC data
+4. Match pages to pieces to create performance snapshots
+5. Compare current week against previous week to detect changes
+6. Call generate_insights with a summary of the data — this uses an LLM to produce expert-level interpretation with specific recommendations
+7. Save the final report, using the generated insights as the insights parameter
+
+USING generate_insights:
+- After compare_weeks, compile a text summary of the key data points: site totals, top/bottom performing pieces, alerts, week-over-week changes for each piece, and notable queries
+- Pass this summary to generate_insights to get structured analysis with Key Wins, Concerns, Recommendations, and Priority Keywords
+- Use the returned insights text as the insights parameter when calling save_report
+
+Be specific in your data summaries. Include actual numbers, piece titles, keyword names, and position changes so the insights tool can reference them.
+
+Always call create_plan before starting work, and update_plan as you complete steps.
+Use the scratchpad (write_scratchpad / read_scratchpad) to store intermediate calculations or notes you want to reference later in the run.`;
+
+async function runAnalyticsAgentV2(): Promise<WeeklyReport> {
+  const siteUrl = process.env.ANALYTICS_SITE_URL;
+  if (!siteUrl) {
+    throw new Error('ANALYTICS_SITE_URL environment variable is required');
+  }
+
+  const weekId = getWeekId();
+
+  // --- Check for a paused run to resume ---
+  const existingRunId = await getActiveRunId('analytics', weekId);
+  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
+  if (pausedState && pausedState.status !== 'paused') {
+    pausedState = null;
+  }
+
+  const runId = pausedState ? pausedState.runId : `analytics-${weekId}-${Date.now()}`;
+
+  const tools = [
+    ...createPlanTools(runId),
+    ...createAnalyticsTools(siteUrl),
+    ...createScratchpadTools(),
+  ];
+
+  const config: AgentConfig = {
+    agentId: 'analytics',
+    runId,
+    model: 'claude-sonnet-4-20250514',
+    maxTokens: 4096,
+    maxTurns: 15,
+    tools,
+    systemPrompt: ANALYTICS_SYSTEM_PROMPT,
+    onProgress: async (step, detail) => {
+      console.log(`[analytics-v2] ${step}: ${detail ?? ''}`);
+    },
+  };
+
+  // --- Run or resume ---
+  let state;
+  if (pausedState) {
+    console.log(`[analytics-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+    state = await resumeAgent(config, pausedState);
+  } else {
+    const initialMessage = `Run the weekly analytics report for site ${siteUrl}. Current week: ${weekId}. Fetch the data, analyze performance changes, and save a report with actionable insights.`;
+    state = await runAgent(config, initialMessage);
+  }
+
+  // --- Handle result ---
+  if (state.status === 'paused') {
+    await saveActiveRun('analytics', weekId, runId);
+    throw new Error('AGENT_PAUSED');
+  }
+
+  await clearActiveRun('analytics', weekId);
+  await deleteAgentState(runId);
+
+  if (state.status === 'error') {
+    throw new Error(state.error || 'Analytics agent failed');
+  }
+
+  // The report was saved by the save_report tool — fetch it
+  const { getWeeklyReport: getReport } = await import('@/lib/analytics-db');
+  const report = await getReport(weekId);
+  if (!report) {
+    throw new Error('Report not found after agent completed');
+  }
+
+  return report;
+}
+
+/**
+ * Entry point that switches between v1 (procedural) and v2 (agentic) based
+ * on the AGENT_V2 environment variable.
+ */
+export async function runAnalyticsAgentAuto(): Promise<WeeklyReport> {
+  if (process.env.AGENT_V2 === 'true') {
+    return runAnalyticsAgentV2();
+  }
+  return runAnalyticsAgent();
 }

@@ -12,9 +12,22 @@ import {
 import {
   savePaintedDoorSite,
   savePaintedDoorProgress,
+  getPaintedDoorProgress,
   saveDynamicPublishTarget,
   getPaintedDoorSite,
 } from './painted-door-db';
+import {
+  runAgent,
+  resumeAgent,
+  getAgentState,
+  deleteAgentState,
+  saveActiveRun,
+  getActiveRunId,
+  clearActiveRun,
+} from './agent-runtime';
+import { createWebsiteTools } from './agent-tools/website';
+import { createPlanTools, createScratchpadTools } from './agent-tools/common';
+import { emitEvent } from './agent-events';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -573,4 +586,231 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
       await savePaintedDoorSite(existingSite);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// V2: Agentic website builder
+// ---------------------------------------------------------------------------
+
+const WEBSITE_SYSTEM_PROMPT = `You are a website builder agent. Your job is to create a complete painted door test website for a product idea.
+
+You have tools to:
+1. Load the product idea and research context
+2. Design a brand identity (colors, typography, copy)
+3. Evaluate the brand identity for SEO quality
+4. Generate core website files (layout, CSS, landing page, signup API)
+5. Generate content pages (blog, compare, FAQ templates, config files)
+6. Validate generated code for common issues
+7. Create a GitHub repo and push all files
+8. Create a Vercel project and deploy the site
+9. Register the site as a publish target for future content
+10. Delegate to the content agent to create a content calendar
+
+WORKFLOW:
+1. Call get_idea_context to understand the product
+2. Call design_brand to create the brand identity
+3. Call evaluate_brand to check SEO quality — if score < 7, note the issues for the next steps
+4. Call generate_core_files to create the landing page and core components
+5. Call generate_content_pages to create content page templates and config
+6. Call validate_code to check for common issues — if there are critical issues (missing H1, wrong Tailwind syntax, missing 'use client'), regenerate the affected files
+7. Call create_repo to create a GitHub repository
+8. Call push_files to push all generated files
+9. Call create_vercel_project to set up hosting
+10. Call trigger_deploy to start the deployment
+11. Call check_deploy_status to monitor — if not READY, wait and check again (up to 5 times)
+12. Call register_publish_target to enable content publishing
+13. Call verify_site to confirm accessibility
+14. Call finalize_site to save the final record
+15. Call invoke_content_agent to create a content calendar for the site
+
+EVALUATION RULES:
+- After design_brand, ALWAYS call evaluate_brand. If the primary keyword is missing from the headline or the meta description is the wrong length, note this but continue — the code generation prompts include the brand identity so the LLM can compensate.
+- After generating files, ALWAYS call validate_code. If there are critical issues (missing H1, @tailwind instead of @import, missing 'use client'), you should regenerate the problematic files by calling generate_core_files or generate_content_pages again.
+- Maximum 1 regeneration attempt per step to avoid looping.
+
+IMPORTANT:
+- Follow the steps in order — each step depends on the previous one
+- If check_deploy_status shows the deployment is still in progress, call it again after a moment
+- If any step fails, report the error clearly
+- If a code generation step was truncated (max_tokens), note that in your final report
+- Do NOT skip any steps
+- Use the scratchpad (write_scratchpad / read_scratchpad) to store notes between steps, e.g. evaluation issues to address in code generation`;
+
+// Map tool names to v1 pipeline step indices for progress bridging
+const TOOL_TO_STEP: Record<string, number> = {
+  get_idea_context: 0, // Maps to "Brand Identity" start
+  design_brand: 0,
+  generate_core_files: 1,
+  generate_content_pages: 2,
+  create_repo: 3,
+  push_files: 4,
+  create_vercel_project: 5,
+  trigger_deploy: 6,
+  check_deploy_status: 6,
+  register_publish_target: 7,
+  verify_site: 8,
+  finalize_site: 8,
+};
+
+async function runPaintedDoorAgentV2(ideaId: string): Promise<void> {
+  // --- Check for a paused run to resume ---
+  const existingRunId = await getActiveRunId('website', ideaId);
+  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
+  if (pausedState && pausedState.status !== 'paused') {
+    pausedState = null;
+  }
+
+  const runId = pausedState ? pausedState.runId : `website-${ideaId}-${Date.now()}`;
+  const isResume = !!pausedState;
+
+  // Load existing progress on resume, or create fresh
+  let progress: PaintedDoorProgress;
+  if (isResume) {
+    const existing = await getPaintedDoorProgress(ideaId);
+    progress = existing || createProgress(ideaId);
+    progress.status = 'running';
+    progress.currentStep = 'Resuming site generation...';
+  } else {
+    progress = createProgress(ideaId);
+    progress.status = 'running';
+  }
+  await savePaintedDoorProgress(ideaId, progress);
+
+  // Determine where we left off for step tracking
+  let lastStepIndex = isResume
+    ? progress.steps.findIndex((s) => s.status === 'running' || s.status === 'pending') - 1
+    : -1;
+  if (lastStepIndex < -1) lastStepIndex = -1;
+
+  const tools = [
+    ...createWebsiteTools(ideaId),
+    ...createPlanTools(runId),
+    ...createScratchpadTools(),
+  ];
+
+  try {
+    const config = {
+      agentId: 'website',
+      runId,
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 4096,
+      maxTurns: 30,
+      tools,
+      systemPrompt: WEBSITE_SYSTEM_PROMPT,
+      onProgress: async (step: string, detail?: string) => {
+        if (step === 'tool_call' && detail) {
+          const toolName = detail.split(',')[0].trim();
+          const stepIndex = TOOL_TO_STEP[toolName];
+          if (stepIndex !== undefined && stepIndex !== lastStepIndex) {
+            if (lastStepIndex >= 0) {
+              await updateStep(ideaId, progress, lastStepIndex, 'complete');
+            }
+            await updateStep(ideaId, progress, stepIndex, 'running');
+            lastStepIndex = stepIndex;
+          }
+        }
+        if (step === 'complete') {
+          for (let i = 0; i < progress.steps.length; i++) {
+            if (progress.steps[i].status === 'running') {
+              progress.steps[i].status = 'complete';
+            }
+          }
+          progress.status = 'complete';
+          progress.currentStep = 'Site deployed!';
+          const site = await getPaintedDoorSite(ideaId);
+          if (site) progress.result = site;
+          await savePaintedDoorProgress(ideaId, progress);
+        }
+        if (step === 'error' && detail) {
+          const runningStep = progress.steps.findIndex((s) => s.status === 'running');
+          if (runningStep >= 0) {
+            progress.steps[runningStep].status = 'error';
+            progress.steps[runningStep].detail = detail;
+          }
+          progress.status = 'error';
+          progress.error = detail;
+          progress.currentStep = 'Failed';
+          await savePaintedDoorProgress(ideaId, progress);
+        }
+      },
+    };
+
+    // --- Run or resume ---
+    let state;
+    if (pausedState) {
+      console.log(`[website-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+      state = await resumeAgent(config, pausedState);
+    } else {
+      state = await runAgent(
+        config,
+        `Build a painted door test website for idea ${ideaId}. Follow the workflow steps in order.`,
+      );
+    }
+
+    // --- Handle result ---
+    if (state.status === 'paused') {
+      await saveActiveRun('website', ideaId, runId);
+      progress.status = 'running'; // Keep showing as running to frontend
+      progress.currentStep = 'Resuming...';
+      await savePaintedDoorProgress(ideaId, progress);
+      throw new Error('AGENT_PAUSED');
+    }
+
+    // Clean up on completion/error
+    await clearActiveRun('website', ideaId);
+    await deleteAgentState(runId);
+
+    if (state.status === 'error') {
+      throw new Error(state.error || 'Website agent failed');
+    }
+
+    // Emit event for other agents
+    await emitEvent({
+      type: 'site_deployed',
+      agentId: 'website',
+      ideaId,
+      timestamp: new Date().toISOString(),
+      payload: {
+        status: state.status,
+        finalOutput: state.finalOutput?.slice(0, 500),
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+      throw error; // Propagate for the API route to handle
+    }
+
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Website agent v2 failed:', error);
+
+    await clearActiveRun('website', ideaId);
+
+    const runningStep = progress.steps.findIndex((s) => s.status === 'running');
+    if (runningStep >= 0) {
+      progress.steps[runningStep].status = 'error';
+      progress.steps[runningStep].detail = message;
+    }
+    progress.status = 'error';
+    progress.error = message;
+    progress.currentStep = 'Failed';
+    await savePaintedDoorProgress(ideaId, progress);
+
+    const existingSite = await getPaintedDoorSite(ideaId);
+    if (existingSite) {
+      existingSite.status = 'failed';
+      existingSite.error = message;
+      await savePaintedDoorSite(existingSite);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-switcher: v1 vs v2 based on AGENT_V2 env var
+// ---------------------------------------------------------------------------
+
+export async function runPaintedDoorAgentAuto(ideaId: string): Promise<void> {
+  if (process.env.AGENT_V2 === 'true') {
+    return runPaintedDoorAgentV2(ideaId);
+  }
+  return runPaintedDoorAgent(ideaId);
 }

@@ -277,3 +277,76 @@ export interface WeeklyReport {
   unmatchedPages: GSCQueryRow[];
   alerts: PerformanceAlert[];
 }
+
+// Agent Runtime Types
+
+export type AgentStatus = 'running' | 'paused' | 'complete' | 'error';
+
+export interface AgentPlanStep {
+  description: string;
+  rationale: string;
+  status: 'pending' | 'in_progress' | 'complete' | 'skipped';
+}
+
+export interface AgentState {
+  runId: string;
+  agentId: string;
+  messages: AgentMessage[];
+  turnCount: number;
+  status: AgentStatus;
+  plan: AgentPlanStep[];
+  lastToolCall?: string;
+  finalOutput?: string;
+  error?: string;
+  startedAt: string;
+  resumeCount: number;
+}
+
+/** Anthropic message format — subset we need for serialization */
+export type AgentMessage =
+  | { role: 'user'; content: string | AgentContentBlock[] }
+  | { role: 'assistant'; content: AgentContentBlock[] };
+
+export type AgentContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+  | { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean };
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+  execute: (input: Record<string, unknown>) => Promise<unknown>;
+}
+
+export interface AgentConfig {
+  agentId: string;
+  runId: string;
+  model: string;
+  maxTokens: number;
+  maxTurns: number;
+  tools: ToolDefinition[];
+  systemPrompt: string;
+  onProgress: (step: string, detail?: string) => Promise<void>;
+}
+
+export interface Evaluation {
+  pass: boolean;
+  score: number;
+  issues: string[];
+  suggestions: string[];
+}
+
+export type AgentEventType =
+  | 'analysis_complete'
+  | 'content_generated'
+  | 'site_deployed'
+  | 'analytics_ready';
+
+export interface AgentEvent {
+  type: AgentEventType;
+  agentId: string;
+  ideaId: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
-import { runAnalyticsAgent } from '@/lib/analytics-agent';
+import { runAnalyticsAgentAuto } from '@/lib/analytics-agent';
 
 export const maxDuration = 300;
 
@@ -18,9 +18,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const report = await runAnalyticsAgent();
+    const report = await runAnalyticsAgentAuto();
     return NextResponse.json(report);
   } catch (error) {
+    if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+      // Agent paused due to time budget — will resume on next cron/manual trigger
+      return NextResponse.json({ status: 'paused', message: 'Agent paused, will resume on next trigger' });
+    }
     console.error('Cron analytics failed:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Analytics agent failed' },
@@ -36,9 +40,12 @@ export async function POST() {
   }
 
   try {
-    const report = await runAnalyticsAgent();
+    const report = await runAnalyticsAgentAuto();
     return NextResponse.json(report);
   } catch (error) {
+    if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+      return NextResponse.json({ status: 'paused', message: 'Agent paused, will resume on next trigger' });
+    }
     console.error('Manual analytics failed:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Analytics agent failed' },

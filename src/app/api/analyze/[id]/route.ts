@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { getIdeaFromDb, getProgress, isRedisConfigured } from '@/lib/db';
-import { runResearchAgent } from '@/lib/research-agent';
+import { runResearchAgentAuto } from '@/lib/research-agent';
 
 // Allow up to 5 minutes for the full analysis pipeline
 export const maxDuration = 300;
@@ -52,8 +52,13 @@ export async function POST(
     // Run analysis after the response is sent, keeping the function alive
     after(async () => {
       try {
-        await runResearchAgent(idea, additionalContext);
+        await runResearchAgentAuto(idea, additionalContext);
       } catch (error) {
+        // AGENT_PAUSED is expected when v2 agent hits time budget
+        if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+          console.log(`[analyze] Agent paused for ${id}, will resume on next request`);
+          return;
+        }
         console.error('Analysis failed:', error);
       }
     });

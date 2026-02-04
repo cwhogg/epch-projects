@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
-import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
+import { runPaintedDoorAgentAuto } from '@/lib/painted-door-agent';
 import { getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
 
 export const maxDuration = 300;
@@ -52,8 +52,12 @@ export async function POST(
   // Run agent in background after response
   after(async () => {
     try {
-      await runPaintedDoorAgent(id);
+      await runPaintedDoorAgentAuto(id);
     } catch (error) {
+      if (error instanceof Error && error.message === 'AGENT_PAUSED') {
+        console.log(`[painted-door] Agent paused for ${id}, will resume on next request`);
+        return;
+      }
       console.error('Painted door agent failed:', error);
     }
   });

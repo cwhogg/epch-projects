@@ -1,10 +1,23 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea, Analysis, AnalysisScores } from '@/types';
-import { saveProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, AnalysisProgress } from './db';
+import { saveProgress, getProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, AnalysisProgress } from './db';
 import { runFullSEOPipeline, SEOPipelineResult, SEODataQuality } from './seo-analysis';
 import { isOpenAIConfigured } from './openai';
 import { isSerpConfigured } from './serp-search';
 import { buildExpertiseContext } from './expertise-profile';
+import {
+  runAgent,
+  resumeAgent,
+  getAgentState,
+  deleteAgentState,
+  saveActiveRun,
+  getActiveRunId,
+  clearActiveRun,
+} from './agent-runtime';
+import { createResearchTools } from './agent-tools/research';
+import { createPlanTools, createScratchpadTools } from './agent-tools/common';
+import { emitEvent } from './agent-events';
+import type { AgentConfig } from '@/types';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -504,6 +517,222 @@ ${content.scoring || 'Not available'}
     await updateIdeaStatus(idea.id, 'pending');
     throw error;
   }
+}
+
+// ---------------------------------------------------------------------------
+// V2: Agentic research with tool use
+// ---------------------------------------------------------------------------
+
+const RESEARCH_SYSTEM_PROMPT = `You are a SENIOR market research analyst with deep domain expertise. You research like a VC doing due diligence — finding real insights, not surface-level observations.
+
+Your mission: Thoroughly evaluate a product idea's market viability across competitive landscape, SEO opportunity, willingness to pay, differentiation potential, and expertise alignment.
+
+CRITICAL RULES:
+- Be a DOMAIN EXPERT. If this is healthcare, think like a healthcare insider. If it's B2B software, think like a SaaS veteran.
+- Find NICHE competitors, not just the obvious big players
+- NEVER fabricate data (search volumes, traffic). Mark unknown data as "Unknown"
+- Be SPECIFIC and ANALYTICAL. Generic observations are worthless.
+- Do NOT over-weight regulatory risks (FDA, HIPAA) — they're speed bumps, not showstoppers
+
+Your workflow:
+1. Create a plan
+2. Get the idea details and expertise profile
+3. Analyze competitors — find 6-8 across direct, adjacent, niche, and emerging categories. Use search_serp and fetch_page to find real competitors.
+4. Run the SEO pipeline for comprehensive keyword analysis
+5. Optionally use search_serp for additional keyword exploration if the pipeline missed important angles
+6. Analyze willingness to pay — find 5-7 comparable product price points
+7. Score all 5 dimensions, determine recommendation tier and confidence
+8. Save each section (competitor analysis, WTP analysis) then save the final analysis
+
+When analyzing competitors, use search_serp to find real companies, then fetch_page to read their landing pages. Don't invent competitor names — find real ones.
+
+For scoring guidance:
+- SEO Opportunity: Based on content gaps and competitive density from the SEO pipeline data, NOT volume claims
+- Competitive Landscape: 8-10 = wide open, 5-7 = room to differentiate, 1-4 = crowded/dominated
+- Willingness to Pay: Based on actual price points and evidence people pay
+- Differentiation: Is there a credible unique angle?
+- Expertise Alignment: Use the expertise profile. High (8-10) if strong domain + technical fit
+
+RECOMMENDATION: Tier 1 (overall ≥7), Tier 2 (5-7), Tier 3 (<5)
+CONFIDENCE: High (strong multi-source evidence), Medium (some gaps), Low (mostly inference)`;
+
+async function runResearchAgentV2(idea: ProductIdea, additionalContext?: string): Promise<Analysis> {
+  // --- Check for a paused run to resume ---
+  const existingRunId = await getActiveRunId('research', idea.id);
+  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
+  if (pausedState && pausedState.status !== 'paused') {
+    pausedState = null; // Not actually paused — start fresh
+  }
+
+  const runId = pausedState ? pausedState.runId : `research-${idea.id}-${Date.now()}`;
+  const isResume = !!pausedState;
+
+  await updateIdeaStatus(idea.id, 'analyzing');
+
+  // Load existing progress on resume, or create fresh
+  let progress: AnalysisProgress;
+  if (isResume) {
+    const existing = await getProgress(idea.id);
+    progress = existing || {
+      ideaId: idea.id,
+      status: 'running',
+      currentStep: 'Resuming analysis...',
+      steps: [
+        { name: 'Planning', status: 'complete' as const },
+        { name: 'Competitive Analysis', status: 'pending' as const },
+        { name: 'SEO Pipeline', status: 'pending' as const },
+        { name: 'Willingness to Pay', status: 'pending' as const },
+        { name: 'Scoring & Synthesis', status: 'pending' as const },
+        { name: 'Saving Results', status: 'pending' as const },
+      ],
+    };
+    progress.status = 'running';
+    progress.currentStep = 'Resuming analysis...';
+  } else {
+    progress = {
+      ideaId: idea.id,
+      status: 'running',
+      currentStep: 'Starting agentic analysis...',
+      steps: [
+        { name: 'Planning', status: 'pending' as const },
+        { name: 'Competitive Analysis', status: 'pending' as const },
+        { name: 'SEO Pipeline', status: 'pending' as const },
+        { name: 'Willingness to Pay', status: 'pending' as const },
+        { name: 'Scoring & Synthesis', status: 'pending' as const },
+        { name: 'Saving Results', status: 'pending' as const },
+      ],
+    };
+  }
+  await saveProgress(idea.id, progress);
+
+  // Map tool names to progress step indices
+  const toolStepMap: Record<string, number> = {
+    create_plan: 0,
+    get_idea_details: 0,
+    get_expertise_profile: 0,
+    search_serp: 1,
+    fetch_page: 1,
+    save_competitor_analysis: 1,
+    run_seo_pipeline: 2,
+    save_wtp_analysis: 3,
+    save_final_analysis: 4,
+  };
+
+  const tools = [
+    ...createPlanTools(runId),
+    ...createScratchpadTools(),
+    ...createResearchTools(idea, additionalContext),
+  ];
+
+  const config: AgentConfig = {
+    agentId: 'research',
+    runId,
+    model: 'claude-sonnet-4-20250514',
+    maxTokens: 4096,
+    maxTurns: 25,
+    tools,
+    systemPrompt: RESEARCH_SYSTEM_PROMPT,
+    onProgress: async (step, detail) => {
+      console.log(`[research-v2] ${step}: ${detail ?? ''}`);
+
+      if (step === 'tool_call' && detail) {
+        const toolNames = detail.split(', ');
+        for (const name of toolNames) {
+          const stepIdx = toolStepMap[name];
+          if (stepIdx !== undefined) {
+            if (progress.steps[stepIdx].status === 'pending') {
+              progress.steps[stepIdx].status = 'running';
+              for (let i = 0; i < stepIdx; i++) {
+                if (progress.steps[i].status === 'running') {
+                  progress.steps[i].status = 'complete';
+                }
+              }
+            }
+            progress.currentStep = progress.steps[stepIdx].name;
+          }
+        }
+        await saveProgress(idea.id, progress);
+      } else if (step === 'complete') {
+        for (const s of progress.steps) {
+          if (s.status !== 'error') s.status = 'complete';
+        }
+        progress.status = 'complete';
+        progress.currentStep = 'Analysis complete!';
+        await saveProgress(idea.id, progress);
+      } else if (step === 'error') {
+        progress.status = 'error';
+        progress.error = detail;
+        progress.currentStep = 'Analysis failed';
+        await saveProgress(idea.id, progress);
+      }
+    },
+  };
+
+  // --- Run or resume the agent ---
+  let state;
+  if (pausedState) {
+    console.log(`[research-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+    state = await resumeAgent(config, pausedState);
+  } else {
+    const initialMessage = `Analyze this product idea:
+
+Name: ${idea.name}
+${idea.description ? `Description: ${idea.description}` : ''}
+${idea.targetUser ? `Target User: ${idea.targetUser}` : ''}
+${idea.problemSolved ? `Problem Solved: ${idea.problemSolved}` : ''}
+${idea.url ? `URL: ${idea.url}` : ''}
+${additionalContext ? `\nAdditional Context: ${additionalContext}` : ''}
+
+Conduct a thorough market research analysis. Start by creating a plan, then work through competitors, SEO, willingness to pay, and final scoring. Save your findings at each step.`;
+
+    state = await runAgent(config, initialMessage);
+  }
+
+  // --- Handle result ---
+  if (state.status === 'paused') {
+    await saveActiveRun('research', idea.id, runId);
+    throw new Error('AGENT_PAUSED');
+  }
+
+  // Completed or errored — clean up active run tracking
+  await clearActiveRun('research', idea.id);
+  await deleteAgentState(runId);
+
+  if (state.status === 'error') {
+    await updateIdeaStatus(idea.id, 'pending');
+    throw new Error(state.error || 'Research agent failed');
+  }
+
+  // Emit event for inter-agent communication
+  await emitEvent({
+    type: 'analysis_complete',
+    agentId: 'research',
+    ideaId: idea.id,
+    timestamp: new Date().toISOString(),
+    payload: { ideaName: idea.name },
+  });
+
+  // Fetch the saved analysis (save_final_analysis tool persisted it)
+  const { getAnalysisFromDb } = await import('./db');
+  const analysis = await getAnalysisFromDb(idea.id);
+  if (!analysis) {
+    throw new Error('Analysis not found after agent completed');
+  }
+
+  return analysis;
+}
+
+/**
+ * Entry point that switches between v1 (procedural) and v2 (agentic).
+ */
+export async function runResearchAgentAuto(
+  idea: ProductIdea,
+  additionalContext?: string,
+): Promise<Analysis> {
+  if (process.env.AGENT_V2 === 'true') {
+    return runResearchAgentV2(idea, additionalContext);
+  }
+  return runResearchAgent(idea, additionalContext);
 }
 
 function buildSEOScoringContext(seoResult: SEOPipelineResult): string {
