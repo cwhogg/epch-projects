@@ -91,7 +91,7 @@ const stages = [
   {
     stage: 'Testing',
     href: '/testing',
-    description: 'Track published content performance',
+    description: 'Track SEO of published content performance',
     accentColor: '#fbbf24',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -143,7 +143,7 @@ export default async function Home() {
           Product Pipeline
         </h1>
         <p className="mt-2 text-sm sm:text-base relative" style={{ color: 'var(--text-secondary)' }}>
-          From idea to optimized content — track every stage of development.
+          From idea to optimized SEO test — track every stage of development.
         </p>
       </header>
 
