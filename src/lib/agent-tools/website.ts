@@ -680,6 +680,15 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
           }
         }
 
+        // Check for removed Next.js 15 APIs
+        for (const [filePath, content] of Object.entries(allFiles)) {
+          if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) continue;
+          if (content.includes('request.ip') || content.includes('req.ip')) {
+            issues.push(`${filePath}: Uses request.ip which does not exist on NextRequest in Next.js 15`);
+            suggestions.push(`Replace with request.headers.get('x-forwarded-for') || 'unknown'`);
+          }
+        }
+
         // Check for Next.js 15 async params pattern in dynamic routes
         for (const [filePath, content] of Object.entries(allFiles)) {
           if (!filePath.includes('[') || !filePath.endsWith('page.tsx')) continue;

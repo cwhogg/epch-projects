@@ -207,6 +207,7 @@ Generate these files as a JSON object where keys are file paths and values are f
    - INCR email_signups_count:{SITE_ID}
    - Reads SITE_ID from process.env.SITE_ID
    - Returns JSON { success: true } or { error: string }
+   - Do NOT use request.ip — it does not exist on NextRequest in Next.js 15. Use request.headers.get('x-forwarded-for') if you need the IP.
 
 7. **components/content/MarkdownRenderer.tsx** — Client component:
    - Renders HTML string with proper styling
