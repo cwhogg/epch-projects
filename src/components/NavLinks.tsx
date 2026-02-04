@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 const navItems = [
   { href: '/ideation', label: 'Ideation' },
   { href: '/analysis', label: 'Analysis' },
+  { href: '/website', label: 'Website' },
   { href: '/content', label: 'Content' },
   { href: '/testing', label: 'Testing' },
   { href: '/optimization', label: 'Optimization' },
@@ -16,7 +17,9 @@ function isActive(pathname: string, href: string): boolean {
     case '/ideation':
       return pathname === '/ideation';
     case '/analysis':
-      return pathname === '/analysis' || pathname.startsWith('/analyses/') && !pathname.includes('/content') && !pathname.includes('/analytics') || pathname.startsWith('/ideas/');
+      return pathname === '/analysis' || pathname.startsWith('/analyses/') && !pathname.includes('/content') && !pathname.includes('/analytics') && !pathname.includes('/painted-door') || pathname.startsWith('/ideas/');
+    case '/website':
+      return pathname === '/website' || pathname.includes('/painted-door');
     case '/content':
       return pathname === '/content' || pathname.includes('/content');
     case '/testing':

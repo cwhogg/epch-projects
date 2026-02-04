@@ -1,4 +1,5 @@
 import { getAnalysesFromDb, getAllContentCalendars, getPublishedPieces, isRedisConfigured } from '@/lib/db';
+import { getAllPaintedDoorSites } from '@/lib/painted-door-db';
 import { getAnalyses } from '@/lib/data';
 import PipelineCard, { PipelineArrow, PipelineArrowDown } from '@/components/PipelineCard';
 
@@ -6,14 +7,16 @@ export const dynamic = 'force-dynamic';
 
 async function getCounts() {
   if (isRedisConfigured()) {
-    const [analyses, calendars] = await Promise.all([
+    const [analyses, calendars, paintedDoorSites] = await Promise.all([
       getAnalysesFromDb(),
       getAllContentCalendars(),
+      getAllPaintedDoorSites(),
     ]);
 
     return {
       ideation: 0,
       analysis: analyses.length,
+      website: paintedDoorSites.length,
       content: calendars.filter((c) => c.pieces.length > 0).length,
       testing: calendars.filter((c) => c.active !== false).length,
       optimization: 0,
@@ -24,6 +27,7 @@ async function getCounts() {
   return {
     ideation: 0,
     analysis: analyses.length,
+    website: 0,
     content: 0,
     testing: 0,
     optimization: 0,
@@ -54,6 +58,19 @@ const stages = [
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8" />
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    ),
+  },
+  {
+    stage: 'Website',
+    href: '/website',
+    description: 'Build website for painted door test',
+    accentColor: '#38bdf8',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
       </svg>
     ),
   },
@@ -102,6 +119,7 @@ const stages = [
 const countKeys: Record<string, keyof Awaited<ReturnType<typeof getCounts>>> = {
   Ideation: 'ideation',
   Analysis: 'analysis',
+  Website: 'website',
   Content: 'content',
   Testing: 'testing',
   Optimization: 'optimization',
