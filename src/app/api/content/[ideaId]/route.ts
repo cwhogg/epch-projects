@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isRedisConfigured, getContentCalendar, saveContentCalendar } from '@/lib/db';
 import { generateContentCalendar, appendNewPieces } from '@/lib/content-agent';
+import { getPaintedDoorSite } from '@/lib/painted-door-db';
 
 export const maxDuration = 300;
 
@@ -32,6 +33,14 @@ export async function POST(
       // No body or invalid JSON — that's fine, use default
     }
 
+    // If no target specified, check for a painted door site for this idea
+    if (!targetId) {
+      const site = await getPaintedDoorSite(ideaId);
+      if (site?.status === 'live') {
+        targetId = site.id;
+      }
+    }
+
     let calendar;
     if (mode === 'append') {
       calendar = await appendNewPieces(ideaId, targetId, userFeedback);
@@ -61,10 +70,15 @@ export async function GET(
 
   try {
     const calendar = await getContentCalendar(ideaId);
+
+    // Check if a painted door site exists for this idea
+    const site = await getPaintedDoorSite(ideaId);
+    const suggestedTargetId = site?.status === 'live' ? site.id : undefined;
+
     if (!calendar) {
-      return NextResponse.json({ exists: false });
+      return NextResponse.json({ exists: false, suggestedTargetId });
     }
-    return NextResponse.json({ exists: true, calendar });
+    return NextResponse.json({ exists: true, calendar, suggestedTargetId });
   } catch (error) {
     console.error('Failed to get content calendar:', error);
     return NextResponse.json({ error: 'Failed to get content calendar' }, { status: 500 });

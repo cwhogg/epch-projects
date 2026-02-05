@@ -34,6 +34,10 @@ export default function ContentCalendarPage() {
     try {
       const res = await fetch(`/api/content/${analysisId}`);
       const data = await res.json();
+      // Use suggested target from painted door site if available
+      if (data.suggestedTargetId && !calendar) {
+        setTargetId(data.suggestedTargetId);
+      }
       if (data.exists && data.calendar) {
         setCalendar(data.calendar);
         if (data.calendar.targetId) setTargetId(data.calendar.targetId);
