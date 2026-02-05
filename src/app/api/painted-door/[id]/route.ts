@@ -102,6 +102,55 @@ export async function GET(
   }
 }
 
+// PATCH — repair painted door site + publish target (fix repo name mismatches)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  if (!isRedisConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const { repoName, siteUrl } = body as { repoName?: string; siteUrl?: string };
+
+    if (!repoName) {
+      return NextResponse.json({ error: 'repoName is required' }, { status: 400 });
+    }
+
+    const { savePaintedDoorSite, saveDynamicPublishTarget, getDynamicPublishTarget } = await import('@/lib/painted-door-db');
+
+    // Fix painted door site record
+    const site = await getPaintedDoorSite(id);
+    if (site) {
+      site.repoName = repoName;
+      if (siteUrl) site.siteUrl = siteUrl;
+      await savePaintedDoorSite(site);
+    }
+
+    // Fix publish target
+    const siteId = site?.id || `pd-${id}`;
+    const target = await getDynamicPublishTarget(siteId);
+    if (target) {
+      target.repoName = repoName;
+      if (siteUrl) target.siteUrl = siteUrl;
+      await saveDynamicPublishTarget(target);
+    }
+
+    return NextResponse.json({
+      message: 'Repaired',
+      site: site ? { id: site.id, repoName: site.repoName, siteUrl: site.siteUrl } : null,
+      target: target ? { id: target.id, repoName: target.repoName, siteUrl: target.siteUrl } : null,
+    });
+  } catch (error) {
+    console.error('Error repairing painted door site:', error);
+    return NextResponse.json({ error: 'Repair failed' }, { status: 500 });
+  }
+}
+
 // DELETE — reset stuck progress so it can be re-triggered
 export async function DELETE(
   request: NextRequest,
