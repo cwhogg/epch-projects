@@ -98,6 +98,7 @@ async function pushFilesToGitHub(
   owner: string,
   repoName: string,
   files: Record<string, string>,
+  message = 'Initial commit: painted door test site',
 ): Promise<string> {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error('GITHUB_TOKEN not configured');
@@ -166,7 +167,7 @@ async function pushFilesToGitHub(
     method: 'POST',
     headers,
     body: JSON.stringify({
-      message: 'Initial commit: painted door test site',
+      message,
       tree: treeData.sha,
       parents: [parentSha],
     }),
@@ -289,6 +290,8 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
   let repo: { owner: string; name: string; url: string } | null = null;
   let vercelProjectId = '';
   let siteUrl = '';
+  let lastDeploymentId: string | null = null;
+  let pushCount = 0;
 
   return [
     // -----------------------------------------------------------------------
@@ -818,7 +821,11 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         if (Object.keys(allFiles).length === 0) return { error: 'No files to push — generate files first' };
         if (!idea || !brand) return { error: 'Missing idea or brand context' };
 
-        const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles);
+        const commitMessage = pushCount === 0
+          ? 'Initial commit: painted door test site'
+          : 'Fix build errors';
+        const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles, commitMessage);
+        pushCount++;
 
         // Save partial site state
         const partialSite: PaintedDoorSite = {
@@ -934,6 +941,7 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         }
 
         const deployment = deployments[0];
+        lastDeploymentId = deployment.uid;
         const state = deployment.state || deployment.readyState;
 
         if (state === 'READY') {
@@ -942,10 +950,100 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         }
 
         if (state === 'ERROR') {
-          return { status: 'ERROR', message: `Deployment failed: ${deployment.url}`, deploymentUrl: deployment.url };
+          return { status: 'ERROR', message: `Deployment failed: ${deployment.url}`, deploymentUrl: deployment.url, deploymentId: deployment.uid };
         }
 
         return { status: state, message: 'Deployment in progress' };
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    // Fetch build error logs from a failed deployment
+    // -----------------------------------------------------------------------
+    {
+      name: 'get_deploy_error',
+      description:
+        'Fetch the build error logs from a failed Vercel deployment. Call this after check_deploy_status returns ERROR.',
+      input_schema: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+      execute: async () => {
+        if (!lastDeploymentId) {
+          return { error: 'No deployment ID — call check_deploy_status first' };
+        }
+
+        const token = process.env.VERCEL_TOKEN;
+        if (!token) return { error: 'VERCEL_TOKEN not configured' };
+
+        const res = await fetch(
+          `https://api.vercel.com/v2/deployments/${lastDeploymentId}/events`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          return { error: `Failed to fetch deploy events: ${res.status} ${errBody}` };
+        }
+
+        const events = await res.json() as { type?: string; text?: string; payload?: { text?: string; deploymentId?: string } }[];
+
+        // Extract build output lines
+        const buildLines: string[] = [];
+        for (const event of events) {
+          const text = event.text || event.payload?.text || '';
+          if (text) buildLines.push(text);
+        }
+
+        // Return the last 50 lines (where errors typically appear)
+        const tail = buildLines.slice(-50);
+
+        // Also extract lines that look like errors for quick identification
+        const errorLines = buildLines.filter(
+          (line) =>
+            /error/i.test(line) ||
+            /failed/i.test(line) ||
+            /Type '.*' is not assignable/i.test(line) ||
+            /Cannot find module/i.test(line) ||
+            /Module not found/i.test(line),
+        );
+
+        return {
+          deploymentId: lastDeploymentId,
+          totalLines: buildLines.length,
+          errorLines: errorLines.length > 0 ? errorLines : undefined,
+          buildOutput: tail,
+        };
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    // Update a single file in the generated site
+    // -----------------------------------------------------------------------
+    {
+      name: 'update_file',
+      description:
+        'Update or create a single file in the generated site. Use this to fix build errors without regenerating all files.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          filePath: {
+            type: 'string',
+            description: 'File path (e.g. "app/api/signup/route.ts")',
+          },
+          content: {
+            type: 'string',
+            description: 'Full file content',
+          },
+        },
+        required: ['filePath', 'content'],
+      },
+      execute: async (input) => {
+        const filePath = input.filePath as string;
+        const content = input.content as string;
+        allFiles[filePath] = content;
+        return { success: true, filePath, size: content.length };
       },
     },
 

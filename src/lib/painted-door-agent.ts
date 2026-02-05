@@ -603,8 +603,10 @@ You have tools to:
 6. Validate generated code for common issues
 7. Create a GitHub repo and push all files
 8. Create a Vercel project and deploy the site
-9. Register the site as a publish target for future content
-10. Delegate to the content agent to create a content calendar
+9. Fetch build error logs from a failed deployment (get_deploy_error)
+10. Update individual files to fix build errors (update_file)
+11. Register the site as a publish target for future content
+12. Delegate to the content agent to create a content calendar
 
 WORKFLOW:
 1. Call get_idea_context to understand the product
@@ -618,6 +620,13 @@ WORKFLOW:
 9. Call create_vercel_project to set up hosting
 10. Call trigger_deploy to start the deployment
 11. Call check_deploy_status to monitor — if not READY, wait and check again (up to 5 times)
+    IF check_deploy_status returns ERROR:
+      a. Call get_deploy_error to fetch the build logs
+      b. Analyze the error — identify which file and what the issue is
+      c. Call update_file to fix the problematic file(s)
+      d. Call push_files to push the fixed code (Vercel will auto-redeploy)
+      e. Call check_deploy_status again to monitor the new deployment
+      f. Maximum 2 fix-and-redeploy attempts. If still failing after 2 retries, report the error.
 12. Call register_publish_target to enable content publishing
 13. Call verify_site to confirm accessibility
 14. Call finalize_site to save the final record
@@ -628,6 +637,11 @@ EVALUATION RULES:
 - After generating files, ALWAYS call validate_code. If there are critical issues (missing H1, @tailwind instead of @import, missing 'use client'), you should regenerate the problematic files by calling generate_core_files or generate_content_pages again.
 - validate_code checks for BROKEN INTERNAL LINKS — links to pages that don't exist in the generated files. If broken links are found, you MUST regenerate the file containing the links and remove or fix them. Only link to routes that have a page.tsx file. Do NOT link to /about, /privacy, /terms, or /pricing unless those pages are actually generated. Do NOT link to specific blog post slugs (like /blog/some-post) unless the content file exists.
 - Maximum 1 regeneration attempt per step to avoid looping.
+- On deployment ERROR, ALWAYS call get_deploy_error before giving up. Common fixable errors:
+  - Type errors (request.ip, wrong param types) → call update_file to fix the file with correct types
+  - CSS/Tailwind errors (@apply unknown class) → call update_file to fix globals.css @theme block
+  - Missing 'use client' → call update_file to add the directive to the file
+  - Import errors → call update_file to fix the import path or update package.json with the missing dependency
 
 IMPORTANT:
 - Follow the steps in order — each step depends on the previous one
@@ -648,6 +662,8 @@ const TOOL_TO_STEP: Record<string, number> = {
   create_vercel_project: 5,
   trigger_deploy: 6,
   check_deploy_status: 6,
+  get_deploy_error: 6,
+  update_file: 6,
   register_publish_target: 7,
   verify_site: 8,
   finalize_site: 8,
