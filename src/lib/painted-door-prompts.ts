@@ -255,8 +255,9 @@ The landing page is the most important page for search ranking. Follow these rul
 - Links should have descriptive anchor text (not "click here")
 
 ### Internal Linking
-- Include nav links to /blog, /compare, and /faq sections in footer or navigation
-- Use keyword-rich anchor text for internal links
+- The TOP NAVIGATION BAR (header) MUST include links to /blog, /compare, and /faq — these are real pages, not anchor links. Users need to discover content from the main nav.
+- The footer should also include links to /blog, /compare, and /faq
+- Use keyword-rich anchor text for internal links (e.g. "Heart Health Blog" not just "Blog")
 
 ### Landing Page Content
 - FAQ section is MANDATORY — use People Also Ask questions from SERP data as FAQ items
