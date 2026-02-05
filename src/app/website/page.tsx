@@ -5,18 +5,77 @@ import { PaintedDoorSite } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-async function getSites(): Promise<(PaintedDoorSite & { signupCount: number })[]> {
-  if (!isRedisConfigured()) return [];
+interface SiteEntry {
+  id: string;
+  ideaId?: string;
+  ideaName: string;
+  siteName: string;
+  tagline?: string;
+  primaryColor: string;
+  accentColor: string;
+  status: string;
+  signupCount: number;
+  siteUrl?: string;
+  detailsHref?: string;
+  isBuiltProduct?: boolean;
+}
 
-  const sites = await getAllPaintedDoorSites();
-  const enriched = await Promise.all(
-    sites.map(async (site) => {
-      const signupCount = await getEmailSignupCount(site.id);
-      return { ...site, signupCount };
-    }),
-  );
+const builtProducts: SiteEntry[] = [
+  {
+    id: 'secondlook',
+    ideaName: 'SecondLook',
+    siteName: 'SecondLook',
+    tagline: 'AI-powered health analysis for patients with rare, complex, or undiagnosed conditions',
+    primaryColor: '#6366f1',
+    accentColor: '#818cf8',
+    status: 'live',
+    signupCount: 0,
+    siteUrl: 'https://secondlook.vercel.app',
+    isBuiltProduct: true,
+  },
+  {
+    id: 'study-platform',
+    ideaName: 'N of One',
+    siteName: 'N of One',
+    tagline: 'Personalized diagnostic guidance platform',
+    primaryColor: '#0ea5e9',
+    accentColor: '#38bdf8',
+    status: 'live',
+    signupCount: 0,
+    siteUrl: 'https://nofone.us',
+    isBuiltProduct: true,
+  },
+];
 
-  return enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+async function getSites(): Promise<SiteEntry[]> {
+  const paintedDoorEntries: SiteEntry[] = [];
+
+  if (isRedisConfigured()) {
+    const sites = await getAllPaintedDoorSites();
+    const enriched = await Promise.all(
+      sites.map(async (site) => {
+        const signupCount = await getEmailSignupCount(site.id);
+        return {
+          id: site.id,
+          ideaId: site.ideaId,
+          ideaName: site.ideaName,
+          siteName: site.brand?.siteName || site.ideaName,
+          tagline: site.brand?.tagline,
+          primaryColor: site.brand?.colors?.primary || '#38bdf8',
+          accentColor: site.brand?.colors?.accent || '#38bdf8',
+          status: site.status,
+          signupCount,
+          siteUrl: site.siteUrl,
+          detailsHref: `/analyses/${site.ideaId}/painted-door`,
+        } satisfies SiteEntry;
+      }),
+    );
+    paintedDoorEntries.push(...enriched);
+  }
+
+  paintedDoorEntries.sort((a, b) => b.signupCount - a.signupCount);
+
+  return [...builtProducts, ...paintedDoorEntries];
 }
 
 const statusStyles: Record<string, { bg: string; color: string; label: string }> = {
@@ -45,7 +104,7 @@ export default async function WebsitePage() {
           Website
         </h1>
         <p className="mt-2 text-sm sm:text-base relative" style={{ color: 'var(--text-secondary)' }}>
-          Painted door test sites — validate demand before building.
+          Test sites and products — validate demand before building.
         </p>
       </header>
 
@@ -54,7 +113,6 @@ export default async function WebsitePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-slide-up stagger-2">
           {sites.map((site) => {
             const status = statusStyles[site.status] || statusStyles.generating;
-            const primaryColor = site.brand?.colors?.primary || '#38bdf8';
 
             return (
               <div key={site.id} className="card-static overflow-hidden">
@@ -62,19 +120,19 @@ export default async function WebsitePage() {
                 <div
                   className="h-16 relative"
                   style={{
-                    background: `linear-gradient(135deg, ${primaryColor}, ${site.brand?.colors?.accent || primaryColor})`,
+                    background: `linear-gradient(135deg, ${site.primaryColor}, ${site.accentColor})`,
                   }}
                 >
                   <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.15)' }} />
                   <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
                     <span className="text-xs font-medium text-white/90 truncate">
-                      {site.brand?.siteName || site.ideaName}
+                      {site.siteName}
                     </span>
                     <span
                       className="text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0"
                       style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
                     >
-                      {status.label}
+                      {site.isBuiltProduct ? 'Product' : status.label}
                     </span>
                   </div>
                 </div>
@@ -85,9 +143,9 @@ export default async function WebsitePage() {
                     <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
                       {site.ideaName}
                     </h3>
-                    {site.brand?.tagline && (
+                    {site.tagline && (
                       <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                        {site.brand.tagline}
+                        {site.tagline}
                       </p>
                     )}
                   </div>
@@ -95,17 +153,19 @@ export default async function WebsitePage() {
                   <div className="flex items-center gap-2">
                     <span
                       className="text-xs px-1.5 py-0.5 rounded"
-                      style={{ background: status.bg, color: status.color }}
+                      style={{ background: site.isBuiltProduct ? 'rgba(99, 102, 241, 0.15)' : status.bg, color: site.isBuiltProduct ? '#818cf8' : status.color }}
                     >
-                      {status.label}
+                      {site.isBuiltProduct ? 'Product' : status.label}
                     </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {site.signupCount} signup{site.signupCount !== 1 ? 's' : ''}
-                    </span>
+                    {!site.isBuiltProduct && (
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {site.signupCount} signup{site.signupCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
-                    {site.siteUrl && site.status === 'live' && (
+                    {site.siteUrl && (site.status === 'live' || site.isBuiltProduct) && (
                       <a
                         href={site.siteUrl}
                         target="_blank"
@@ -120,17 +180,32 @@ export default async function WebsitePage() {
                         Visit site
                       </a>
                     )}
-                    <Link
-                      href={`/analyses/${site.ideaId}/painted-door`}
-                      className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                      style={{
-                        background: 'rgba(167, 139, 250, 0.1)',
-                        color: '#a78bfa',
-                        border: '1px solid rgba(167, 139, 250, 0.25)',
-                      }}
-                    >
-                      Details
-                    </Link>
+                    {site.ideaId && site.status === 'live' && (
+                      <Link
+                        href={`/analyses/${site.ideaId}/content`}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                        style={{
+                          background: 'rgba(255, 107, 91, 0.1)',
+                          color: '#ff6b5b',
+                          border: '1px solid rgba(255, 107, 91, 0.25)',
+                        }}
+                      >
+                        Create Content
+                      </Link>
+                    )}
+                    {site.detailsHref && (
+                      <Link
+                        href={site.detailsHref}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                        style={{
+                          background: 'rgba(167, 139, 250, 0.1)',
+                          color: '#a78bfa',
+                          border: '1px solid rgba(167, 139, 250, 0.25)',
+                        }}
+                      >
+                        Details
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
