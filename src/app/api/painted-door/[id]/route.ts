@@ -40,13 +40,19 @@ export async function POST(
     );
   }
 
-  // Check if already running or completed
+  // Check if already running
   const existing = await getPaintedDoorProgress(id);
   if (existing && existing.status === 'running') {
     return NextResponse.json(
       { message: 'Already running', progress: existing },
       { status: 200 },
     );
+  }
+
+  // Don't re-trigger if a live site already exists (progress TTL may have expired)
+  const existingSite = await getPaintedDoorSite(id);
+  if (existingSite?.status === 'live') {
+    return NextResponse.json({ message: 'Site already exists', site: existingSite });
   }
 
   // Run agent in background after response

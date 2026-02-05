@@ -58,13 +58,49 @@ export async function updateIdeaStatus(id: string, status: ProductIdea['status']
 }
 
 export async function deleteIdeaFromDb(id: string): Promise<boolean> {
-  const deleted = await getRedis().hdel('ideas', id);
-  // Also delete associated analysis, content, and GSC data
-  await getRedis().hdel('analyses', id);
-  await getRedis().hdel('analysis_content', id);
-  await getRedis().del(`progress:${id}`);
-  await getRedis().hdel('gsc_links', id);
-  await getRedis().del(`gsc_analytics:${id}`);
+  const r = getRedis();
+  const deleted = await r.hdel('ideas', id);
+
+  // Analysis + progress + GSC
+  await r.hdel('analyses', id);
+  await r.hdel('analysis_content', id);
+  await r.del(`progress:${id}`);
+  await r.hdel('gsc_links', id);
+  await r.del(`gsc_analytics:${id}`);
+
+  // Content calendar, pieces, progress, rejected pieces
+  await r.del(`content_calendar:${id}`);
+  await r.del(`content_pieces:${id}`);
+  await r.del(`content_progress:${id}`);
+  await r.del(`rejected_pieces:${id}`);
+
+  // Published pieces: scan set for entries matching this idea, remove from set + meta hash
+  const allPublished = await r.smembers('published_pieces') as string[];
+  const ideaEntries = allPublished.filter((key) => key.startsWith(`${id}:`));
+  if (ideaEntries.length > 0) {
+    await r.srem('published_pieces', ...ideaEntries);
+    await r.hdel('published_pieces_meta', ...ideaEntries);
+  }
+
+  // Painted door site, progress, publish target, email signups
+  try {
+    const { getPaintedDoorSite, deletePaintedDoorSite, deletePaintedDoorProgress, getDynamicPublishTarget } = await import('@/lib/painted-door-db');
+    const site = await getPaintedDoorSite(id);
+    await deletePaintedDoorProgress(id);
+    await deletePaintedDoorSite(id);
+
+    if (site) {
+      const siteId = site.id;
+      // Remove publish target keyed by siteId
+      await r.hdel('painted_door_targets', siteId);
+      // Remove email signup data
+      await r.del(`email_signups:${siteId}`);
+      await r.del(`email_signups_count:${siteId}`);
+    }
+  } catch {
+    // Painted door cleanup is best-effort — don't break delete if it fails
+  }
+
   return deleted > 0;
 }
 
