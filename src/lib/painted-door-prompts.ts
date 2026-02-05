@@ -258,6 +258,7 @@ The landing page is the most important page for search ranking. Follow these rul
 - The TOP NAVIGATION BAR (header) MUST include links to /blog, /compare, and /faq — these are real pages, not anchor links. Users need to discover content from the main nav.
 - The footer should also include links to /blog, /compare, and /faq
 - Use keyword-rich anchor text for internal links (e.g. "Heart Health Blog" not just "Blog")
+- CRITICAL: Do NOT link to pages that don't exist. Only link to routes that have a page.tsx file generated. Do NOT add links to /about, /privacy, /terms, /pricing, or specific blog post slugs (e.g. /blog/some-post) unless those pages are actually generated. Every href must resolve to a real page.
 
 ### Landing Page Content
 - FAQ section is MANDATORY — use People Also Ask questions from SERP data as FAQ items

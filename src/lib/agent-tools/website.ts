@@ -713,6 +713,56 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
           }
         }
 
+        // Check internal links resolve to generated pages
+        const generatedRoutes = new Set<string>();
+        generatedRoutes.add('/'); // landing page always exists
+        for (const filePath of Object.keys(allFiles)) {
+          // app/blog/page.tsx → /blog, app/compare/[slug]/page.tsx → /compare/* (dynamic)
+          const pageMatch = filePath.match(/^app\/(.+)\/page\.tsx$/);
+          if (pageMatch) {
+            const route = '/' + pageMatch[1];
+            generatedRoutes.add(route);
+            // Dynamic routes: /blog/[slug] means /blog/* is valid
+            if (route.includes('[')) {
+              const base = route.replace(/\/\[.*$/, '');
+              generatedRoutes.add(base + '/*');
+            }
+          }
+        }
+        // Content directories mean dynamic content will be served
+        for (const filePath of Object.keys(allFiles)) {
+          if (filePath.startsWith('content/blog/')) generatedRoutes.add('/blog/*');
+          if (filePath.startsWith('content/comparison/') || filePath.startsWith('content/compare/')) generatedRoutes.add('/compare/*');
+          if (filePath.startsWith('content/faq/')) generatedRoutes.add('/faq/*');
+        }
+
+        const brokenLinks: string[] = [];
+        for (const [filePath, content] of Object.entries(allFiles)) {
+          if (!filePath.endsWith('.tsx')) continue;
+          // Match href="/..." patterns (both JSX and template literals)
+          const linkMatches = content.matchAll(/href=["'`](\/?[a-z][a-z0-9\-\/]*)["'`]/gi);
+          for (const match of linkMatches) {
+            const href = match[1].startsWith('/') ? match[1] : '/' + match[1];
+            if (href.startsWith('/#')) continue; // anchor links are fine
+            if (generatedRoutes.has(href)) continue; // exact match
+            // Check if covered by a dynamic route wildcard
+            const parentPath = href.replace(/\/[^/]+$/, '');
+            if (generatedRoutes.has(parentPath + '/*')) continue;
+            brokenLinks.push(`${filePath}: links to "${href}" but no page exists for this route`);
+          }
+        }
+        if (brokenLinks.length > 0) {
+          // Deduplicate by route
+          const seenRoutes = new Set<string>();
+          for (const link of brokenLinks) {
+            const route = link.match(/"([^"]+)"/)?.[1] || '';
+            if (seenRoutes.has(route)) continue;
+            seenRoutes.add(route);
+            issues.push(link);
+          }
+          suggestions.push('Remove links to pages that do not exist, or generate the missing pages. Only link to routes that have a corresponding page.tsx file or will be served by a dynamic [slug] route with content.');
+        }
+
         const score = Math.max(0, 10 - issues.length);
         return {
           pass: issues.length === 0,

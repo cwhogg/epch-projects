@@ -626,6 +626,7 @@ WORKFLOW:
 EVALUATION RULES:
 - After design_brand, ALWAYS call evaluate_brand. If the primary keyword is missing from the headline or the meta description is the wrong length, note this but continue — the code generation prompts include the brand identity so the LLM can compensate.
 - After generating files, ALWAYS call validate_code. If there are critical issues (missing H1, @tailwind instead of @import, missing 'use client'), you should regenerate the problematic files by calling generate_core_files or generate_content_pages again.
+- validate_code checks for BROKEN INTERNAL LINKS — links to pages that don't exist in the generated files. If broken links are found, you MUST regenerate the file containing the links and remove or fix them. Only link to routes that have a page.tsx file. Do NOT link to /about, /privacy, /terms, or /pricing unless those pages are actually generated. Do NOT link to specific blog post slugs (like /blog/some-post) unless the content file exists.
 - Maximum 1 regeneration attempt per step to avoid looping.
 
 IMPORTANT:
