@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { getIdeas, saveIdea, deleteIdea } from '@/lib/data';
-import { saveIdeaToDb, getIdeasFromDb, deleteIdeaFromDb, isRedisConfigured } from '@/lib/db';
+import { saveIdeaToDb, getIdeasFromDb, getIdeaFromDb, deleteIdeaFromDb, isRedisConfigured } from '@/lib/db';
 import { ProductIdea } from '@/types';
 
 export async function GET() {
@@ -56,6 +56,41 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error saving idea:', error);
     return NextResponse.json({ error: 'Failed to save idea' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    if (!isRedisConfigured()) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
+    const idea = await getIdeaFromDb(id);
+    if (!idea) {
+      return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
+    }
+
+    const body = await request.json();
+
+    // Only allow updating specific fields
+    if (body.name !== undefined) idea.name = body.name;
+    if (body.description !== undefined) idea.description = body.description;
+    if (body.targetUser !== undefined) idea.targetUser = body.targetUser;
+    if (body.problemSolved !== undefined) idea.problemSolved = body.problemSolved;
+    if (body.url !== undefined) idea.url = normalizeUrl(body.url);
+
+    await saveIdeaToDb(idea);
+    return NextResponse.json(idea);
+  } catch (error) {
+    console.error('Error updating idea:', error);
+    return NextResponse.json({ error: 'Failed to update idea' }, { status: 500 });
   }
 }
 

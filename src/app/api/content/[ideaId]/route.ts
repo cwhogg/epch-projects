@@ -98,7 +98,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { targetId, active, pieceOrder } = body;
+    const { targetId, active, pieceOrder, ideaName } = body;
 
     const calendar = await getContentCalendar(ideaId);
     if (!calendar) {
@@ -107,6 +107,7 @@ export async function PATCH(
 
     if (targetId !== undefined) calendar.targetId = targetId;
     if (active !== undefined) calendar.active = active;
+    if (ideaName !== undefined) calendar.ideaName = ideaName;
 
     // Reorder pieces by the given ID order and assign sequential priorities
     if (Array.isArray(pieceOrder)) {
