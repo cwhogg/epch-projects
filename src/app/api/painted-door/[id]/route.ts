@@ -157,13 +157,26 @@ export async function PATCH(
   }
 }
 
-// DELETE — reset stuck progress so it can be re-triggered
+// DELETE — fully remove painted door site and all associated data
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Get site first to find siteId for cleanup
+  const site = await getPaintedDoorSite(id);
+  const siteId = site?.id;
+
   await deletePaintedDoorProgress(id);
   await deletePaintedDoorSite(id);
-  return NextResponse.json({ message: 'Progress reset', ideaId: id });
+
+  // Clean up publish target and email signups if we have a siteId
+  if (siteId) {
+    const { deleteDynamicPublishTarget, deleteEmailSignups } = await import('@/lib/painted-door-db');
+    await deleteDynamicPublishTarget(siteId);
+    await deleteEmailSignups(siteId);
+  }
+
+  return NextResponse.json({ message: 'Painted door site deleted', ideaId: id, siteId });
 }

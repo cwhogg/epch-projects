@@ -80,6 +80,10 @@ export async function getAllDynamicPublishTargets(): Promise<PublishTarget[]> {
   return Object.values(data).map((v) => parseValue<PublishTarget>(v));
 }
 
+export async function deleteDynamicPublishTarget(targetId: string): Promise<void> {
+  await getRedis().hdel('painted_door_targets', targetId);
+}
+
 // ---------- Email Signups ----------
 
 export async function recordEmailSignup(siteId: string, email: string, source?: string): Promise<void> {
@@ -97,3 +101,9 @@ export async function getEmailSignups(siteId: string, limit: number = 100): Prom
   const entries = await getRedis().lrange(`email_signups:${siteId}`, 0, limit - 1);
   return entries.map((e) => parseValue<{ email: string; timestamp: string; source: string }>(e));
 }
+
+export async function deleteEmailSignups(siteId: string): Promise<void> {
+  await getRedis().del(`email_signups:${siteId}`);
+  await getRedis().del(`email_signups_count:${siteId}`);
+}
+
