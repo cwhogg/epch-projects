@@ -46,7 +46,10 @@ async function getExistingFileSha(
 ): Promise<string | null> {
   const res = await fetch(
     `https://api.github.com/repos/${target.repoOwner}/${target.repoName}/contents/${filePath}?ref=${target.branch}`,
-    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' } },
+    {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+      cache: 'no-store' as RequestCache,
+    },
   );
   if (res.status === 404) return null;
   if (!res.ok) {
@@ -105,6 +108,7 @@ export async function commitToRepo(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
+      cache: 'no-store' as RequestCache,
     },
   );
 
@@ -114,10 +118,18 @@ export async function commitToRepo(
   }
 
   const data = await res.json();
+  const commitSha = data?.commit?.sha as string;
+  if (!commitSha) {
+    console.error('[commitToRepo] Unexpected response — no commit SHA:', JSON.stringify(data).slice(0, 500));
+    throw new Error(`GitHub commit returned unexpected response (no commit SHA)`);
+  }
+
+  console.log(`[commitToRepo] Committed ${filePath} to ${target.repoOwner}/${target.repoName}@${target.branch} — SHA: ${commitSha}`);
+
   return {
-    commitSha: data.commit.sha as string,
+    commitSha,
     filePath,
-    htmlUrl: data.content.html_url as string,
+    htmlUrl: data.content?.html_url as string,
   };
 }
 

@@ -159,7 +159,7 @@ async function publishCandidate(candidate: PipelineCandidate): Promise<PipelineR
 
   const result: PipelineResult = {
     action,
-    detail: `Published "${piece.title}" to ${target.id}:${commitResult.filePath}`,
+    detail: `Published "${piece.title}" to ${target.repoOwner}/${target.repoName}:${commitResult.filePath} (${commitResult.commitSha.slice(0, 7)})`,
     pieceId: piece.id,
     ideaId: calendar.ideaId,
     commitSha: commitResult.commitSha,
