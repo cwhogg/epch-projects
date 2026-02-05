@@ -1,17 +1,11 @@
 import { ContentType } from '@/types';
 import { PublishTarget, getPublishTarget } from './publish-targets';
 
-function getFilename(type: ContentType, slug: string): string {
-  switch (type) {
-    case 'blog-post':
-      return `blog-${slug}.md`;
-    case 'comparison':
-      return `comparison-${slug}.md`;
-    case 'faq':
-      return `faq-${slug}.md`;
-    default:
-      return `${slug}.md`;
-  }
+function getFilename(_type: ContentType, slug: string): string {
+  // Files live in type-specific directories (content/blog/, content/comparison/,
+  // content/faq/) so no type prefix needed. The template's lib/content.ts uses
+  // the filename (minus .md) as the slug for URLs.
+  return `${slug}.md`;
 }
 
 function flipDraftToPublished(markdown: string): string {

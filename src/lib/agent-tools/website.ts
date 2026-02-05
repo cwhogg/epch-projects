@@ -4,11 +4,8 @@ import { ContentContext } from '@/lib/content-prompts';
 import { buildContentContext, generateContentCalendar } from '@/lib/content-agent';
 import { detectVertical } from '@/lib/seo-knowledge';
 import { getIdeaFromDb } from '@/lib/db';
-import {
-  buildBrandIdentityPrompt,
-  buildCoreFilesPrompt,
-  buildContentPagesPrompt,
-} from '@/lib/painted-door-prompts';
+import { buildBrandIdentityPrompt } from '@/lib/painted-door-prompts';
+import { assembleAllFiles } from '@/lib/painted-door-templates';
 import {
   savePaintedDoorSite,
   saveDynamicPublishTarget,
@@ -282,8 +279,6 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
   let idea: ProductIdea | null = null;
   let ctx: ContentContext | null = null;
   let brand: BrandIdentity | null = null;
-  let coreFiles: Record<string, string> = {};
-  let contentFiles: Record<string, string> = {};
   let allFiles: Record<string, string> = {};
   let siteSlug = '';
   let siteId = '';
@@ -366,93 +361,26 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
     },
 
     // -----------------------------------------------------------------------
-    // Generate core files (layout, CSS, page, signup API, etc.)
+    // Assemble all site files from templates
     // -----------------------------------------------------------------------
     {
-      name: 'generate_core_files',
+      name: 'assemble_site_files',
       description:
-        'Generate the core website files (layout, CSS, landing page, signup API, robots, sitemap, components). Requires design_brand to have been called first.',
+        'Assemble all site files from templates using the brand identity. Instant — no LLM call needed. Requires design_brand to have been called first.',
       input_schema: {
         type: 'object',
         properties: {},
         required: [],
       },
       execute: async () => {
-        if (!brand || !idea || !ctx) return { error: 'Call design_brand first' };
+        if (!brand || !ctx) return { error: 'Call design_brand first' };
 
-        const prompt = buildCoreFilesPrompt(brand, idea, ctx);
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 16384,
-          messages: [{ role: 'user', content: prompt }],
-        });
-
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        const result = parseJsonResponse(text) as { files: Record<string, string> };
-        coreFiles = result.files;
-
-        // Validate expected files
-        const expectedCore = ['app/layout.tsx', 'app/globals.css', 'app/page.tsx'];
-        const missing = expectedCore.filter((f) => !coreFiles[f]);
+        allFiles = assembleAllFiles(brand, ctx);
 
         return {
           success: true,
-          fileCount: Object.keys(coreFiles).length,
-          files: Object.keys(coreFiles),
-          missingExpected: missing.length > 0 ? missing : undefined,
-          truncated: response.stop_reason === 'max_tokens',
-        };
-      },
-    },
-
-    // -----------------------------------------------------------------------
-    // Generate content pages and config
-    // -----------------------------------------------------------------------
-    {
-      name: 'generate_content_pages',
-      description:
-        'Generate content pages (blog, compare, FAQ routes), package.json, tsconfig, next.config, postcss config, and lib/content.ts. Requires generate_core_files to have been called first.',
-      input_schema: {
-        type: 'object',
-        properties: {},
-        required: [],
-      },
-      execute: async () => {
-        if (!brand || !idea || !ctx) return { error: 'Call generate_core_files first' };
-        if (Object.keys(coreFiles).length === 0) return { error: 'No core files generated yet' };
-
-        const prompt = buildContentPagesPrompt(
-          brand,
-          coreFiles['app/layout.tsx'] || '',
-          coreFiles['app/globals.css'] || '',
-          idea,
-          ctx,
-        );
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 12288,
-          messages: [{ role: 'user', content: prompt }],
-        });
-
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        const result = parseJsonResponse(text) as { files: Record<string, string> };
-        contentFiles = result.files;
-
-        // Merge all files
-        allFiles = {
-          ...coreFiles,
-          ...contentFiles,
-          'content/blog/.gitkeep': '',
-          'content/comparison/.gitkeep': '',
-          'content/faq/.gitkeep': '',
-        };
-
-        return {
-          success: true,
-          contentFileCount: Object.keys(contentFiles).length,
           totalFileCount: Object.keys(allFiles).length,
-          files: Object.keys(contentFiles),
-          truncated: response.stop_reason === 'max_tokens',
+          files: Object.keys(allFiles),
         };
       },
     },

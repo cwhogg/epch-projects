@@ -2,13 +2,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { BrandIdentity, PaintedDoorSite, PaintedDoorProgress } from '@/types';
 import { getIdeaFromDb } from './db';
 import { buildContentContext } from './content-agent';
-import { detectVertical } from './seo-knowledge';
 import { PublishTarget } from './publish-targets';
-import {
-  buildBrandIdentityPrompt,
-  buildCoreFilesPrompt,
-  buildContentPagesPrompt,
-} from './painted-door-prompts';
+import { buildBrandIdentityPrompt } from './painted-door-prompts';
+import { assembleAllFiles } from './painted-door-templates';
 import {
   savePaintedDoorSite,
   savePaintedDoorProgress,
@@ -35,8 +31,7 @@ const anthropic = new Anthropic({
 
 const PIPELINE_STEPS = [
   'Brand Identity',
-  'Code Gen (core)',
-  'Code Gen (content)',
+  'Assemble Files',
   'Create GitHub Repo',
   'Push Files',
   'Create Vercel Project',
@@ -386,7 +381,6 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     const ctx = await buildContentContext(ideaId);
     if (!ctx) throw new Error('No analysis context found — run research agent first');
 
-    const vertical = detectVertical(idea);
     const siteSlug = slugify(idea.name);
     const siteId = `pd-${siteSlug}`;
 
@@ -404,75 +398,26 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     const brand = parseJsonResponse(brandText) as BrandIdentity;
     await updateStep(ideaId, progress, 0, 'complete', brand.siteName);
 
-    // --- Step 2: Code Gen (core files) ---
+    // --- Step 2: Assemble Files ---
     await updateStep(ideaId, progress, 1, 'running');
 
-    const corePrompt = buildCoreFilesPrompt(brand, idea, ctx);
-    const coreResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 16384,
-      messages: [{ role: 'user', content: corePrompt }],
-    });
+    const allFiles = assembleAllFiles(brand, ctx);
 
-    const coreText = coreResponse.content[0].type === 'text' ? coreResponse.content[0].text : '';
-    const coreResult = parseJsonResponse(coreText) as { files: Record<string, string> };
-    const coreFiles = coreResult.files;
+    await updateStep(ideaId, progress, 1, 'complete', `${Object.keys(allFiles).length} files`);
 
-    // Validate expected files present
-    const expectedCore = ['app/layout.tsx', 'app/globals.css', 'app/page.tsx'];
-    for (const expected of expectedCore) {
-      if (!coreFiles[expected]) {
-        console.warn(`Expected core file missing: ${expected}`);
-      }
-    }
-
-    await updateStep(ideaId, progress, 1, 'complete', `${Object.keys(coreFiles).length} files`);
-
-    // --- Step 3: Code Gen (content pages + config) ---
+    // --- Step 3: Create GitHub Repo ---
     await updateStep(ideaId, progress, 2, 'running');
-
-    const contentPrompt = buildContentPagesPrompt(
-      brand,
-      coreFiles['app/layout.tsx'] || '',
-      coreFiles['app/globals.css'] || '',
-      idea,
-      ctx,
-    );
-    const contentResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 12288,
-      messages: [{ role: 'user', content: contentPrompt }],
-    });
-
-    const contentText = contentResponse.content[0].type === 'text' ? contentResponse.content[0].text : '';
-    const contentResult = parseJsonResponse(contentText) as { files: Record<string, string> };
-    const contentFiles = contentResult.files;
-
-    // Merge all files
-    const allFiles: Record<string, string> = {
-      ...coreFiles,
-      ...contentFiles,
-      // Add empty content directories with .gitkeep
-      'content/blog/.gitkeep': '',
-      'content/comparison/.gitkeep': '',
-      'content/faq/.gitkeep': '',
-    };
-
-    await updateStep(ideaId, progress, 2, 'complete', `${Object.keys(contentFiles).length} files`);
-
-    // --- Step 4: Create GitHub Repo ---
-    await updateStep(ideaId, progress, 3, 'running');
 
     const repo = await createGitHubRepo(siteSlug, `${brand.siteName} — ${brand.tagline}`);
 
-    await updateStep(ideaId, progress, 3, 'complete', repo.url);
+    await updateStep(ideaId, progress, 2, 'complete', repo.url);
 
-    // --- Step 5: Push Files ---
-    await updateStep(ideaId, progress, 4, 'running');
+    // --- Step 4: Push Files ---
+    await updateStep(ideaId, progress, 3, 'running');
 
     const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles);
 
-    await updateStep(ideaId, progress, 4, 'complete', commitSha.substring(0, 7));
+    await updateStep(ideaId, progress, 3, 'complete', commitSha.substring(0, 7));
 
     // Save partial state in case later steps fail
     const partialSite: PaintedDoorSite = {
@@ -491,8 +436,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     };
     await savePaintedDoorSite(partialSite);
 
-    // --- Step 6: Create Vercel Project ---
-    await updateStep(ideaId, progress, 5, 'running');
+    // --- Step 5: Create Vercel Project ---
+    await updateStep(ideaId, progress, 4, 'running');
 
     const vercel = await createVercelProject(repo.owner, repo.name, siteId);
 
@@ -500,10 +445,10 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     partialSite.status = 'deploying';
     await savePaintedDoorSite(partialSite);
 
-    await updateStep(ideaId, progress, 5, 'complete', vercel.projectId);
+    await updateStep(ideaId, progress, 4, 'complete', vercel.projectId);
 
-    // --- Step 7: Wait for Deploy ---
-    await updateStep(ideaId, progress, 6, 'running');
+    // --- Step 6: Wait for Deploy ---
+    await updateStep(ideaId, progress, 5, 'running');
 
     // Push empty commit to trigger Vercel's GitHub webhook
     await triggerDeployViaGitPush(repo.owner, repo.name);
@@ -513,10 +458,10 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     partialSite.siteUrl = siteUrl;
     await savePaintedDoorSite(partialSite);
 
-    await updateStep(ideaId, progress, 6, 'complete', siteUrl);
+    await updateStep(ideaId, progress, 5, 'complete', siteUrl);
 
-    // --- Step 8: Register Publish Target ---
-    await updateStep(ideaId, progress, 7, 'running');
+    // --- Step 7: Register Publish Target ---
+    await updateStep(ideaId, progress, 6, 'running');
 
     const publishTarget: PublishTarget = {
       id: siteId,
@@ -532,10 +477,10 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     };
     await saveDynamicPublishTarget(publishTarget);
 
-    await updateStep(ideaId, progress, 7, 'complete', siteId);
+    await updateStep(ideaId, progress, 6, 'complete', siteId);
 
-    // --- Step 9: Verify ---
-    await updateStep(ideaId, progress, 8, 'running');
+    // --- Step 8: Verify ---
+    await updateStep(ideaId, progress, 7, 'running');
 
     let verified = false;
     try {
@@ -554,7 +499,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     };
     await savePaintedDoorSite(finalSite);
 
-    await updateStep(ideaId, progress, 8, 'complete', verified ? 'Site live' : 'Deploy confirmed');
+    await updateStep(ideaId, progress, 7, 'complete', verified ? 'Site live' : 'Deploy confirmed');
 
     // Complete
     progress.status = 'complete';
@@ -598,28 +543,26 @@ You have tools to:
 1. Load the product idea and research context
 2. Design a brand identity (colors, typography, copy)
 3. Evaluate the brand identity for SEO quality
-4. Generate core website files (layout, CSS, landing page, signup API)
-5. Generate content pages (blog, compare, FAQ templates, config files)
-6. Validate generated code for common issues
-7. Create a GitHub repo and push all files
-8. Create a Vercel project and deploy the site
-9. Fetch build error logs from a failed deployment (get_deploy_error)
-10. Update individual files to fix build errors (update_file)
-11. Register the site as a publish target for future content
-12. Delegate to the content agent to create a content calendar
+4. Assemble all site files from pre-tested templates (instant, no LLM call)
+5. Validate generated code for common issues
+6. Create a GitHub repo and push all files
+7. Create a Vercel project and deploy the site
+8. Fetch build error logs from a failed deployment (get_deploy_error)
+9. Update individual files to fix build errors (update_file)
+10. Register the site as a publish target for future content
+11. Delegate to the content agent to create a content calendar
 
 WORKFLOW:
 1. Call get_idea_context to understand the product
 2. Call design_brand to create the brand identity
-3. Call evaluate_brand to check SEO quality — if score < 7, note the issues for the next steps
-4. Call generate_core_files to create the landing page and core components
-5. Call generate_content_pages to create content page templates and config
-6. Call validate_code to check for common issues — if there are critical issues (missing H1, wrong Tailwind syntax, missing 'use client'), regenerate the affected files
-7. Call create_repo to create a GitHub repository
-8. Call push_files to push all generated files
-9. Call create_vercel_project to set up hosting
-10. Call trigger_deploy to start the deployment
-11. Call check_deploy_status to monitor — if not READY, wait and check again (up to 5 times)
+3. Call evaluate_brand to check SEO quality — if score < 7, note the issues
+4. Call assemble_site_files to build all ~21 files from templates using brand data
+5. Call validate_code to check for common issues
+6. Call create_repo to create a GitHub repository
+7. Call push_files to push all generated files
+8. Call create_vercel_project to set up hosting
+9. Call trigger_deploy to start the deployment
+10. Call check_deploy_status to monitor — if not READY, wait and check again (up to 5 times)
     IF check_deploy_status returns ERROR:
       a. Call get_deploy_error to fetch the build logs
       b. Analyze the error — identify which file and what the issue is
@@ -627,46 +570,38 @@ WORKFLOW:
       d. Call push_files to push the fixed code (Vercel will auto-redeploy)
       e. Call check_deploy_status again to monitor the new deployment
       f. Maximum 2 fix-and-redeploy attempts. If still failing after 2 retries, report the error.
-12. Call register_publish_target to enable content publishing
-13. Call verify_site to confirm accessibility
-14. Call finalize_site to save the final record
-15. Call invoke_content_agent to create a content calendar for the site
+11. Call register_publish_target to enable content publishing
+12. Call verify_site to confirm accessibility
+13. Call finalize_site to save the final record
+14. Call invoke_content_agent to create a content calendar for the site
 
 EVALUATION RULES:
-- After design_brand, ALWAYS call evaluate_brand. If the primary keyword is missing from the headline or the meta description is the wrong length, note this but continue — the code generation prompts include the brand identity so the LLM can compensate.
-- After generating files, ALWAYS call validate_code. If there are critical issues (missing H1, @tailwind instead of @import, missing 'use client'), you should regenerate the problematic files by calling generate_core_files or generate_content_pages again.
-- validate_code checks for BROKEN INTERNAL LINKS — links to pages that don't exist in the generated files. If broken links are found, you MUST regenerate the file containing the links and remove or fix them. Only link to routes that have a page.tsx file. Do NOT link to /about, /privacy, /terms, or /pricing unless those pages are actually generated. Do NOT link to specific blog post slugs (like /blog/some-post) unless the content file exists.
-- Maximum 1 regeneration attempt per step to avoid looping.
-- On deployment ERROR, ALWAYS call get_deploy_error before giving up. Common fixable errors:
-  - Type errors (request.ip, wrong param types) → call update_file to fix the file with correct types
-  - CSS/Tailwind errors (@apply unknown class) → call update_file to fix globals.css @theme block
-  - Missing 'use client' → call update_file to add the directive to the file
-  - Import errors → call update_file to fix the import path or update package.json with the missing dependency
+- After design_brand, ALWAYS call evaluate_brand. If the primary keyword is missing from the headline or the meta description is the wrong length, note this but continue.
+- After assemble_site_files, ALWAYS call validate_code. Templates are pre-tested so issues should be rare. If validate_code reports a problem, use update_file to fix the specific file.
+- On deployment ERROR, ALWAYS call get_deploy_error before giving up. Use update_file to fix the specific file, then push_files and check_deploy_status again.
 
 IMPORTANT:
 - Follow the steps in order — each step depends on the previous one
 - If check_deploy_status shows the deployment is still in progress, call it again after a moment
 - If any step fails, report the error clearly
-- If a code generation step was truncated (max_tokens), note that in your final report
 - Do NOT skip any steps
-- Use the scratchpad (write_scratchpad / read_scratchpad) to store notes between steps, e.g. evaluation issues to address in code generation`;
+- Use the scratchpad (write_scratchpad / read_scratchpad) to store notes between steps`;
 
 // Map tool names to v1 pipeline step indices for progress bridging
 const TOOL_TO_STEP: Record<string, number> = {
-  get_idea_context: 0, // Maps to "Brand Identity" start
+  get_idea_context: 0,
   design_brand: 0,
-  generate_core_files: 1,
-  generate_content_pages: 2,
-  create_repo: 3,
-  push_files: 4,
-  create_vercel_project: 5,
-  trigger_deploy: 6,
-  check_deploy_status: 6,
-  get_deploy_error: 6,
-  update_file: 6,
-  register_publish_target: 7,
-  verify_site: 8,
-  finalize_site: 8,
+  assemble_site_files: 1,
+  create_repo: 2,
+  push_files: 3,
+  create_vercel_project: 4,
+  trigger_deploy: 5,
+  check_deploy_status: 5,
+  get_deploy_error: 5,
+  update_file: 5,
+  register_publish_target: 6,
+  verify_site: 7,
+  finalize_site: 7,
 };
 
 async function runPaintedDoorAgentV2(ideaId: string): Promise<void> {

@@ -189,6 +189,7 @@ export interface BrandIdentity {
     ctaText: string;
     valueProps: { title: string; description: string }[];
     socialProofApproach: string;
+    faqs: { question: string; answer: string }[];
   };
 }
 
