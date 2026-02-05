@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getAllContentCalendars, getPublishedPieces, isRedisConfigured } from '@/lib/db';
 import { ContentCalendar } from '@/types';
 import { PUBLISH_TARGETS } from '@/lib/publish-targets';
+import { getAllPaintedDoorSites } from '@/lib/painted-door-db';
 import ProgramToggleButton from '@/components/ProgramToggleButton';
 
 export const dynamic = 'force-dynamic';
@@ -11,16 +12,24 @@ async function getData(): Promise<{ calendars: (ContentCalendar & { generatedCou
     return { calendars: [] };
   }
 
-  const [calendars, publishedKeys] = await Promise.all([
+  const [calendars, publishedKeys, paintedDoorSites] = await Promise.all([
     getAllContentCalendars(),
     getPublishedPieces(),
+    getAllPaintedDoorSites().catch(() => []),
   ]);
   const publishedSet = new Set(publishedKeys);
+
+  // Build lookup from painted door site IDs to their URLs
+  const dynamicSiteMap = new Map(
+    paintedDoorSites.map((s) => [s.id, s.siteUrl.replace('https://', '')])
+  );
 
   const enriched = calendars.map((cal) => {
     const targetId = cal.targetId || 'secondlook';
     const target = PUBLISH_TARGETS[targetId];
-    const siteName = target ? target.siteUrl.replace('https://', '') : targetId;
+    const siteName = target
+      ? target.siteUrl.replace('https://', '')
+      : dynamicSiteMap.get(targetId) || targetId;
     const generatedCount = cal.pieces.filter((p) => p.status === 'complete').length;
     const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
     return { ...cal, generatedCount, publishedCount, siteName };

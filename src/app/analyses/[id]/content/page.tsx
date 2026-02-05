@@ -24,11 +24,6 @@ export default function ContentCalendarPage() {
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [appending, setAppending] = useState(false);
-  const [targetSaved, setTargetSaved] = useState(false);
-  const [publishTargets, setPublishTargets] = useState<{ id: string; siteUrl: string }[]>([
-    { id: 'secondlook', siteUrl: 'https://secondlook.vercel.app' },
-    { id: 'study-platform', siteUrl: 'https://nofone.us' },
-  ]);
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -98,7 +93,7 @@ export default function ContentCalendarPage() {
       const res = await fetch(`/api/content/${analysisId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId, mode: 'full' }),
+        body: JSON.stringify({ mode: 'full' }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -120,7 +115,7 @@ export default function ContentCalendarPage() {
       const res = await fetch(`/api/content/${analysisId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId, mode: 'append', userFeedback: feedback }),
+        body: JSON.stringify({ mode: 'append', userFeedback: feedback }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -155,35 +150,10 @@ export default function ContentCalendarPage() {
     }
   };
 
-  const handleTargetChange = async (newTarget: string) => {
-    setTargetId(newTarget);
-    if (calendar) {
-      // Update existing calendar's target
-      const res = await fetch(`/api/content/${analysisId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: newTarget }),
-      }).catch(() => null);
-      if (res?.ok) {
-        setTargetSaved(true);
-        setTimeout(() => setTargetSaved(false), 1500);
-      }
-    }
-  };
-
   const [autoGenerating, setAutoGenerating] = useState(false);
 
   useEffect(() => {
     fetchCalendar();
-    // Fetch dynamic publish targets
-    fetch('/api/publish-targets')
-      .then((res) => res.ok ? res.json() : null)
-      .then((targets) => {
-        if (Array.isArray(targets) && targets.length > 0) {
-          setPublishTargets(targets.map((t: { id: string; siteUrl: string }) => ({ id: t.id, siteUrl: t.siteUrl })));
-        }
-      })
-      .catch(() => {}); // Keep defaults on error
   }, [fetchCalendar]);
 
   // Auto-generate calendar if none exists (skip the extra click)
@@ -396,25 +366,12 @@ export default function ContentCalendarPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <div className="relative">
-              <select
-                value={targetId}
-                onChange={(e) => handleTargetChange(e.target.value)}
-                className="text-xs pl-2 pr-6 py-1.5 rounded-lg cursor-pointer"
-                style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: `1px solid ${targetSaved ? 'rgba(52, 211, 153, 0.5)' : 'var(--border-subtle)'}`, backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239ca3af\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', WebkitAppearance: 'none', appearance: 'none' as const, transition: 'border-color 0.2s' }}
-              >
-                {publishTargets.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.id === 'study-platform' ? 'nofone.us' : t.id}
-                  </option>
-                ))}
-              </select>
-              {targetSaved && (
-                <span className="absolute -bottom-5 left-0 text-xs animate-fade-in" style={{ color: '#34d399' }}>
-                  Saved
-                </span>
-              )}
-            </div>
+            <span
+              className="text-xs px-2 py-1.5 rounded-lg"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+            >
+              {targetId}
+            </span>
             <button
               onClick={triggerPublish}
               disabled={publishing}

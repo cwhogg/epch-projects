@@ -180,7 +180,7 @@ export async function generateContentCalendar(ideaId: string, targetId?: string)
   const calendar: ContentCalendar = {
     ideaId,
     ideaName: ctx.ideaName,
-    targetId: targetId || 'secondlook',
+    targetId,
     strategySummary: parsed.strategySummary,
     pieces,
     createdAt: new Date().toISOString(),
