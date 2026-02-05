@@ -330,6 +330,7 @@ async function triggerDeployViaGitPush(
 
 async function waitForDeployment(
   projectId: string,
+  projectName: string,
   timeoutMs: number = 300000,
 ): Promise<string> {
   const token = process.env.VERCEL_TOKEN;
@@ -352,7 +353,8 @@ async function waitForDeployment(
       if (deployments.length > 0) {
         const deployment = deployments[0];
         if (deployment.state === 'READY' || deployment.readyState === 'READY') {
-          return `https://${deployment.url}`;
+          // Return the stable production alias, not the deployment-specific URL
+          return `https://${projectName}.vercel.app`;
         }
         if (deployment.state === 'ERROR' || deployment.readyState === 'ERROR') {
           throw new Error(`Deployment failed: ${deployment.url}`);
@@ -453,7 +455,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     // Push empty commit to trigger Vercel's GitHub webhook
     await triggerDeployViaGitPush(repo.owner, repo.name);
 
-    const siteUrl = await waitForDeployment(vercel.projectId);
+    const siteUrl = await waitForDeployment(vercel.projectId, repo.name);
 
     partialSite.siteUrl = siteUrl;
     await savePaintedDoorSite(partialSite);
