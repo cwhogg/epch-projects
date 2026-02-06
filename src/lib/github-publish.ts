@@ -143,3 +143,51 @@ export async function commitToSecondlook(
   const target = await getPublishTarget('secondlook');
   return commitToRepo(target, type, slug, markdown, commitMessage);
 }
+
+/** Delete a file from a repo */
+export async function deleteFromRepo(
+  target: PublishTarget,
+  type: ContentType,
+  slug: string,
+  commitMessage: string,
+): Promise<{ deleted: boolean; filePath: string }> {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error('GITHUB_TOKEN not configured');
+  }
+
+  const dir = target.pathMap[type] || 'content';
+  const filePath = `${dir}/${slug}.md`;
+
+  // Get existing file SHA
+  const existingSha = await getExistingFileSha(token, target, filePath);
+  if (!existingSha) {
+    return { deleted: false, filePath };
+  }
+
+  const res = await fetch(
+    `https://api.github.com/repos/${target.repoOwner}/${target.repoName}/contents/${filePath}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: commitMessage,
+        sha: existingSha,
+        branch: target.branch,
+      }),
+      cache: 'no-store' as RequestCache,
+    },
+  );
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`GitHub delete failed: ${res.status} ${errBody}`);
+  }
+
+  console.log(`[deleteFromRepo] Deleted ${filePath} from ${target.repoOwner}/${target.repoName}`);
+  return { deleted: true, filePath };
+}

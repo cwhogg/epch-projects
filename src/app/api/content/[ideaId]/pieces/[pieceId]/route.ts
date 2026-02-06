@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isRedisConfigured, getContentPieces, getContentCalendar, saveContentCalendar, saveRejectedPiece } from '@/lib/db';
+import { isRedisConfigured, getContentPieces, getContentCalendar, saveContentCalendar, saveRejectedPiece, removePublishedPiece } from '@/lib/db';
 import { RejectedPiece } from '@/types';
+import { deleteFromRepo } from '@/lib/github-publish';
+import { getPublishTarget } from '@/lib/publish-targets';
 
 // GET — Retrieve a single generated content piece
 export async function GET(
@@ -87,5 +89,62 @@ export async function PATCH(
   } catch (error) {
     console.error('Error rejecting content piece:', error);
     return NextResponse.json({ error: 'Failed to reject piece' }, { status: 500 });
+  }
+}
+
+// DELETE — Remove a published piece from a target repo
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ ideaId: string; pieceId: string }> }
+) {
+  const { ideaId, pieceId } = await params;
+
+  if (!isRedisConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const { targetId } = await request.json();
+
+    if (!targetId) {
+      return NextResponse.json({ error: 'targetId is required' }, { status: 400 });
+    }
+
+    // Get piece info
+    const pieces = await getContentPieces(ideaId);
+    const piece = pieces.find((p) => p.id === pieceId);
+
+    if (!piece) {
+      return NextResponse.json({ error: 'Content piece not found' }, { status: 404 });
+    }
+
+    // Get target
+    const target = await getPublishTarget(targetId);
+
+    // Delete from repo
+    const result = await deleteFromRepo(
+      target,
+      piece.type,
+      piece.slug,
+      `Remove: ${piece.title}`,
+    );
+
+    // Remove from published_pieces tracking if it was deleted
+    if (result.deleted) {
+      await removePublishedPiece(ideaId, pieceId);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      deleted: result.deleted,
+      filePath: result.filePath,
+      targetId,
+    });
+  } catch (error) {
+    console.error('Error deleting published piece:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to delete piece' },
+      { status: 500 },
+    );
   }
 }

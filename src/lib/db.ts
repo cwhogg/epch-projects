@@ -316,6 +316,12 @@ export async function isPiecePublished(ideaId: string, pieceId: string): Promise
   return result === 1;
 }
 
+export async function removePublishedPiece(ideaId: string, pieceId: string): Promise<void> {
+  const key = `${ideaId}:${pieceId}`;
+  await getRedis().srem('published_pieces', key);
+  await getRedis().hdel('published_pieces_meta', key);
+}
+
 export async function getPublishedPieces(): Promise<string[]> {
   const members = await getRedis().smembers('published_pieces');
   return members as string[];
