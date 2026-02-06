@@ -522,6 +522,15 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     };
     await savePaintedDoorSite(finalSite);
 
+    // If a content calendar already exists, update its targetId to point to this site
+    const { getContentCalendar, saveContentCalendar } = await import('./db');
+    const existingCalendar = await getContentCalendar(ideaId);
+    if (existingCalendar && existingCalendar.targetId !== siteId) {
+      existingCalendar.targetId = siteId;
+      await saveContentCalendar(ideaId, existingCalendar);
+      console.log(`[painted-door] Updated content calendar targetId to ${siteId}`);
+    }
+
     await updateStep(ideaId, progress, 7, 'complete', verified ? 'Site live' : 'Deploy confirmed');
 
     // Complete

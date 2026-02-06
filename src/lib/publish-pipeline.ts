@@ -136,7 +136,18 @@ async function publishCandidate(candidate: PipelineCandidate): Promise<PipelineR
     action = 'generated_and_published';
   }
 
-  const targetId = calendar.targetId || 'secondlook';
+  // Determine target: use calendar's targetId, or check for a live painted door site, or default to secondlook
+  let targetId = calendar.targetId;
+  if (!targetId) {
+    const { getPaintedDoorSite } = await import('./painted-door-db');
+    const site = await getPaintedDoorSite(calendar.ideaId);
+    if (site?.status === 'live') {
+      targetId = site.id;
+      console.log(`[publish] Calendar missing targetId, using painted door site: ${targetId}`);
+    } else {
+      targetId = 'secondlook';
+    }
+  }
   const target = await getPublishTarget(targetId);
 
   const commitMessage = `Publish: ${piece.title} (${piece.type})`;
