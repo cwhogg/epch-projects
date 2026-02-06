@@ -25,6 +25,7 @@ import {
   checkHeadingHierarchy,
   combineEvaluations,
 } from './common';
+import { parseLLMJson } from '../llm-utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -37,22 +38,6 @@ function slugifyName(name: string): string {
 function getFilename(piece: ContentPiece): string {
   const prefix = piece.type === 'comparison' ? 'comparison' : piece.type === 'faq' ? 'faq' : 'blog';
   return `${prefix}-${piece.slug}.md`;
-}
-
-/**
- * Parse JSON from LLM text, handling markdown fences and extraction.
- */
-function parseJSON<T>(text: string): T {
-  let jsonStr = text.trim();
-  const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
-  try {
-    return JSON.parse(jsonStr);
-  } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-    throw new Error('Failed to parse JSON from LLM response');
-  }
 }
 
 /**
@@ -133,7 +118,7 @@ export function createContentTools(ideaId: string): ToolDefinition[] {
         });
 
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        const parsed = parseJSON<{
+        const parsed = parseLLMJson<{
           strategySummary: string;
           pieces: Array<{
             type: string; title: string; slug: string;

@@ -10,6 +10,7 @@ import {
   SERP_CRITERIA,
   CONTENT_GAP_TYPES,
 } from './seo-knowledge';
+import { cleanJSONString } from './llm-utils';
 
 // ---------- Types ----------
 
@@ -811,16 +812,6 @@ function generateMarkdownReport(
 }
 
 // ---------- Helpers ----------
-
-export function cleanJSONString(str: string): string {
-  // Remove trailing commas before } or ] (common LLM mistake)
-  let cleaned = str.replace(/,\s*([\]}])/g, '$1');
-  // Remove single-line comments (// ...)
-  cleaned = cleaned.replace(/\/\/[^\n]*/g, '');
-  // Remove multi-line comments (/* ... */)
-  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
-  return cleaned;
-}
 
 export function parseSEOJSON(text: string): SEOAnalysisResult {
   // Try to extract JSON from the response

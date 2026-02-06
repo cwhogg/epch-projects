@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   fuzzyMatch,
-  cleanJSONString,
   parseSEOJSON,
   validateSEOResult,
   compareSEOResults,
 } from '../seo-analysis';
+import { cleanJSONString } from '../llm-utils';
 
 describe('fuzzyMatch', () => {
   it('matches exact keywords', () => {

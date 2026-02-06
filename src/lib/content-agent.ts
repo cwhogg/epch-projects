@@ -36,6 +36,7 @@ import {
 import { createContentTools } from './agent-tools/content';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
+import { parseLLMJson } from './llm-utils';
 import type { AgentConfig } from '@/types';
 
 const anthropic = new Anthropic({
@@ -140,24 +141,7 @@ export async function generateContentCalendar(ideaId: string, targetId?: string)
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
 
   // Parse JSON response
-  let parsed: { strategySummary: string; pieces: Array<{ type: string; title: string; slug: string; targetKeywords: string[]; contentGap?: string; priority: number; rationale: string }> };
-  try {
-    // Strip markdown code fences if present
-    let jsonStr = text.trim();
-    const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-    parsed = JSON.parse(jsonStr);
-  } catch {
-    // Try extracting JSON object from text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error('Failed to parse content calendar response');
-    }
-  }
+  const parsed = parseLLMJson<{ strategySummary: string; pieces: Array<{ type: string; title: string; slug: string; targetKeywords: string[]; contentGap?: string; priority: number; rationale: string }> }>(text);
 
   const validTypes: ContentType[] = ['blog-post', 'comparison', 'faq'];
 
@@ -227,22 +211,7 @@ export async function appendNewPieces(ideaId: string, targetId?: string, userFee
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
 
-  let parsed: { pieces: Array<{ type: string; title: string; slug: string; targetKeywords: string[]; contentGap?: string; priority: number; rationale: string }> };
-  try {
-    let jsonStr = text.trim();
-    const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-    parsed = JSON.parse(jsonStr);
-  } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error('Failed to parse append calendar response');
-    }
-  }
+  const parsed = parseLLMJson<{ pieces: Array<{ type: string; title: string; slug: string; targetKeywords: string[]; contentGap?: string; priority: number; rationale: string }> }>(text);
 
   // Determine nextPieceIndex by scanning all existing + rejected IDs
   const allIds = [

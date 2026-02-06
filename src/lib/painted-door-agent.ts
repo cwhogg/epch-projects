@@ -24,6 +24,7 @@ import {
 import { createWebsiteTools } from './agent-tools/website';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
+import { parseLLMJson } from './llm-utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -72,24 +73,6 @@ function slugify(name: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-function parseJsonResponse(text: string): unknown {
-  let jsonStr = text.trim();
-  // Strip markdown code fences
-  const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) {
-    jsonStr = codeBlockMatch[1].trim();
-  }
-  try {
-    return JSON.parse(jsonStr);
-  } catch {
-    // Try extracting JSON object from text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    throw new Error('Failed to parse JSON from LLM response');
-  }
-}
 
 // ---------- GitHub API ----------
 
@@ -435,7 +418,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     });
 
     const brandText = brandResponse.content[0].type === 'text' ? brandResponse.content[0].text : '';
-    const brand = parseJsonResponse(brandText) as BrandIdentity;
+    const brand = parseLLMJson<BrandIdentity>(brandText);
     await updateStep(ideaId, progress, 0, 'complete', brand.siteName);
 
     // --- Step 2: Assemble Files ---

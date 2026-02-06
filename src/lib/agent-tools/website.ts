@@ -13,27 +13,11 @@ import {
 } from '@/lib/painted-door-db';
 import { PublishTarget } from '@/lib/publish-targets';
 import { checkMetaDescription, combineEvaluations } from './common';
+import { parseLLMJson } from '../llm-utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
-
-// ---------------------------------------------------------------------------
-// JSON parsing helper (same as painted-door-agent.ts)
-// ---------------------------------------------------------------------------
-
-function parseJsonResponse(text: string): unknown {
-  let jsonStr = text.trim();
-  const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
-  try {
-    return JSON.parse(jsonStr);
-  } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-    throw new Error('Failed to parse JSON from LLM response');
-  }
-}
 
 function slugify(name: string): string {
   return name
@@ -348,7 +332,7 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         });
 
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        brand = parseJsonResponse(text) as BrandIdentity;
+        brand = parseLLMJson<BrandIdentity>(text);
 
         return {
           success: true,
