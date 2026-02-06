@@ -40,8 +40,10 @@ async function getData(): Promise<{ calendars: (ContentCalendar & { generatedCou
     const siteName = target
       ? target.siteUrl.replace('https://', '')
       : dynamicSiteMap.get(targetId) || targetId;
-    const generatedCount = generatedPiecesMap.get(cal.ideaId) || 0;
+    const totalGenerated = generatedPiecesMap.get(cal.ideaId) || 0;
     const publishedCount = cal.pieces.filter((p) => publishedSet.has(`${cal.ideaId}:${p.id}`)).length;
+    // Show only unpublished generated pieces in the "generated" count
+    const generatedCount = Math.max(0, totalGenerated - publishedCount);
     return { ...cal, generatedCount, publishedCount, siteName };
   });
 
@@ -126,7 +128,7 @@ export default async function ContentPage() {
                       {cal.pieces.length} pieces
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }}>
-                      {cal.generatedCount} generated
+                      {cal.generatedCount} ready
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa' }}>
                       {cal.publishedCount} published
