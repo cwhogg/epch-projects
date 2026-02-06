@@ -339,7 +339,7 @@ export function compareSEOResults(
   };
 }
 
-function fuzzyMatch(keyword: string, list: string[]): boolean {
+export function fuzzyMatch(keyword: string, list: string[]): boolean {
   const normalized = keyword.replace(/[^a-z0-9 ]/g, '').trim();
   return list.some((item) => {
     const normalizedItem = item.replace(/[^a-z0-9 ]/g, '').trim();
@@ -403,7 +403,7 @@ interface ContentGapAnalysis {
   gapTypes: string[];
 }
 
-function detectContentGap(serp: SERPResult): ContentGapAnalysis {
+export function detectContentGap(serp: SERPResult): ContentGapAnalysis {
   const gapTypes: string[] = [];
   const criteria = SERP_CRITERIA['general-niche'];
 
@@ -812,7 +812,7 @@ function generateMarkdownReport(
 
 // ---------- Helpers ----------
 
-function cleanJSONString(str: string): string {
+export function cleanJSONString(str: string): string {
   // Remove trailing commas before } or ] (common LLM mistake)
   let cleaned = str.replace(/,\s*([\]}])/g, '$1');
   // Remove single-line comments (// ...)
@@ -822,7 +822,7 @@ function cleanJSONString(str: string): string {
   return cleaned;
 }
 
-function parseSEOJSON(text: string): SEOAnalysisResult {
+export function parseSEOJSON(text: string): SEOAnalysisResult {
   // Try to extract JSON from the response
   let jsonStr = text.trim();
 
@@ -858,7 +858,7 @@ function parseSEOJSON(text: string): SEOAnalysisResult {
   }
 }
 
-function validateSEOResult(parsed: Record<string, unknown>): SEOAnalysisResult {
+export function validateSEOResult(parsed: Record<string, unknown>): SEOAnalysisResult {
   const keywords: SEOKeyword[] = Array.isArray(parsed.keywords)
     ? parsed.keywords.map((k: Record<string, unknown>) => {
         const kw: SEOKeyword = {
