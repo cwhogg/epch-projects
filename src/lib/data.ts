@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ProductIdea, Analysis, AnalysisScores, LeaderboardEntry } from '@/types';
-import { formatScoreName } from './utils';
+import { buildLeaderboard } from './utils';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const IDEAS_FILE = path.join(DATA_DIR, 'ideas.json');
@@ -227,44 +227,6 @@ export function getAnalysis(id: string): { analysis: Analysis; content: { main: 
 
 // Generate leaderboard
 export function getLeaderboard(): LeaderboardEntry[] {
-  const analyses = getAnalyses();
-
-  // Sort by recommendation priority, then by available scores
-  const sorted = analyses.sort((a, b) => {
-    const recPriority: Record<string, number> = { 'Tier 1': 0, 'Tier 2': 1, 'Incomplete': 2, 'Tier 3': 3 };
-    const aPriority = recPriority[a.recommendation] ?? 2;
-    const bPriority = recPriority[b.recommendation] ?? 2;
-
-    if (aPriority !== bPriority) return aPriority - bPriority;
-
-    // Then by confidence
-    const confPriority = { 'High': 0, 'Medium': 1, 'Low': 2, 'Unknown': 3 };
-    const aConf = confPriority[a.confidence] ?? 3;
-    const bConf = confPriority[b.confidence] ?? 3;
-
-    return aConf - bConf;
-  });
-
-  return sorted.map((analysis, index) => {
-    // Find top strength (highest non-null score)
-    const scoreEntries = Object.entries(analysis.scores)
-      .filter(([key, val]) => val !== null && key !== 'overall')
-      .sort((a, b) => (b[1] as number) - (a[1] as number));
-
-    const topStrength = scoreEntries[0]
-      ? `${formatScoreName(scoreEntries[0][0])}: ${scoreEntries[0][1]}/10`
-      : 'No scores yet';
-
-    return {
-      rank: index + 1,
-      ideaName: analysis.ideaName,
-      ideaId: analysis.id,
-      overallScore: analysis.scores.overall,
-      confidence: analysis.confidence,
-      recommendation: analysis.recommendation,
-      topStrength,
-      topRisk: analysis.risks[0] || 'None identified',
-    };
-  });
+  return buildLeaderboard(getAnalyses());
 }
 
