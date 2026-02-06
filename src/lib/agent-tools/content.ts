@@ -26,14 +26,11 @@ import {
   combineEvaluations,
 } from './common';
 import { parseLLMJson } from '../llm-utils';
+import { slugify } from '../utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
-
-function slugifyName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
 
 function getFilename(piece: ContentPiece): string {
   const prefix = piece.type === 'comparison' ? 'comparison' : piece.type === 'faq' ? 'faq' : 'blog';
@@ -484,7 +481,7 @@ Rewrite the complete content piece with the requested improvements. Preserve the
         // Write to vault (best-effort)
         if (cachedCtx) {
           try {
-            const dir = path.join(process.cwd(), 'experiments', slugifyName(cachedCtx.ideaName), 'content');
+            const dir = path.join(process.cwd(), 'experiments', slugify(cachedCtx.ideaName), 'content');
             await fs.mkdir(dir, { recursive: true });
             await fs.writeFile(path.join(dir, getFilename(completedPiece)), generated.markdown, 'utf-8');
           } catch {

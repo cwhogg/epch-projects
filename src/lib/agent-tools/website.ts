@@ -14,17 +14,11 @@ import {
 import { PublishTarget } from '@/lib/publish-targets';
 import { checkMetaDescription, combineEvaluations } from './common';
 import { parseLLMJson } from '../llm-utils';
+import { slugify } from '../utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
 
 // ---------------------------------------------------------------------------
 // GitHub API helpers (extracted from painted-door-agent.ts)

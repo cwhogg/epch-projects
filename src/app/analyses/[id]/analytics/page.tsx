@@ -14,6 +14,7 @@ import {
   GSCAnalyticsSummary,
   WeeklyReport,
 } from '@/types';
+import { fuzzyMatchPair } from '@/lib/utils';
 
 interface AnalysisInfo {
   ideaName: string;
@@ -34,17 +35,6 @@ interface GSCProperty {
   permissionLevel: string;
 }
 
-function fuzzyMatchKeyword(query: string, keyword: string): boolean {
-  const normalizedQuery = query.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-  const normalizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-  if (normalizedQuery === normalizedKeyword) return true;
-  if (normalizedQuery.includes(normalizedKeyword) || normalizedKeyword.includes(normalizedQuery)) return true;
-  const words1 = new Set(normalizedQuery.split(/\s+/));
-  const words2 = new Set(normalizedKeyword.split(/\s+/));
-  const intersection = [...words1].filter((w) => words2.has(w));
-  const minSize = Math.min(words1.size, words2.size);
-  return minSize > 0 && intersection.length / minSize >= 0.6;
-}
 
 function buildComparisons(
   predictedKeywords: AnalysisInfo['seoData'] extends null ? never : NonNullable<AnalysisInfo['seoData']>['synthesis']['topKeywords'],
@@ -54,7 +44,7 @@ function buildComparisons(
   const matchedQueries = new Set<string>();
 
   for (const kw of predictedKeywords) {
-    const matchingRow = queryData.find((q) => fuzzyMatchKeyword(q.query, kw.keyword));
+    const matchingRow = queryData.find((q) => fuzzyMatchPair(q.query, kw.keyword));
     if (matchingRow) {
       matchedQueries.add(matchingRow.query);
     }
@@ -77,7 +67,7 @@ function buildComparisons(
   }
 
   const unexpectedWinners = queryData
-    .filter((q) => !matchedQueries.has(q.query) && !predictedKeywords.some((kw) => fuzzyMatchKeyword(q.query, kw.keyword)))
+    .filter((q) => !matchedQueries.has(q.query) && !predictedKeywords.some((kw) => fuzzyMatchPair(q.query, kw.keyword)))
     .sort((a, b) => b.impressions - a.impressions)
     .slice(0, 20);
 

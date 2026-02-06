@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ProductIdea, Analysis, AnalysisScores, LeaderboardEntry } from '@/types';
+import { formatScoreName } from './utils';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const IDEAS_FILE = path.join(DATA_DIR, 'ideas.json');
@@ -267,13 +268,3 @@ export function getLeaderboard(): LeaderboardEntry[] {
   });
 }
 
-function formatScoreName(key: string): string {
-  const names: Record<string, string> = {
-    seoOpportunity: 'SEO',
-    competitiveLandscape: 'Competition',
-    willingnessToPay: 'WTP',
-    differentiationPotential: 'Differentiation',
-    expertiseAlignment: 'Expertise',
-  };
-  return names[key] || key;
-}

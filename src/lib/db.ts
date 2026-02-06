@@ -1,4 +1,5 @@
 import { getRedis, parseValue, isRedisConfigured } from './redis';
+import { formatScoreName } from './utils';
 import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece } from '@/types';
 
 export { isRedisConfigured } from './redis';
@@ -134,17 +135,6 @@ export async function getAnalysisContent(id: string): Promise<AnalysisContent | 
 }
 
 // Leaderboard
-function formatScoreName(key: string): string {
-  const names: Record<string, string> = {
-    seoOpportunity: 'SEO',
-    competitiveLandscape: 'Competition',
-    willingnessToPay: 'WTP',
-    differentiationPotential: 'Differentiation',
-    expertiseAlignment: 'Expertise',
-  };
-  return names[key] || key;
-}
-
 export async function getLeaderboardFromDb(): Promise<LeaderboardEntry[]> {
   const analyses = await getAnalysesFromDb();
 

@@ -11,6 +11,7 @@ import {
   CONTENT_GAP_TYPES,
 } from './seo-knowledge';
 import { cleanJSONString } from './llm-utils';
+import { fuzzyMatchPair } from './utils';
 
 // ---------- Types ----------
 
@@ -341,20 +342,7 @@ export function compareSEOResults(
 }
 
 export function fuzzyMatch(keyword: string, list: string[]): boolean {
-  const normalized = keyword.replace(/[^a-z0-9 ]/g, '').trim();
-  return list.some((item) => {
-    const normalizedItem = item.replace(/[^a-z0-9 ]/g, '').trim();
-    // Exact match
-    if (normalized === normalizedItem) return true;
-    // One contains the other
-    if (normalized.includes(normalizedItem) || normalizedItem.includes(normalized)) return true;
-    // Word overlap >= 60%
-    const words1 = new Set(normalized.split(/\s+/));
-    const words2 = new Set(normalizedItem.split(/\s+/));
-    const intersection = [...words1].filter((w) => words2.has(w));
-    const minSize = Math.min(words1.size, words2.size);
-    return minSize > 0 && intersection.length / minSize >= 0.6;
-  });
+  return list.some((item) => fuzzyMatchPair(keyword, item));
 }
 
 // ---------- SERP Validation ----------

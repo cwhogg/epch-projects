@@ -25,6 +25,7 @@ import { createWebsiteTools } from './agent-tools/website';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
 import { parseLLMJson } from './llm-utils';
+import { slugify } from './utils';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -66,12 +67,6 @@ async function updateStep(
   await savePaintedDoorProgress(ideaId, progress);
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
 
 
 // ---------- GitHub API ----------

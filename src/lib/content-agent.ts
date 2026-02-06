@@ -37,6 +37,7 @@ import { createContentTools } from './agent-tools/content';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
 import { parseLLMJson } from './llm-utils';
+import { slugify } from './utils';
 import type { AgentConfig } from '@/types';
 
 const anthropic = new Anthropic({
@@ -385,15 +386,8 @@ export async function generateSinglePiece(ctx: ContentContext, piece: ContentPie
 
 // ---------- File Output ----------
 
-function slugifyName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
-
 function getContentDir(ideaName: string): string {
-  return path.join(process.cwd(), 'experiments', slugifyName(ideaName), 'content');
+  return path.join(process.cwd(), 'experiments', slugify(ideaName), 'content');
 }
 
 function getFilename(piece: ContentPiece): string {
