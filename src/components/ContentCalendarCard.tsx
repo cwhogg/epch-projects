@@ -24,13 +24,13 @@ function StatusBadge({ status, published }: { status: ContentPiece['status']; pu
   let label: string;
 
   if (published) {
-    bg = 'rgba(96, 165, 250, 0.15)'; color = '#60a5fa'; label = 'Published';
+    bg = 'rgba(96, 165, 250, 0.15)'; color = 'var(--color-info)'; label = 'Published';
   } else if (status === 'complete') {
-    bg = 'rgba(52, 211, 153, 0.15)'; color = '#34d399'; label = 'Generated';
+    bg = 'rgba(52, 211, 153, 0.15)'; color = 'var(--accent-emerald)'; label = 'Generated';
   } else if (status === 'generating') {
     bg = 'rgba(255, 107, 91, 0.15)'; color = 'var(--accent-coral)'; label = 'Generating...';
   } else if (status === 'error') {
-    bg = 'rgba(248, 113, 113, 0.15)'; color = '#f87171'; label = 'Error';
+    bg = 'rgba(248, 113, 113, 0.15)'; color = 'var(--color-danger)'; label = 'Error';
   } else {
     bg = 'var(--bg-elevated)'; color = 'var(--text-muted)'; label = 'Not Generated';
   }
@@ -77,7 +77,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
         <button
           onClick={() => setShowRejectInput(true)}
           className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
-          style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171' }}
+          style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--color-danger)' }}
           title="Reject this piece"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -106,7 +106,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
           <button
             onClick={handleReject}
             className="text-xs px-2 py-1 rounded-md transition-colors"
-            style={{ background: 'rgba(248, 113, 113, 0.15)', color: '#f87171' }}
+            style={{ background: 'rgba(248, 113, 113, 0.15)', color: 'var(--color-danger)' }}
           >
             Reject
           </button>
@@ -129,7 +129,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
               className="w-5 h-5 rounded flex items-center justify-center"
               style={{ background: 'rgba(52, 211, 153, 0.15)' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </Link>
@@ -231,7 +231,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
 
           {piece.contentGap && (
             <div className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span style={{ color: '#34d399' }}>Gap:</span> {piece.contentGap}
+              <span style={{ color: 'var(--accent-emerald)' }}>Gap:</span> {piece.contentGap}
             </div>
           )}
 

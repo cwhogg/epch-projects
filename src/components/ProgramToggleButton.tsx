@@ -46,7 +46,7 @@ export default function ProgramToggleButton({ ideaId, active }: { ideaId: string
       disabled={loading}
       title="Resume publishing"
       className="text-xs px-2 py-1.5 rounded-lg transition-colors"
-      style={{ color: '#34d399' }}
+      style={{ color: 'var(--accent-emerald)' }}
     >
       {loading ? '...' : (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

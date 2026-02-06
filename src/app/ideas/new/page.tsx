@@ -86,7 +86,7 @@ export default function NewIdeaPage() {
             style={{
               background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(248, 113, 113, 0.1) 100%)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              color: 'var(--color-danger)',
             }}
           >
             {error}
@@ -204,7 +204,7 @@ export default function NewIdeaPage() {
               />
             </label>
             {formData.documentContent && (
-              <p className="mt-2 text-sm" style={{ color: '#34d399' }}>
+              <p className="mt-2 text-sm" style={{ color: 'var(--accent-emerald)' }}>
                 Document loaded ({formData.documentContent.length.toLocaleString()} characters)
               </p>
             )}

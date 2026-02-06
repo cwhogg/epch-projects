@@ -22,7 +22,7 @@ function ChangeIndicator({ value, invert }: { value: number | null; invert?: boo
 
   // For position, negative change is good (moved up in rankings)
   const isGood = invert ? value < 0 : value > 0;
-  const color = isGood ? '#34d399' : '#f87171';
+  const color = isGood ? 'var(--accent-emerald)' : 'var(--color-danger)';
   const arrow = isGood ? (invert ? '↑' : '↑') : (invert ? '↓' : '↓');
   const display = invert ? Math.abs(value) : Math.abs(value);
 

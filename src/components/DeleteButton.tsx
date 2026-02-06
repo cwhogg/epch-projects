@@ -61,7 +61,7 @@ export default function DeleteButton({ ideaId, ideaName }: DeleteButtonProps) {
     <button
       onClick={() => setConfirming(true)}
       className="btn btn-ghost text-sm"
-      style={{ color: '#f87171' }}
+      style={{ color: 'var(--color-danger)' }}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="3 6 5 6 21 6" />

@@ -8,7 +8,7 @@ export default function OptimizationPage() {
           className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
           style={{ background: 'rgba(244, 114, 182, 0.12)' }}
         >
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f472b6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-pink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
             <polyline points="16 7 22 7 22 13" />
           </svg>
@@ -29,7 +29,7 @@ export default function OptimizationPage() {
       >
         <span
           className="inline-block text-xs font-medium px-3 py-1 rounded-full mb-4"
-          style={{ background: 'rgba(244, 114, 182, 0.12)', color: '#f472b6' }}
+          style={{ background: 'rgba(244, 114, 182, 0.12)', color: 'var(--color-pink)' }}
         >
           Coming Soon
         </span>

@@ -68,7 +68,7 @@ export default async function TestingPage() {
       {programs.length > 0 && (
         <section className="animate-slide-up stagger-2">
           <h2 className="text-lg font-display mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
@@ -89,7 +89,7 @@ export default async function TestingPage() {
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       {isActive ? (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}>
                           {program.publishedCount} published
                         </span>
                       ) : (
@@ -106,7 +106,7 @@ export default async function TestingPage() {
                     <Link
                       href={`/analyses/${program.ideaId}/analytics`}
                       className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                      style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                      style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-purple-light)', border: '1px solid rgba(139, 92, 246, 0.25)' }}
                     >
                       Analytics
                     </Link>

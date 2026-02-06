@@ -42,11 +42,11 @@ function getBadgeClass(rec: string) {
 function getConfidenceStyle(conf: string) {
   switch (conf) {
     case 'High':
-      return { color: '#34d399' };
+      return { color: 'var(--accent-emerald)' };
     case 'Medium':
-      return { color: '#fbbf24' };
+      return { color: 'var(--accent-amber)' };
     case 'Low':
-      return { color: '#f87171' };
+      return { color: 'var(--color-danger)' };
     default:
       return { color: 'var(--text-muted)' };
   }
@@ -61,9 +61,9 @@ function ScoreRing({ score, label, size = 48 }: { score: number | null; label: s
 
   const getColor = () => {
     if (score === null) return 'var(--text-muted)';
-    if (score >= 7) return '#34d399';
-    if (score >= 4) return '#fbbf24';
-    return '#f87171';
+    if (score >= 7) return 'var(--accent-emerald)';
+    if (score >= 4) return 'var(--accent-amber)';
+    return 'var(--color-danger)';
   };
 
   const getGlow = () => {
@@ -341,17 +341,17 @@ export default async function AnalysisPage() {
                         </span>
                       )}
                       {analysis.hasKeywordAnalysis && (
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa' }}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--color-purple-light)' }}>
                           Keywords
                         </span>
                       )}
                       {analysis.hasContentGenerated && (
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}>
                           Content
                         </span>
                       )}
                       {gscLinkedIds.has(analysis.id) && (
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-violet)' }}>
                           Analytics
                         </span>
                       )}

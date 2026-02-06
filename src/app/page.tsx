@@ -54,7 +54,7 @@ const stages = [
     stage: 'Analysis',
     href: '/analysis',
     description: 'AI-powered research across competition, SEO & WTP',
-    accentColor: '#34d399',
+    accentColor: 'var(--accent-emerald)',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8" />
@@ -66,7 +66,7 @@ const stages = [
     stage: 'Website',
     href: '/website',
     description: 'Build website for painted door test',
-    accentColor: '#38bdf8',
+    accentColor: 'var(--color-sky)',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -79,7 +79,7 @@ const stages = [
     stage: 'Content',
     href: '/content',
     description: 'Content calendars and piece generation',
-    accentColor: '#a78bfa',
+    accentColor: 'var(--color-purple-light)',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -93,7 +93,7 @@ const stages = [
     stage: 'Testing',
     href: '/testing',
     description: 'Track SEO of published content performance',
-    accentColor: '#fbbf24',
+    accentColor: 'var(--accent-amber)',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20V10" />
@@ -106,7 +106,7 @@ const stages = [
     stage: 'Optimization',
     href: '/optimization',
     description: 'Refine content with performance data',
-    accentColor: '#f472b6',
+    accentColor: 'var(--color-pink)',
     isPlaceholder: true,
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

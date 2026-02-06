@@ -75,11 +75,11 @@ function getBadgeClass(rec: string) {
 function getConfidenceStyle(conf: string) {
   switch (conf) {
     case 'High':
-      return { color: '#34d399' };
+      return { color: 'var(--accent-emerald)' };
     case 'Medium':
-      return { color: '#fbbf24' };
+      return { color: 'var(--accent-amber)' };
     case 'Low':
-      return { color: '#f87171' };
+      return { color: 'var(--color-danger)' };
     default:
       return { color: 'var(--text-muted)' };
   }
@@ -95,9 +95,9 @@ function ScoreRing({ score, label, size = 72 }: { score: number | null; label: s
 
   const getColor = () => {
     if (score === null) return 'var(--text-muted)';
-    if (score >= 7) return '#34d399';
-    if (score >= 4) return '#fbbf24';
-    return '#f87171';
+    if (score >= 7) return 'var(--accent-emerald)';
+    if (score >= 4) return 'var(--accent-amber)';
+    return 'var(--color-danger)';
   };
 
   const getGlow = () => {
@@ -183,19 +183,19 @@ function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-3 rounded-lg" style={{ background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: '#34d399' }}>
+              <div className="text-lg font-display" style={{ color: 'var(--accent-emerald)' }}>
                 {synthesis.comparison.agreedKeywords.length}
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Agreed</div>
             </div>
             <div className="p-3 rounded-lg" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: '#818cf8' }}>
+              <div className="text-lg font-display" style={{ color: 'var(--color-indigo)' }}>
                 {synthesis.comparison.claudeUniqueKeywords.length}
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Claude Only</div>
             </div>
             <div className="p-3 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: '#fbbf24' }}>
+              <div className="text-lg font-display" style={{ color: 'var(--accent-amber)' }}>
                 {synthesis.comparison.openaiUniqueKeywords.length}
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>OpenAI Only</div>
@@ -237,7 +237,7 @@ function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
                   {v.hasContentGap && (
                     <span
                       className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}
+                      style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}
                     >
                       Content Gap
                     </span>
@@ -293,10 +293,10 @@ function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
                               : 'rgba(248, 113, 113, 0.1)',
                           color:
                             kw.estimatedCompetitiveness === 'Low'
-                              ? '#34d399'
+                              ? 'var(--accent-emerald)'
                               : kw.estimatedCompetitiveness === 'Medium'
-                              ? '#fbbf24'
-                              : '#f87171',
+                              ? 'var(--accent-amber)'
+                              : 'var(--color-danger)',
                         }}
                       >
                         {kw.estimatedCompetitiveness}
@@ -382,7 +382,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               >
                 {paintedDoorSite?.status === 'live' ? (
                   <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
@@ -426,7 +426,7 @@ export default async function AnalysisPage({ params }: PageProps) {
       {analysis.risks && analysis.risks.length > 0 && (
         <div className="card-static p-5 sm:p-6 animate-slide-up stagger-3">
           <h2 className="font-display text-base mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -436,7 +436,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           <ul className="space-y-2">
             {analysis.risks.map((risk, index) => (
               <li key={index} className="flex items-start gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: '#f87171' }}>•</span>
+                <span style={{ color: 'var(--color-danger)' }}>•</span>
                 <span>{risk}</span>
               </li>
             ))}

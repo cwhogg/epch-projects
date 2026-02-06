@@ -34,7 +34,7 @@ function SummaryCard({
   let changeDisplay: React.ReactNode = null;
   if (change !== null && change !== 0) {
     const isGood = fmt === 'position' ? change < 0 : change > 0;
-    const color = isGood ? '#34d399' : '#f87171';
+    const color = isGood ? 'var(--accent-emerald)' : 'var(--color-danger)';
     const arrow = isGood ? '↑' : '↓';
     const displayVal = fmt === 'percent'
       ? `${(Math.abs(change) * 100).toFixed(1)}%`
@@ -168,8 +168,8 @@ export default function TestingAnalytics() {
       </div>
 
       {error && (
-        <div className="card-static p-4" style={{ borderLeft: '3px solid #f87171' }}>
-          <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>
+        <div className="card-static p-4" style={{ borderLeft: '3px solid var(--color-danger)' }}>
+          <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>
         </div>
       )}
 

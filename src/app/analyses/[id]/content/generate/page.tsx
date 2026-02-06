@@ -103,7 +103,7 @@ export default function ContentGeneratePage() {
         >
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.2)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
                 <line x1="9" y1="9" x2="15" y2="15" />
@@ -113,7 +113,7 @@ export default function ContentGeneratePage() {
               Generation Failed
             </h2>
           </div>
-          <p className="text-sm mb-6" style={{ color: '#f87171' }}>{error}</p>
+          <p className="text-sm mb-6" style={{ color: 'var(--color-danger)' }}>{error}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
               Back to Content Options
@@ -150,7 +150,7 @@ export default function ContentGeneratePage() {
             }}
           >
             {progress?.status === 'complete' ? (
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             ) : (
@@ -187,7 +187,7 @@ export default function ContentGeneratePage() {
               style={{
                 width: `${progressPercent}%`,
                 background: progress?.status === 'complete'
-                  ? 'linear-gradient(90deg, #34d399 0%, #4ade80 100%)'
+                  ? 'linear-gradient(90deg, var(--accent-emerald) 0%, var(--color-green-light) 100%)'
                   : 'linear-gradient(90deg, var(--accent-coral) 0%, #ff8f6b 50%, var(--accent-coral) 100%)',
                 backgroundSize: progress?.status === 'complete' ? '100% 100%' : '200% 100%',
                 animation: progress?.status === 'complete' ? 'none' : 'shimmer 2s ease-in-out infinite',
@@ -230,7 +230,7 @@ export default function ContentGeneratePage() {
             >
               <div className="shrink-0">
                 {step.status === 'complete' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 ) : step.status === 'running' ? (
@@ -238,7 +238,7 @@ export default function ContentGeneratePage() {
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
                 ) : step.status === 'error' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="15" y1="9" x2="9" y2="15" />
                     <line x1="9" y1="9" x2="15" y2="15" />
@@ -256,9 +256,9 @@ export default function ContentGeneratePage() {
                       step.status === 'running'
                         ? 'var(--accent-coral)'
                         : step.status === 'complete'
-                        ? '#34d399'
+                        ? 'var(--accent-emerald)'
                         : step.status === 'error'
-                        ? '#f87171'
+                        ? 'var(--color-danger)'
                         : 'var(--text-secondary)',
                   }}
                 >
@@ -283,7 +283,7 @@ export default function ContentGeneratePage() {
               border: '1px solid rgba(52, 211, 153, 0.3)',
             }}
           >
-            <p className="text-sm font-medium text-center" style={{ color: '#34d399' }}>
+            <p className="text-sm font-medium text-center" style={{ color: 'var(--accent-emerald)' }}>
               Redirecting to content options...
             </p>
           </div>

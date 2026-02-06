@@ -90,7 +90,7 @@ export default function ContentPieceViewerPage() {
           <h2 className="font-display text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
             Content Not Found
           </h2>
-          <p className="text-sm mb-4" style={{ color: '#f87171' }}>
+          <p className="text-sm mb-4" style={{ color: 'var(--color-danger)' }}>
             {error || 'This content piece could not be loaded.'}
           </p>
           <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
@@ -147,7 +147,7 @@ export default function ContentPieceViewerPage() {
             >
               {copied ? (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                   Copied!

@@ -8,21 +8,21 @@ function severityConfig(severity: AlertSeverity) {
       return {
         bg: 'rgba(16, 185, 129, 0.15)',
         border: 'rgba(16, 185, 129, 0.3)',
-        color: '#34d399',
+        color: 'var(--accent-emerald)',
         label: 'Positive',
       };
     case 'warning':
       return {
         bg: 'rgba(239, 68, 68, 0.15)',
         border: 'rgba(239, 68, 68, 0.3)',
-        color: '#f87171',
+        color: 'var(--color-danger)',
         label: 'Warning',
       };
     case 'info':
       return {
         bg: 'rgba(96, 165, 250, 0.15)',
         border: 'rgba(96, 165, 250, 0.3)',
-        color: '#60a5fa',
+        color: 'var(--color-info)',
         label: 'Info',
       };
   }

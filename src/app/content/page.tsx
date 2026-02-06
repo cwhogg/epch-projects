@@ -85,7 +85,7 @@ export default async function ContentPage() {
             className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
             style={{ background: 'rgba(139, 92, 246, 0.12)' }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-purple-light)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -127,10 +127,10 @@ export default async function ContentPage() {
                     <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
                       {cal.pieces.length} pieces
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }}>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.1)', color: 'var(--accent-emerald)' }}>
                       {cal.generatedCount} ready
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa' }}>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-purple-light)' }}>
                       {cal.publishedCount} published
                     </span>
                   </div>
@@ -147,7 +147,7 @@ export default async function ContentPage() {
                 <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <div className="flex items-center gap-2">
                     {isActive ? (
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}>
                         Active
                       </span>
                     ) : (

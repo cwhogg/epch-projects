@@ -310,7 +310,7 @@ export default function ContentCalendarPage() {
               <h2 className="text-xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
                 Generation Failed
               </h2>
-              <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171' }}>
+              <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--color-danger)' }}>
                 {error}
               </div>
               <button
@@ -376,7 +376,7 @@ export default function ContentCalendarPage() {
               onClick={triggerPublish}
               disabled={publishing}
               className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-              style={{ background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa', border: '1px solid rgba(96, 165, 250, 0.3)' }}
+              style={{ background: 'rgba(96, 165, 250, 0.1)', color: 'var(--color-info)', border: '1px solid rgba(96, 165, 250, 0.3)' }}
             >
               {publishing ? 'Publishing...' : 'Publish Next'}
             </button>
@@ -396,7 +396,7 @@ export default function ContentCalendarPage() {
       {publishResult && (
         <div
           className="p-3 rounded-lg text-sm animate-fade-in"
-          style={{ background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa' }}
+          style={{ background: 'rgba(96, 165, 250, 0.1)', color: 'var(--color-info)' }}
         >
           {publishResult}
         </div>

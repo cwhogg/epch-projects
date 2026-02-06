@@ -81,9 +81,9 @@ export default function AnalyticsChart({ timeSeries }: AnalyticsChartProps) {
               type="checkbox"
               checked={showImpressions}
               onChange={(e) => setShowImpressions(e.target.checked)}
-              className="accent-[#8b5cf6]"
+              className="accent-[var(--accent-violet)]"
             />
-            <span style={{ color: '#8b5cf6' }}>Impressions</span>
+            <span style={{ color: 'var(--accent-violet)' }}>Impressions</span>
           </label>
         </div>
       </div>
@@ -135,10 +135,10 @@ export default function AnalyticsChart({ timeSeries }: AnalyticsChartProps) {
                 yAxisId="impressions"
                 type="monotone"
                 dataKey="impressions"
-                stroke="#8b5cf6"
+                stroke="var(--accent-violet)"
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, fill: '#8b5cf6' }}
+                activeDot={{ r: 4, fill: 'var(--accent-violet)' }}
               />
             )}
           </LineChart>

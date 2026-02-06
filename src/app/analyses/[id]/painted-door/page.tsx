@@ -112,7 +112,7 @@ export default function PaintedDoorProgressPage() {
     switch (status) {
       case 'complete':
         return (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         );
@@ -124,7 +124,7 @@ export default function PaintedDoorProgressPage() {
         );
       case 'error':
         return (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -215,7 +215,7 @@ export default function PaintedDoorProgressPage() {
       {error && (
         <div
           className="p-4 rounded-lg text-sm animate-fade-in"
-          style={{ background: 'rgba(248, 113, 113, 0.1)', color: '#f87171', border: '1px solid rgba(248, 113, 113, 0.2)' }}
+          style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--color-danger)', border: '1px solid rgba(248, 113, 113, 0.2)' }}
         >
           {error}
         </div>
@@ -249,11 +249,11 @@ export default function PaintedDoorProgressPage() {
                       className="text-sm font-medium"
                       style={{
                         color: step.status === 'complete'
-                          ? '#34d399'
+                          ? 'var(--accent-emerald)'
                           : step.status === 'running'
                           ? 'var(--text-primary)'
                           : step.status === 'error'
-                          ? '#f87171'
+                          ? 'var(--color-danger)'
                           : 'var(--text-muted)',
                       }}
                     >
@@ -310,8 +310,8 @@ export default function PaintedDoorProgressPage() {
           className="card-static p-5 animate-slide-up stagger-4"
           style={{ borderColor: 'rgba(52, 211, 153, 0.3)' }}
         >
-          <h2 className="font-display text-base mb-3 flex items-center gap-2" style={{ color: '#34d399' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <h2 className="font-display text-base mb-3 flex items-center gap-2" style={{ color: 'var(--accent-emerald)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             Site Deployed

@@ -26,7 +26,7 @@ const builtProducts: SiteEntry[] = [
     siteName: 'SecondLook',
     tagline: 'AI-powered health analysis for patients with rare, complex, or undiagnosed conditions',
     primaryColor: '#6366f1',
-    accentColor: '#818cf8',
+    accentColor: 'var(--color-indigo)',
     status: 'live',
     signupCount: 0,
     siteUrl: 'https://secondlook.vercel.app',
@@ -38,7 +38,7 @@ const builtProducts: SiteEntry[] = [
     siteName: 'N of One',
     tagline: 'Personalized diagnostic guidance platform',
     primaryColor: '#0ea5e9',
-    accentColor: '#38bdf8',
+    accentColor: 'var(--color-sky)',
     status: 'live',
     signupCount: 0,
     siteUrl: 'https://nofone.us',
@@ -60,8 +60,8 @@ async function getSites(): Promise<SiteEntry[]> {
           ideaName: site.ideaName,
           siteName: site.brand?.siteName || site.ideaName,
           tagline: site.brand?.tagline,
-          primaryColor: site.brand?.colors?.primary || '#38bdf8',
-          accentColor: site.brand?.colors?.accent || '#38bdf8',
+          primaryColor: site.brand?.colors?.primary || 'var(--color-sky)',
+          accentColor: site.brand?.colors?.accent || 'var(--color-sky)',
           status: site.status,
           signupCount,
           siteUrl: site.siteUrl,
@@ -78,11 +78,11 @@ async function getSites(): Promise<SiteEntry[]> {
 }
 
 const statusStyles: Record<string, { bg: string; color: string; label: string }> = {
-  live: { bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399', label: 'Live' },
-  deploying: { bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', label: 'Deploying' },
-  generating: { bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', label: 'Generating' },
-  pushing: { bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', label: 'Pushing' },
-  failed: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', label: 'Failed' },
+  live: { bg: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)', label: 'Live' },
+  deploying: { bg: 'rgba(56, 189, 248, 0.15)', color: 'var(--color-sky)', label: 'Deploying' },
+  generating: { bg: 'rgba(251, 191, 36, 0.15)', color: 'var(--accent-amber)', label: 'Generating' },
+  pushing: { bg: 'rgba(251, 191, 36, 0.15)', color: 'var(--accent-amber)', label: 'Pushing' },
+  failed: { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--color-error)', label: 'Failed' },
 };
 
 export default async function WebsitePage() {
@@ -152,7 +152,7 @@ export default async function WebsitePage() {
                   <div className="flex items-center gap-2">
                     <span
                       className="text-xs px-1.5 py-0.5 rounded"
-                      style={{ background: site.isBuiltProduct ? 'rgba(99, 102, 241, 0.15)' : status.bg, color: site.isBuiltProduct ? '#818cf8' : status.color }}
+                      style={{ background: site.isBuiltProduct ? 'rgba(99, 102, 241, 0.15)' : status.bg, color: site.isBuiltProduct ? 'var(--color-indigo)' : status.color }}
                     >
                       {site.isBuiltProduct ? 'Product' : status.label}
                     </span>
@@ -178,7 +178,7 @@ export default async function WebsitePage() {
       ) : (
         <div className="animate-slide-up stagger-2 text-center py-16">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style={{ background: 'rgba(56, 189, 248, 0.1)' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-sky)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />

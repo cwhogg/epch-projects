@@ -22,7 +22,7 @@ function StatusBadge({ comparison }: { comparison: KeywordComparison }) {
     return (
       <span
         className="text-xs px-2 py-0.5 rounded-full"
-        style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}
+        style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}
       >
         Getting clicks
       </span>
@@ -32,7 +32,7 @@ function StatusBadge({ comparison }: { comparison: KeywordComparison }) {
     return (
       <span
         className="text-xs px-2 py-0.5 rounded-full"
-        style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}
+        style={{ background: 'rgba(251, 191, 36, 0.15)', color: 'var(--accent-amber)' }}
       >
         Impressions only
       </span>
@@ -176,7 +176,7 @@ export default function KeywordPerformance({
             className="font-display text-base mb-4 flex items-center gap-2"
             style={{ color: 'var(--text-primary)' }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
             Unexpected Winners

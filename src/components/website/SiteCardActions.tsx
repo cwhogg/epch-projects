@@ -77,7 +77,7 @@ export default function SiteCardActions({
             className="text-xs px-3 py-1.5 rounded-lg transition-colors"
             style={{
               background: 'rgba(56, 189, 248, 0.1)',
-              color: '#38bdf8',
+              color: 'var(--color-sky)',
               border: '1px solid rgba(56, 189, 248, 0.25)',
             }}
           >
@@ -103,7 +103,7 @@ export default function SiteCardActions({
             className="text-xs px-3 py-1.5 rounded-lg transition-colors"
             style={{
               background: 'rgba(167, 139, 250, 0.1)',
-              color: '#a78bfa',
+              color: 'var(--color-purple-light)',
               border: '1px solid rgba(167, 139, 250, 0.25)',
             }}
           >
@@ -116,7 +116,7 @@ export default function SiteCardActions({
             className="text-xs px-3 py-1.5 rounded-lg transition-colors"
             style={{
               background: showVerification ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
-              color: '#22c55e',
+              color: 'var(--color-success)',
               border: '1px solid rgba(34, 197, 94, 0.25)',
             }}
           >
@@ -151,7 +151,7 @@ export default function SiteCardActions({
               disabled={isUploading || !verificationFile.trim()}
               className="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
               style={{
-                background: '#22c55e',
+                background: 'var(--color-success)',
                 color: 'white',
               }}
             >
@@ -161,7 +161,7 @@ export default function SiteCardActions({
           {uploadResult && (
             <p
               className="text-xs"
-              style={{ color: uploadResult.success ? '#22c55e' : '#ef4444' }}
+              style={{ color: uploadResult.success ? 'var(--color-success)' : 'var(--color-error)' }}
             >
               {uploadResult.message}
             </p>
