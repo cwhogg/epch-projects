@@ -353,8 +353,16 @@ async function waitForDeployment(
       if (deployments.length > 0) {
         const deployment = deployments[0];
         if (deployment.state === 'READY' || deployment.readyState === 'READY') {
-          // Return the stable production alias, not the deployment-specific URL
-          return `https://${projectName}.vercel.app`;
+          // Get the actual production URL from the deployment's aliases
+          // Vercel may assign a different subdomain if the requested one is taken
+          const aliases: string[] = deployment.alias || [];
+          const vercelAlias = aliases.find((a: string) => a.endsWith('.vercel.app'));
+          // Fall back to deployment.url, then to constructed URL as last resort
+          const productionAlias = vercelAlias || deployment.url || `${projectName}.vercel.app`;
+          // Ensure https prefix
+          const siteUrl = productionAlias.startsWith('http') ? productionAlias : `https://${productionAlias}`;
+          console.log(`[painted-door] Deployment ready. Aliases: ${aliases.join(', ')}. Using: ${siteUrl}`);
+          return siteUrl;
         }
         if (deployment.state === 'ERROR' || deployment.readyState === 'ERROR') {
           throw new Error(`Deployment failed: ${deployment.url}`);
