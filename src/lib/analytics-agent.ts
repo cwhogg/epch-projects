@@ -109,7 +109,8 @@ export function matchUrlToSlug(pageUrl: string): string | null {
       return parts[parts.length - 1];
     }
     return null;
-  } catch {
+  } catch (error) {
+    console.debug('[analytics] URL parse failed:', error);
     return null;
   }
 }

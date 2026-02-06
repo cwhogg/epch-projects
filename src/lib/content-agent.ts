@@ -305,8 +305,8 @@ export async function generateContentPieces(
       // Write to vault (best-effort — fails silently on read-only filesystems like Vercel)
       try {
         await writeContentToVault(ctx.ideaName, completedPiece);
-      } catch {
-        // Expected on Vercel — content is still saved in Redis
+      } catch (error) {
+        console.debug('[content-agent] fs write skipped:', error);
       }
 
       progress.steps[i].status = 'complete';
@@ -343,8 +343,8 @@ export async function generateContentPieces(
   // Write calendar index to vault (best-effort)
   try {
     await writeCalendarIndex(ctx.ideaName, calendar);
-  } catch {
-    // Expected on Vercel — calendar is still saved in Redis
+  } catch (error) {
+    console.debug('[content-agent] calendar fs write skipped:', error);
   }
 }
 

@@ -153,7 +153,8 @@ function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
   let seoData: SEOSynthesisData;
   try {
     seoData = JSON.parse(seoDataJson) as SEOSynthesisData;
-  } catch {
+  } catch (error) {
+    console.debug('[analysis-detail] data fetch failed:', error);
     return null;
   }
 

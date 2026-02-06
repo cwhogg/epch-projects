@@ -70,8 +70,8 @@ export async function deleteIdeaFromDb(id: string): Promise<boolean> {
       await r.del(`email_signups:${siteId}`);
       await r.del(`email_signups_count:${siteId}`);
     }
-  } catch {
-    // Painted door cleanup is best-effort — don't break delete if it fails
+  } catch (error) {
+    console.debug('[deleteIdeaFromDb] painted door cleanup failed:', error);
   }
 
   return deleted > 0;

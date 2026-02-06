@@ -481,8 +481,8 @@ Rewrite the complete content piece with the requested improvements. Preserve the
             const dir = path.join(process.cwd(), 'experiments', slugify(cachedCtx.ideaName), 'content');
             await fs.mkdir(dir, { recursive: true });
             await fs.writeFile(path.join(dir, getFilename(completedPiece)), generated.markdown, 'utf-8');
-          } catch {
-            // Expected on Vercel
+          } catch (error) {
+            console.debug('[agent-tools/content] fs write skipped:', error);
           }
         }
 

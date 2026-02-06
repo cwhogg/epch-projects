@@ -55,8 +55,8 @@ export async function getAllPublishTargets(): Promise<PublishTarget[]> {
     const { getAllDynamicPublishTargets } = await import('./painted-door-db');
     const dynamicTargets = await getAllDynamicPublishTargets();
     return [...staticTargets, ...dynamicTargets];
-  } catch {
-    // Redis not configured — return static targets only
+  } catch (error) {
+    console.debug('[publish-targets] Redis fallback:', error);
     return staticTargets;
   }
 }

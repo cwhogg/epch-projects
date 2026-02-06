@@ -206,7 +206,8 @@ export async function getAllPosts(type: ContentType): Promise<Post[]> {
   let filenames: string[];
   try {
     filenames = fs.readdirSync(dir).filter((f) => f.endsWith('.md'));
-  } catch {
+  } catch (error) {
+    console.debug('[templates] post directory read failed:', error);
     return [];
   }
 
@@ -228,7 +229,8 @@ export async function getPostBySlug(type: ContentType, slug: string): Promise<Po
   let raw: string;
   try {
     raw = fs.readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (error) {
+    console.debug('[templates] post file read failed:', error);
     return null;
   }
 

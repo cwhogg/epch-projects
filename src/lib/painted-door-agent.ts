@@ -501,8 +501,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     try {
       const verifyRes = await fetch(siteUrl, { method: 'HEAD' });
       verified = verifyRes.ok;
-    } catch {
-      // Site might not be ready yet — that's ok, deployment was confirmed
+    } catch (error) {
+      console.debug('[painted-door] site verification skipped:', error);
       verified = true;
     }
 

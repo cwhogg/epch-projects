@@ -688,7 +688,7 @@ export default function AnalyticsPage() {
           if (content?.seoData) {
             try {
               seoData = JSON.parse(content.seoData);
-            } catch { /* ignore */ }
+            } catch (error) { console.debug('[analytics-page] SEO data parse failed:', error); }
           }
           setAnalysisInfo({ ideaName: analysis.ideaName, seoData });
         }
@@ -798,8 +798,8 @@ export default function AnalyticsPage() {
       setWeeklyReport(data.report);
       setAvailableWeeks(data.availableWeeks || []);
       if (!week) setSelectedWeek(data.report.weekId);
-    } catch {
-      // silently fail — GSC data is the primary source
+    } catch (error) {
+      console.debug('[analytics-page] report fetch failed:', error);
     } finally {
       setReportLoading(false);
     }
@@ -814,8 +814,8 @@ export default function AnalyticsPage() {
     try {
       const res = await fetch('/api/cron/analytics', { method: 'POST' });
       if (res.ok) await fetchWeeklyReport();
-    } catch {
-      // silently fail
+    } catch (error) {
+      console.debug('[analytics-page] run report failed:', error);
     } finally {
       setRunningReport(false);
     }

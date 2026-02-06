@@ -93,7 +93,8 @@ export default function PaintedDoorProgressPage() {
         if (data.status === 'running' || data.status === 'pending') {
           pollRef.current = setInterval(pollProgress, 3000);
         }
-      } catch {
+      } catch (error) {
+        console.debug('[painted-door-page] fetch failed:', error);
         setLoading(false);
       }
     };
