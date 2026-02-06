@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import AnalyticsChart from '@/components/AnalyticsChart';
+import dynamic from 'next/dynamic';
+const AnalyticsChart = dynamic(() => import('@/components/AnalyticsChart'), { ssr: false });
 import KeywordPerformance from '@/components/KeywordPerformance';
 import PerformanceTable from '@/components/PerformanceTable';
 import AlertsList from '@/components/AlertsList';

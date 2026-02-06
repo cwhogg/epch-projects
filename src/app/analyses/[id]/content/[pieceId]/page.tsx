@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import MarkdownContent from '@/components/MarkdownContent';
+import dynamic from 'next/dynamic';
+const MarkdownContent = dynamic(() => import('@/components/MarkdownContent'), { ssr: false });
 import { ContentTypeBadge } from '@/components/ContentTypeIcon';
 import { ContentPiece } from '@/types';
 
