@@ -68,7 +68,7 @@ export function deleteIdea(id: string): boolean {
 }
 
 // Parse analysis from markdown files
-function parseAnalysisFromMarkdown(ideaId: string, content: string): Partial<Analysis> {
+export function parseAnalysisFromMarkdown(ideaId: string, content: string): Partial<Analysis> {
   const scores: AnalysisScores = {
     seoOpportunity: null,
     competitiveLandscape: null,
