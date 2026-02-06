@@ -361,11 +361,12 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
   const alerts = detectChanges(snapshots, previousSnapshots);
   console.log(`[analytics] Generated ${alerts.length} alerts`);
 
-  // Calculate site summary
-  const totalClicks = snapshots.reduce((sum, s) => sum + s.clicks, 0);
-  const totalImpressions = snapshots.reduce((sum, s) => sum + s.impressions, 0);
-  const averagePosition = snapshots.length > 0
-    ? Math.round((snapshots.reduce((sum, s) => sum + s.position, 0) / snapshots.length) * 10) / 10
+  // Calculate site summary from ALL GSC data (not just matched pieces)
+  // This ensures homepage and other non-content pages are included in totals
+  const totalClicks = pageData.reduce((sum, row) => sum + row.clicks, 0);
+  const totalImpressions = pageData.reduce((sum, row) => sum + row.impressions, 0);
+  const averagePosition = pageData.length > 0
+    ? Math.round((pageData.reduce((sum, row) => sum + row.position, 0) / pageData.length) * 10) / 10
     : 0;
   const averageCtr = totalImpressions > 0
     ? Math.round((totalClicks / totalImpressions) * 10000) / 10000
