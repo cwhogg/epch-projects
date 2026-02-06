@@ -923,5 +923,8 @@ export function assembleAllFiles(
     'content/blog/.gitkeep': '',
     'content/comparison/.gitkeep': '',
     'content/faq/.gitkeep': '',
+
+    // Google Search Console verification (tied to account, same for all sites)
+    'public/google8016c4ca2d4b4091.html': 'google-site-verification: google8016c4ca2d4b4091.html',
   };
 }
