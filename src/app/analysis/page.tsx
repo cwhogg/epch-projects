@@ -1,23 +1,28 @@
 import Link from 'next/link';
-import { getLeaderboard, getAnalyses } from '@/lib/data';
-import { getLeaderboardFromDb, getAnalysesFromDb, getAllGSCLinks, isRedisConfigured } from '@/lib/db';
+import { getAnalyses } from '@/lib/data';
+import { getAnalysesFromDb, getAllGSCLinks, isRedisConfigured } from '@/lib/db';
+import { buildLeaderboard } from '@/lib/utils';
 import { Analysis, LeaderboardEntry } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
 async function getData(): Promise<{ leaderboard: LeaderboardEntry[]; analyses: Analysis[]; gscLinkedIds: Set<string> }> {
   if (isRedisConfigured()) {
-    const [leaderboard, analyses, gscLinks] = await Promise.all([
-      getLeaderboardFromDb(),
+    const [analyses, gscLinks] = await Promise.all([
       getAnalysesFromDb(),
       getAllGSCLinks(),
     ]);
-    return { leaderboard, analyses, gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)) };
+    return {
+      leaderboard: buildLeaderboard(analyses),
+      analyses,
+      gscLinkedIds: new Set(gscLinks.map((l) => l.ideaId)),
+    };
   }
+  const analyses = getAnalyses();
   return {
-    leaderboard: getLeaderboard(),
-    analyses: getAnalyses(),
-    gscLinkedIds: new Set(),
+    leaderboard: buildLeaderboard(analyses),
+    analyses,
+    gscLinkedIds: new Set<string>(),
   };
 }
 
