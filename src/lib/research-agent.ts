@@ -198,7 +198,7 @@ Be DECISIVE but HONEST about uncertainty.`;
   }
 }
 
-function parseScores(content: string): AnalysisScores {
+export function parseScores(content: string): AnalysisScores {
   const scores: AnalysisScores = {
     seoOpportunity: null,
     competitiveLandscape: null,
@@ -252,7 +252,7 @@ function parseScores(content: string): AnalysisScores {
   return scores;
 }
 
-function parseRecommendation(content: string): Analysis['recommendation'] {
+export function parseRecommendation(content: string): Analysis['recommendation'] {
   // Look for explicit recommendation patterns
   const recMatch = content.match(/(?:OVERALL\s+)?RECOMMENDATION[:\s]*(Tier\s*[123]|Incomplete)/i);
   if (recMatch) {
@@ -269,7 +269,7 @@ function parseRecommendation(content: string): Analysis['recommendation'] {
   return 'Incomplete';
 }
 
-function parseConfidence(content: string): Analysis['confidence'] {
+export function parseConfidence(content: string): Analysis['confidence'] {
   // Look for the formal CONFIDENCE declaration (near RECOMMENDATION)
   // Search for the LAST occurrence to skip any incidental mentions in reasoning
   const allMatches = [...content.matchAll(/CONFIDENCE[:\s]*(High|Medium|Low)/gi)];
@@ -286,7 +286,7 @@ function parseConfidence(content: string): Analysis['confidence'] {
   return 'Unknown';
 }
 
-function parseRisks(content: string): string[] {
+export function parseRisks(content: string): string[] {
   const risks: string[] = [];
 
   // Look for KEY RISKS section
@@ -319,7 +319,7 @@ function parseRisks(content: string): string[] {
   return risks.slice(0, 5);
 }
 
-function parseSummary(content: string): string {
+export function parseSummary(content: string): string {
   // Look for ONE-LINE SUMMARY first (new format)
   const oneLineSummary = content.match(/ONE-LINE SUMMARY[:\s]*([^\n]+)/i);
   if (oneLineSummary && oneLineSummary[1].trim().length > 10) {
