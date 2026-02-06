@@ -1,14 +1,14 @@
 import { ContentType } from '@/types';
 import { PublishTarget, getPublishTarget } from './publish-targets';
 
-function getFilename(_type: ContentType, slug: string): string {
+export function getFilename(_type: ContentType, slug: string): string {
   // Files live in type-specific directories (content/blog/, content/comparison/,
   // content/faq/) so no type prefix needed. The template's lib/content.ts uses
   // the filename (minus .md) as the slug for URLs.
   return `${slug}.md`;
 }
 
-function flipDraftToPublished(markdown: string): string {
+export function flipDraftToPublished(markdown: string): string {
   return markdown.replace(/^(status:\s*)draft\s*$/m, '$1published');
 }
 
