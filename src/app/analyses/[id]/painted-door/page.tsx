@@ -169,12 +169,45 @@ export default function PaintedDoorProgressPage() {
           Back to Analysis
         </Link>
 
-        <h1 className="text-2xl font-display" style={{ color: 'var(--text-primary)' }}>
-          Launch Painted Door Site
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {progress?.currentStep || 'Initializing...'}
-        </p>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-display" style={{ color: 'var(--text-primary)' }}>
+              Launch Painted Door Site
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              {progress?.currentStep || 'Initializing...'}
+            </p>
+          </div>
+
+          {/* Action buttons when complete */}
+          {progress?.status === 'complete' && progress.result && (
+            <div className="flex items-center gap-2">
+              <a
+                href={progress.result.siteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary text-sm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                See Site
+              </a>
+              <Link
+                href={`/analyses/${analysisId}/content`}
+                className="btn btn-ghost text-sm"
+                style={{ borderColor: 'var(--accent-coral)', color: 'var(--accent-coral)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Create Content
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Error */}
