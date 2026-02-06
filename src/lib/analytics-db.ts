@@ -1,26 +1,5 @@
-import { Redis } from '@upstash/redis';
+import { getRedis, parseValue } from './redis';
 import { PieceSnapshot, PerformanceAlert, WeeklyReport } from '@/types';
-
-let redis: Redis | null = null;
-
-function getRedis(): Redis {
-  if (!redis) {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) {
-      throw new Error('Redis not configured: missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN');
-    }
-    redis = new Redis({ url, token });
-  }
-  return redis;
-}
-
-function parseValue<T>(value: unknown): T {
-  if (typeof value === 'string') {
-    return JSON.parse(value) as T;
-  }
-  return value as T;
-}
 
 const WEEK_TTL = 26 * 7 * 24 * 60 * 60; // 26 weeks in seconds
 const REPORT_TTL = 52 * 7 * 24 * 60 * 60; // 52 weeks in seconds

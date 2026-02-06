@@ -1,35 +1,7 @@
-import { Redis } from '@upstash/redis';
+import { getRedis, parseValue, isRedisConfigured } from './redis';
 import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece } from '@/types';
 
-// Lazy-initialize Redis client to ensure env vars are available
-let redis: Redis | null = null;
-
-function getRedis(): Redis {
-  if (!redis) {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!url || !token) {
-      throw new Error('Redis not configured: missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN');
-    }
-
-    redis = new Redis({ url, token });
-  }
-  return redis;
-}
-
-// Check if Redis is configured
-export function isRedisConfigured(): boolean {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
-}
-
-// Helper to parse value that might already be parsed by Upstash
-function parseValue<T>(value: unknown): T {
-  if (typeof value === 'string') {
-    return JSON.parse(value) as T;
-  }
-  return value as T;
-}
+export { isRedisConfigured } from './redis';
 
 // Ideas
 export async function saveIdeaToDb(idea: ProductIdea): Promise<ProductIdea> {

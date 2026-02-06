@@ -1,28 +1,6 @@
-import { Redis } from '@upstash/redis';
+import { getRedis, parseValue } from './redis';
 import { PaintedDoorSite, PaintedDoorProgress } from '@/types';
 import { PublishTarget } from './publish-targets';
-
-// Reuse the same lazy Redis pattern as db.ts
-let redis: Redis | null = null;
-
-function getRedis(): Redis {
-  if (!redis) {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) {
-      throw new Error('Redis not configured: missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN');
-    }
-    redis = new Redis({ url, token });
-  }
-  return redis;
-}
-
-function parseValue<T>(value: unknown): T {
-  if (typeof value === 'string') {
-    return JSON.parse(value) as T;
-  }
-  return value as T;
-}
 
 // ---------- Painted Door Sites ----------
 
