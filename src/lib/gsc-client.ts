@@ -1,9 +1,9 @@
-import { google, Auth } from 'googleapis';
+import { searchconsole_v1, auth as googleAuth } from '@googleapis/searchconsole';
 import { GSCDateRow, GSCQueryRow } from '@/types';
 
 const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 
-let authClient: Auth.JWT | null = null;
+let authClient: InstanceType<typeof googleAuth.JWT> | null = null;
 
 export function isGSCConfigured(): boolean {
   return !!(
@@ -12,19 +12,19 @@ export function isGSCConfigured(): boolean {
   );
 }
 
-function getAuthClient(): Auth.JWT {
+function getAuthClient(): InstanceType<typeof googleAuth.JWT> {
   if (authClient) return authClient;
 
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     const decoded = Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_JSON, 'base64').toString('utf-8');
     const credentials = JSON.parse(decoded);
-    authClient = new google.auth.JWT({
+    authClient = new googleAuth.JWT({
       email: credentials.client_email,
       key: credentials.private_key,
       scopes: [SCOPE],
     });
   } else if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
-    authClient = new google.auth.JWT({
+    authClient = new googleAuth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
       scopes: [SCOPE],
@@ -36,10 +36,14 @@ function getAuthClient(): Auth.JWT {
   return authClient;
 }
 
-export async function listGSCProperties(): Promise<{ siteUrl: string; permissionLevel: string }[]> {
+function getClient(): searchconsole_v1.Searchconsole {
   const auth = getAuthClient();
-  const webmasters = google.webmasters({ version: 'v3', auth });
-  const res = await webmasters.sites.list();
+  return new searchconsole_v1.Searchconsole({ auth });
+}
+
+export async function listGSCProperties(): Promise<{ siteUrl: string; permissionLevel: string }[]> {
+  const client = getClient();
+  const res = await client.sites.list();
   const entries = res.data.siteEntry || [];
   return entries
     .filter((e) => e.siteUrl && e.permissionLevel)
@@ -56,10 +60,9 @@ export async function fetchSearchAnalytics(
   dimensions: string[],
   rowLimit: number,
 ): Promise<GSCQueryRow[] | GSCDateRow[]> {
-  const auth = getAuthClient();
-  const searchconsole = google.searchconsole({ version: 'v1', auth });
+  const client = getClient();
 
-  const res = await searchconsole.searchanalytics.query({
+  const res = await client.searchanalytics.query({
     siteUrl,
     requestBody: {
       startDate,
