@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { ToolDefinition } from '@/types';
 import { fetchSearchAnalytics } from '@/lib/gsc-client';
 import {
@@ -20,10 +19,8 @@ import type {
   GSCQueryRow,
   ContentType,
 } from '@/types';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { getAnthropic } from '../anthropic';
+import { CLAUDE_MODEL } from '../config';
 
 /**
  * Build all tools for the analytics agent.
@@ -249,8 +246,8 @@ export function createAnalyticsTools(siteUrl: string): ToolDefinition[] {
       execute: async (input) => {
         const summary = input.dataSummary as string;
 
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+        const response = await getAnthropic().messages.create({
+          model: CLAUDE_MODEL,
           max_tokens: 2048,
           messages: [{
             role: 'user',

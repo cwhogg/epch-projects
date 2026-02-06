@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { ToolDefinition, BrandIdentity, PaintedDoorSite, ProductIdea, Evaluation } from '@/types';
 import { ContentContext } from '@/lib/content-prompts';
 import { buildContentContext, generateContentCalendar } from '@/lib/content-agent';
@@ -15,10 +14,8 @@ import { PublishTarget } from '@/lib/publish-targets';
 import { checkMetaDescription, combineEvaluations } from './common';
 import { parseLLMJson } from '../llm-utils';
 import { slugify } from '../utils';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { getAnthropic } from '../anthropic';
+import { CLAUDE_MODEL } from '../config';
 
 // ---------------------------------------------------------------------------
 // GitHub API helpers (extracted from painted-door-agent.ts)
@@ -319,8 +316,8 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         if (!idea || !ctx) return { error: 'Call get_idea_context first' };
 
         const prompt = buildBrandIdentityPrompt(idea, ctx);
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+        const response = await getAnthropic().messages.create({
+          model: CLAUDE_MODEL,
           max_tokens: 2048,
           messages: [{ role: 'user', content: prompt }],
         });

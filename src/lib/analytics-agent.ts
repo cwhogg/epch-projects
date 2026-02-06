@@ -1,4 +1,5 @@
 import { fetchSearchAnalytics } from '@/lib/gsc-client';
+import { CLAUDE_MODEL } from './config';
 import { getAllPublishedPiecesMeta, getContentPieces, getAllGSCLinks } from '@/lib/db';
 import {
   saveWeeklySnapshot,
@@ -507,7 +508,7 @@ async function runAnalyticsAgentV2(): Promise<WeeklyReport> {
   const config: AgentConfig = {
     agentId: 'analytics',
     runId,
-    model: 'claude-sonnet-4-20250514',
+    model: CLAUDE_MODEL,
     maxTokens: 4096,
     maxTurns: 15,
     tools,

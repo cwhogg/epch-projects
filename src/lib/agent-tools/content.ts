@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { ToolDefinition, ContentPiece, ContentCalendar, ContentType, Evaluation } from '@/types';
@@ -27,10 +26,8 @@ import {
 } from './common';
 import { parseLLMJson } from '../llm-utils';
 import { slugify } from '../utils';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { getAnthropic } from '../anthropic';
+import { CLAUDE_MODEL } from '../config';
 
 function getFilename(piece: ContentPiece): string {
   const prefix = piece.type === 'comparison' ? 'comparison' : piece.type === 'faq' ? 'faq' : 'blog';
@@ -108,8 +105,8 @@ export function createContentTools(ideaId: string): ToolDefinition[] {
         if (!cachedCtx) return { error: 'Call get_research_context first' };
 
         const prompt = buildCalendarPrompt(cachedCtx);
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+        const response = await getAnthropic().messages.create({
+          model: CLAUDE_MODEL,
           max_tokens: 4096,
           messages: [{ role: 'user', content: prompt }],
         });
@@ -305,8 +302,8 @@ export function createContentTools(ideaId: string): ToolDefinition[] {
             prompt = buildBlogPostPrompt(cachedCtx, piece);
         }
 
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+        const response = await getAnthropic().messages.create({
+          model: CLAUDE_MODEL,
           max_tokens: 8192,
           messages: [{ role: 'user', content: prompt }],
         });
@@ -423,8 +420,8 @@ ${piece.targetKeywords.join(', ')}
 
 Rewrite the complete content piece with the requested improvements. Preserve the overall structure and YAML frontmatter. Output ONLY the revised markdown starting with the YAML frontmatter.`;
 
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+        const response = await getAnthropic().messages.create({
+          model: CLAUDE_MODEL,
           max_tokens: 8192,
           messages: [{ role: 'user', content: prompt }],
         });

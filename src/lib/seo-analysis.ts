@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea } from '@/types';
 import { getOpenAI, isOpenAIConfigured } from './openai';
 import { SERPResult, batchSearchGoogle, isSerpConfigured } from './serp-search';
@@ -12,6 +12,8 @@ import {
 } from './seo-knowledge';
 import { cleanJSONString } from './llm-utils';
 import { fuzzyMatchPair } from './utils';
+import { getAnthropic } from './anthropic';
+import { CLAUDE_MODEL, OPENAI_MODEL } from './config';
 
 // ---------- Types ----------
 
@@ -185,10 +187,6 @@ export async function runClaudeSEOAnalysis(
   idea: ProductIdea,
   additionalContext?: string,
 ): Promise<SEOAnalysisResult> {
-  const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-  });
-
   const knowledgeContext = buildClaudeKnowledgeContext(idea);
   const currentYear = new Date().getFullYear();
 
@@ -222,8 +220,8 @@ IMPORTANT: Do NOT fabricate search volume data. Use estimates based on your unde
 Use the seo_analysis_result tool to submit your analysis.`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await getAnthropic().messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: 4096,
       tools: [SEO_TOOL],
       tool_choice: { type: 'tool', name: 'seo_analysis_result' },
@@ -289,7 +287,7 @@ ${SEO_OUTPUT_SCHEMA}`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: OPENAI_MODEL,
       max_tokens: 3000,
       temperature: 0.7,
       messages: [{ role: 'user', content: prompt }],
@@ -512,10 +510,6 @@ export async function synthesizeSEOAnalysis(
   comparison: SEOComparison | null,
   validated: SERPValidatedKeyword[],
 ): Promise<SEOSynthesis> {
-  const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-  });
-
   const dataSources = ['Claude SEO Analysis'];
   if (openaiResult) dataSources.push('OpenAI SEO Analysis');
   if (validated.length > 0) dataSources.push(`Google SERP Validation (${validated.length} keywords)`);
@@ -572,8 +566,8 @@ Write a concise synthesis narrative (3-5 paragraphs) that:
 
 Be direct and actionable. No fluff.`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }],
   });

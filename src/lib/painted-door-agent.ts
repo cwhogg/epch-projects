@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { BrandIdentity, PaintedDoorSite, PaintedDoorProgress } from '@/types';
 import { getIdeaFromDb } from './db';
 import { buildContentContext } from './content-agent';
@@ -26,10 +25,8 @@ import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
 import { parseLLMJson } from './llm-utils';
 import { slugify } from './utils';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { getAnthropic } from './anthropic';
+import { CLAUDE_MODEL } from './config';
 
 const PIPELINE_STEPS = [
   'Brand Identity',
@@ -406,8 +403,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     await updateStep(ideaId, progress, 0, 'running');
 
     const brandPrompt = buildBrandIdentityPrompt(idea, ctx);
-    const brandResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const brandResponse = await getAnthropic().messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: 2048,
       messages: [{ role: 'user', content: brandPrompt }],
     });
@@ -671,7 +668,7 @@ async function runPaintedDoorAgentV2(ideaId: string): Promise<void> {
     const config = {
       agentId: 'website',
       runId,
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       maxTokens: 4096,
       maxTurns: 30,
       tools,

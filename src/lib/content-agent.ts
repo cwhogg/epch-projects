@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ContentPiece, ContentCalendar, ContentProgress, ContentType } from '@/types';
@@ -38,11 +37,9 @@ import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
 import { parseLLMJson } from './llm-utils';
 import { slugify } from './utils';
+import { getAnthropic } from './anthropic';
+import { CLAUDE_MODEL } from './config';
 import type { AgentConfig } from '@/types';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
 
 // ---------- Context Builder ----------
 
@@ -133,8 +130,8 @@ export async function generateContentCalendar(ideaId: string, targetId?: string)
 
   const prompt = buildCalendarPrompt(ctx);
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -204,8 +201,8 @@ export async function appendNewPieces(ideaId: string, targetId?: string, userFee
 
   const prompt = buildAppendCalendarPrompt(ctx);
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -368,8 +365,8 @@ export async function generateSinglePiece(ctx: ContentContext, piece: ContentPie
       prompt = buildBlogPostPrompt(ctx, piece);
   }
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -547,7 +544,7 @@ async function generateContentPiecesV2(
   const config: AgentConfig = {
     agentId: 'content',
     runId,
-    model: 'claude-sonnet-4-20250514',
+    model: CLAUDE_MODEL,
     maxTokens: 4096,
     maxTurns: selectedIds.length * 6 + 10,
     tools,

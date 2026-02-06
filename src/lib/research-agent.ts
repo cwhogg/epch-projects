@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { ProductIdea, Analysis, AnalysisScores } from '@/types';
 import { saveProgress, getProgress, saveAnalysisToDb, saveAnalysisContent, updateIdeaStatus, AnalysisProgress } from './db';
 import { runFullSEOPipeline, SEOPipelineResult, SEODataQuality } from './seo-analysis';
@@ -17,11 +16,9 @@ import {
 import { createResearchTools } from './agent-tools/research';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
+import { getAnthropic } from './anthropic';
+import { CLAUDE_MODEL } from './config';
 import type { AgentConfig } from '@/types';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
 
 const ANALYSIS_STEPS = [
   { name: 'Competitive Analysis', key: 'competitors' },
@@ -369,8 +366,8 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
   try {
     // --- Step 1: Competitive Analysis ---
     await updateStep('competitors', 'running');
-    const competitorResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const competitorResponse = await getAnthropic().messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: 3000,
       messages: [{ role: 'user', content: createPrompt(idea, 'competitors', additionalContext) }],
     });
@@ -410,8 +407,8 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
         }
       }
       // Fallback: run old-style keyword analysis
-      const fallbackResponse = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+      const fallbackResponse = await getAnthropic().messages.create({
+        model: CLAUDE_MODEL,
         max_tokens: 3000,
         messages: [{ role: 'user', content: createPrompt(idea, 'keywords', additionalContext) }],
       });
@@ -426,8 +423,8 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
 
     // --- Step 7: Willingness to Pay ---
     await updateStep('wtp', 'running');
-    const wtpResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const wtpResponse = await getAnthropic().messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: 3000,
       messages: [{ role: 'user', content: createPrompt(idea, 'wtp', additionalContext) }],
     });
@@ -439,8 +436,8 @@ export async function runResearchAgent(idea: ProductIdea, additionalContext?: st
     const seoContext = seoResult
       ? `\n\nSEO PIPELINE DATA (use this to inform your SEO Opportunity score):\n${buildSEOScoringContext(seoResult)}`
       : '';
-    const scoringResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const scoringResponse = await getAnthropic().messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: 3000,
       messages: [{ role: 'user', content: createPrompt(idea, 'scoring', (additionalContext || '') + seoContext) }],
     });
@@ -627,7 +624,7 @@ async function runResearchAgentV2(idea: ProductIdea, additionalContext?: string)
   const config: AgentConfig = {
     agentId: 'research',
     runId,
-    model: 'claude-sonnet-4-20250514',
+    model: CLAUDE_MODEL,
     maxTokens: 4096,
     maxTurns: 25,
     tools,

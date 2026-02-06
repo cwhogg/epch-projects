@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { Redis } from '@upstash/redis';
+import { getAnthropic } from './anthropic';
 import type {
   AgentConfig,
   AgentState,
@@ -83,18 +84,7 @@ export async function clearActiveRun(agentId: string, entityId: string): Promise
   await getRedis().del(activeRunKey(agentId, entityId));
 }
 
-// ---------------------------------------------------------------------------
-// Anthropic client
-// ---------------------------------------------------------------------------
-
-let anthropicClient: Anthropic | null = null;
-
-function getAnthropic(): Anthropic {
-  if (!anthropicClient) {
-    anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
-  }
-  return anthropicClient;
-}
+// Anthropic client: imported from ./anthropic
 
 // ---------------------------------------------------------------------------
 // Convert our ToolDefinition[] to Anthropic API tool format
