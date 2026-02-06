@@ -157,6 +157,89 @@ export async function PATCH(
   }
 }
 
+// PUT — add a file to the painted door site repo (e.g., Google verification)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  if (!isRedisConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: 'GITHUB_TOKEN not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const { filePath, content, message } = body as {
+      filePath: string;
+      content: string;
+      message?: string;
+    };
+
+    if (!filePath || !content) {
+      return NextResponse.json({ error: 'filePath and content are required' }, { status: 400 });
+    }
+
+    const site = await getPaintedDoorSite(id);
+    if (!site) {
+      return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+    }
+
+    // Check if file already exists to get SHA for update
+    const existingRes = await fetch(
+      `https://api.github.com/repos/${site.repoOwner}/${site.repoName}/contents/${filePath}?ref=main`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+        cache: 'no-store' as RequestCache,
+      },
+    );
+    const existingSha = existingRes.ok ? (await existingRes.json()).sha : null;
+
+    // Push file to repo
+    const payload: Record<string, string> = {
+      message: message || `Add ${filePath}`,
+      content: Buffer.from(content, 'utf-8').toString('base64'),
+      branch: 'main',
+    };
+    if (existingSha) payload.sha = existingSha;
+
+    const res = await fetch(
+      `https://api.github.com/repos/${site.repoOwner}/${site.repoName}/contents/${filePath}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        cache: 'no-store' as RequestCache,
+      },
+    );
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      return NextResponse.json({ error: `GitHub commit failed: ${res.status} ${errBody}` }, { status: 500 });
+    }
+
+    const result = await res.json();
+    return NextResponse.json({
+      message: 'File added',
+      filePath,
+      commitSha: result.commit?.sha,
+      htmlUrl: result.content?.html_url,
+    });
+  } catch (error) {
+    console.error('Error adding file to repo:', error);
+    return NextResponse.json({ error: 'Failed to add file' }, { status: 500 });
+  }
+}
+
 // DELETE — fully remove painted door site and all associated data
 export async function DELETE(
   request: NextRequest,
