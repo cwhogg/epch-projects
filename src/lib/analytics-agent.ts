@@ -1,5 +1,5 @@
 import { fetchSearchAnalytics } from '@/lib/gsc-client';
-import { getAllPublishedPiecesMeta, getContentPieces } from '@/lib/db';
+import { getAllPublishedPiecesMeta, getContentPieces, getAllGSCLinks } from '@/lib/db';
 import {
   saveWeeklySnapshot,
   getWeeklySnapshot,
@@ -287,15 +287,24 @@ function formatDate(date: Date): string {
 
 // Main orchestrator
 export async function runAnalyticsAgent(): Promise<WeeklyReport> {
-  const siteUrl = process.env.ANALYTICS_SITE_URL;
-  if (!siteUrl) {
-    throw new Error('ANALYTICS_SITE_URL environment variable is required');
+  // Get all GSC-linked properties from the database
+  const gscLinks = await getAllGSCLinks();
+
+  // Fall back to ANALYTICS_SITE_URL if no GSC links configured
+  const fallbackSiteUrl = process.env.ANALYTICS_SITE_URL;
+
+  if (gscLinks.length === 0 && !fallbackSiteUrl) {
+    throw new Error('No GSC properties linked. Link a property in the Analytics page or set ANALYTICS_SITE_URL.');
   }
+
+  const siteUrls = gscLinks.length > 0
+    ? gscLinks.map(link => link.siteUrl)
+    : [fallbackSiteUrl!];
 
   const weekId = getWeekId();
   const previousWeekId = getPreviousWeekId(weekId);
 
-  console.log(`[analytics] Running for week ${weekId}, site: ${siteUrl}`);
+  console.log(`[analytics] Running for week ${weekId}, sites: ${siteUrls.join(', ')}`);
 
   // Calculate 7-day window (with 3-day GSC delay)
   const endDate = new Date();
@@ -308,13 +317,30 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
 
   console.log(`[analytics] GSC date range: ${startStr} to ${endStr}`);
 
-  // Fetch GSC data: page-level and query+page level
-  const [pageData, queryPageData] = await Promise.all([
-    fetchSearchAnalytics(siteUrl, startStr, endStr, ['page'], 500) as Promise<GSCQueryRow[]>,
-    fetchSearchAnalytics(siteUrl, startStr, endStr, ['query', 'page'], 1000) as Promise<GSCQueryRow[]>,
-  ]);
+  // Fetch GSC data from all linked properties
+  const allPageData: GSCQueryRow[] = [];
+  const allQueryPageData: GSCQueryRow[] = [];
 
-  console.log(`[analytics] Fetched ${pageData.length} pages, ${queryPageData.length} query+page rows`);
+  for (const siteUrl of siteUrls) {
+    try {
+      const [pageData, queryPageData] = await Promise.all([
+        fetchSearchAnalytics(siteUrl, startStr, endStr, ['page'], 500) as Promise<GSCQueryRow[]>,
+        fetchSearchAnalytics(siteUrl, startStr, endStr, ['query', 'page'], 1000) as Promise<GSCQueryRow[]>,
+      ]);
+      allPageData.push(...pageData);
+      allQueryPageData.push(...queryPageData);
+      console.log(`[analytics] Fetched ${pageData.length} pages from ${siteUrl}`);
+    } catch (error) {
+      console.error(`[analytics] Failed to fetch from ${siteUrl}:`, error);
+      // Continue with other properties
+    }
+  }
+
+  console.log(`[analytics] Total: ${allPageData.length} pages, ${allQueryPageData.length} query+page rows across ${siteUrls.length} properties`);
+
+  // Use aggregated data
+  const pageData = allPageData;
+  const queryPageData = allQueryPageData;
 
   // Build slug lookup from published pieces
   const slugLookup = await buildSlugLookup();
@@ -398,7 +424,7 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
   const report: WeeklyReport = {
     weekId,
     generatedAt: new Date().toISOString(),
-    siteUrl,
+    siteUrl: siteUrls.length === 1 ? siteUrls[0] : `${siteUrls.length} properties`,
     siteSummary: {
       totalClicks,
       totalImpressions,
