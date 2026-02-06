@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { isRedisConfigured, getContentCalendar, getContentProgress } from '@/lib/db';
+import { isRedisConfigured, getContentCalendar, getContentProgress, deleteContentProgress } from '@/lib/db';
 import { generateContentPiecesAuto } from '@/lib/content-agent';
 
 export const maxDuration = 300;
@@ -36,6 +36,9 @@ export async function POST(
     if (!Array.isArray(pieceIds) || pieceIds.length === 0) {
       return NextResponse.json({ error: 'pieceIds must be a non-empty array' }, { status: 400 });
     }
+
+    // Clear any previous progress before starting new generation
+    await deleteContentProgress(ideaId);
 
     // Run generation after response is sent
     after(async () => {

@@ -246,6 +246,10 @@ export async function getContentProgress(ideaId: string): Promise<ContentProgres
   return progress as ContentProgress;
 }
 
+export async function deleteContentProgress(ideaId: string): Promise<void> {
+  await getRedis().del(`content_progress:${ideaId}`);
+}
+
 // GSC Property Links
 export async function saveGSCLink(link: GSCPropertyLink): Promise<void> {
   await getRedis().hset('gsc_links', { [link.ideaId]: JSON.stringify(link) });
