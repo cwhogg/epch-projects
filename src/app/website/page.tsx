@@ -1,7 +1,6 @@
-import Link from 'next/link';
 import { getAllPaintedDoorSites, getEmailSignupCount } from '@/lib/painted-door-db';
 import { isRedisConfigured } from '@/lib/db';
-import { PaintedDoorSite } from '@/types';
+import SiteCardActions from '@/components/website/SiteCardActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,49 +163,13 @@ export default async function WebsitePage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    {site.siteUrl && (site.status === 'live' || site.isBuiltProduct) && (
-                      <a
-                        href={site.siteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                        style={{
-                          background: 'rgba(56, 189, 248, 0.1)',
-                          color: '#38bdf8',
-                          border: '1px solid rgba(56, 189, 248, 0.25)',
-                        }}
-                      >
-                        Visit site
-                      </a>
-                    )}
-                    {site.ideaId && site.status === 'live' && (
-                      <Link
-                        href={`/analyses/${site.ideaId}/content`}
-                        className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                        style={{
-                          background: 'rgba(255, 107, 91, 0.1)',
-                          color: '#ff6b5b',
-                          border: '1px solid rgba(255, 107, 91, 0.25)',
-                        }}
-                      >
-                        Create Content
-                      </Link>
-                    )}
-                    {site.detailsHref && (
-                      <Link
-                        href={site.detailsHref}
-                        className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                        style={{
-                          background: 'rgba(167, 139, 250, 0.1)',
-                          color: '#a78bfa',
-                          border: '1px solid rgba(167, 139, 250, 0.25)',
-                        }}
-                      >
-                        Details
-                      </Link>
-                    )}
-                  </div>
+                  <SiteCardActions
+                    ideaId={site.ideaId}
+                    siteUrl={site.siteUrl}
+                    status={site.status}
+                    isBuiltProduct={site.isBuiltProduct}
+                    detailsHref={site.detailsHref}
+                  />
                 </div>
               </div>
             );
