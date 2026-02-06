@@ -1,6 +1,4 @@
-/* Fonts - Fraunces for display, DM Sans for body */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&display=swap');
-
+/* Fonts loaded via next/font/google in layout.tsx */
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -31,8 +29,8 @@
   --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   /* Typography */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-dm-sans), system-ui, sans-serif;
 
   /* Radius */
   --radius-sm: 0.5rem;

@@ -1,8 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Fraunces, DM_Sans } from 'next/font/google';
 import NavLinks from '@/components/NavLinks';
 import MobileNav from '@/components/MobileNav';
 import './globals.css';
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-fraunces',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'EPCH Project Research',
@@ -15,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${dmSans.variable}`}>
       <body>
         {/* Navigation */}
         <nav className="sticky top-0 z-50 backdrop-blur-xl nav-blur">
