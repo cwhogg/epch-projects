@@ -328,6 +328,39 @@ async function triggerDeployViaGitPush(
   if (!updateRes.ok) throw new Error(`Failed to update ref: ${updateRes.status}`);
 }
 
+async function getProjectProductionUrl(projectId: string, token: string): Promise<string | null> {
+  // Query the project to get its actual production domain
+  const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+
+  const project = await res.json();
+  // The project has a 'targets' object with production domain info
+  // or we can check the 'alias' array on the project
+  const productionTarget = project.targets?.production;
+  if (productionTarget?.alias) {
+    // Find the .vercel.app alias
+    const vercelAlias = productionTarget.alias.find((a: string) => a.endsWith('.vercel.app'));
+    if (vercelAlias) return vercelAlias;
+  }
+
+  // Fallback: check project.alias array
+  if (Array.isArray(project.alias)) {
+    const vercelAlias = project.alias.find((a: { domain: string }) =>
+      a.domain?.endsWith('.vercel.app')
+    );
+    if (vercelAlias?.domain) return vercelAlias.domain;
+  }
+
+  // Last resort: use the project name from Vercel (which includes any suffix)
+  if (project.name) {
+    return `${project.name}.vercel.app`;
+  }
+
+  return null;
+}
+
 async function waitForDeployment(
   projectId: string,
   projectName: string,
@@ -353,28 +386,12 @@ async function waitForDeployment(
       if (deployments.length > 0) {
         const deployment = deployments[0];
         if (deployment.state === 'READY' || deployment.readyState === 'READY') {
-          // Get the actual production URL from the deployment's aliases
-          // Vercel may assign a different subdomain if the requested one is taken
-          // Filter out deployment-specific URLs that have pattern: {project}-{hash}-{team}.vercel.app
-          // These contain random hashes and team names, while production aliases are simpler
-          const aliases: string[] = deployment.alias || [];
-          const isDeploymentUrl = (url: string) => {
-            // Deployment URLs have pattern like: project-abc123xyz-teamname.vercel.app
-            // They contain a long random hash segment. Production aliases don't.
-            const parts = url.replace('.vercel.app', '').split('-');
-            // Check if any segment looks like a deployment hash (8+ alphanumeric chars)
-            return parts.some(part => /^[a-z0-9]{8,}$/.test(part) && part !== projectName);
-          };
-          const productionAliases = aliases.filter((a: string) =>
-            a.endsWith('.vercel.app') && !isDeploymentUrl(a)
-          );
-          // Prefer the shortest production alias (most likely the canonical one)
-          const vercelAlias = productionAliases.sort((a, b) => a.length - b.length)[0];
-          // Fall back to constructed URL if no valid production alias found
-          const productionAlias = vercelAlias || `${projectName}.vercel.app`;
-          // Ensure https prefix
-          const siteUrl = productionAlias.startsWith('http') ? productionAlias : `https://${productionAlias}`;
-          console.log(`[painted-door] Deployment ready. Aliases: ${aliases.join(', ')}. Using: ${siteUrl}`);
+          // Get the production URL from the project (not deployment) to get the actual assigned domain
+          const projectUrl = await getProjectProductionUrl(projectId, token);
+          const siteUrl = projectUrl
+            ? (projectUrl.startsWith('http') ? projectUrl : `https://${projectUrl}`)
+            : `https://${projectName}.vercel.app`;
+          console.log(`[painted-door] Deployment ready. Project URL: ${projectUrl}. Using: ${siteUrl}`);
           return siteUrl;
         }
         if (deployment.state === 'ERROR' || deployment.readyState === 'ERROR') {
