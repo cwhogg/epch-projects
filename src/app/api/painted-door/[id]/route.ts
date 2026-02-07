@@ -108,7 +108,7 @@ export async function GET(
   }
 }
 
-// PATCH — repair painted door site + publish target (fix repo name mismatches)
+// PATCH — repair painted door site + publish target (fix repo name, URL, or status)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -121,10 +121,14 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { repoName, siteUrl } = body as { repoName?: string; siteUrl?: string };
+    const { repoName, siteUrl, status } = body as {
+      repoName?: string;
+      siteUrl?: string;
+      status?: 'live' | 'deploying' | 'pushing';
+    };
 
-    if (!repoName) {
-      return NextResponse.json({ error: 'repoName is required' }, { status: 400 });
+    if (!repoName && !siteUrl && !status) {
+      return NextResponse.json({ error: 'At least one of repoName, siteUrl, or status is required' }, { status: 400 });
     }
 
     const { savePaintedDoorSite, saveDynamicPublishTarget, getDynamicPublishTarget } = await import('@/lib/painted-door-db');
@@ -132,24 +136,26 @@ export async function PATCH(
     // Fix painted door site record
     const site = await getPaintedDoorSite(id);
     if (site) {
-      site.repoName = repoName;
+      if (repoName) site.repoName = repoName;
       if (siteUrl) site.siteUrl = siteUrl;
+      if (status) site.status = status;
       await savePaintedDoorSite(site);
     }
 
-    // Fix publish target
-    const siteId = site?.id || `pd-${id}`;
-    const target = await getDynamicPublishTarget(siteId);
-    if (target) {
-      target.repoName = repoName;
-      if (siteUrl) target.siteUrl = siteUrl;
-      await saveDynamicPublishTarget(target);
+    // Fix publish target (only if repoName or siteUrl changed)
+    if (repoName || siteUrl) {
+      const siteId = site?.id || `pd-${id}`;
+      const target = await getDynamicPublishTarget(siteId);
+      if (target) {
+        if (repoName) target.repoName = repoName;
+        if (siteUrl) target.siteUrl = siteUrl;
+        await saveDynamicPublishTarget(target);
+      }
     }
 
     return NextResponse.json({
       message: 'Repaired',
-      site: site ? { id: site.id, repoName: site.repoName, siteUrl: site.siteUrl } : null,
-      target: target ? { id: target.id, repoName: target.repoName, siteUrl: target.siteUrl } : null,
+      site: site ? { id: site.id, repoName: site.repoName, siteUrl: site.siteUrl, status: site.status } : null,
     });
   } catch (error) {
     console.error('Error repairing painted door site:', error);
