@@ -351,3 +351,49 @@ export interface AgentEvent {
   timestamp: string;
   payload: Record<string, unknown>;
 }
+
+// Foundation Document Types
+
+export type FoundationDocType =
+  | 'strategy'
+  | 'positioning'
+  | 'brand-voice'
+  | 'design-principles'
+  | 'seo-strategy'
+  | 'social-media-strategy';
+
+export const FOUNDATION_DOC_TYPES: FoundationDocType[] = [
+  'strategy',
+  'positioning',
+  'brand-voice',
+  'design-principles',
+  'seo-strategy',
+  'social-media-strategy',
+];
+
+export interface FoundationDocument {
+  id: string;                     // same as type, e.g. 'strategy'
+  ideaId: string;
+  type: FoundationDocType;
+  content: string;                // plain text, optimized for LLM consumption
+  advisorId: string;              // which advisor created/last edited it
+  generatedAt: string;            // ISO timestamp of last generation
+  editedAt: string | null;        // ISO timestamp of last manual edit
+  version: number;                // increments on each save
+}
+
+export type FoundationDocStatus = 'pending' | 'running' | 'complete' | 'error';
+
+export interface FoundationProgress {
+  ideaId: string;
+  status: 'pending' | 'running' | 'complete' | 'error';
+  currentStep: string;
+  docs: Record<FoundationDocType, FoundationDocStatus>;
+  error?: string;
+}
+
+export interface StrategicInputs {
+  differentiation?: string;      // "What makes your approach fundamentally different?"
+  deliberateTradeoffs?: string;  // "What are you deliberately choosing NOT to do?"
+  antiTarget?: string;           // "Who specifically are you NOT targeting?"
+}
