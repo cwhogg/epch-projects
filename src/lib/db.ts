@@ -1,6 +1,6 @@
 import { getRedis, parseValue, isRedisConfigured } from './redis';
 import { buildLeaderboard } from './utils';
-import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece } from '@/types';
+import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece, FoundationDocument, FoundationDocType, FoundationProgress, FOUNDATION_DOC_TYPES } from '@/types';
 
 export { isRedisConfigured } from './redis';
 
@@ -73,6 +73,10 @@ export async function deleteIdeaFromDb(id: string): Promise<boolean> {
   } catch (error) {
     console.debug('[deleteIdeaFromDb] painted door cleanup failed:', error);
   }
+
+  // Foundation documents + progress
+  await deleteAllFoundationDocs(id);
+  await r.del(`foundation_progress:${id}`);
 
   return deleted > 0;
 }
@@ -305,6 +309,47 @@ export async function getRejectedPieces(ideaId: string): Promise<RejectedPiece[]
   const pieces = await getRedis().hgetall(`rejected_pieces:${ideaId}`);
   if (!pieces) return [];
   return Object.values(pieces).map((v) => parseValue<RejectedPiece>(v));
+}
+
+// Foundation Documents
+export async function saveFoundationDoc(ideaId: string, doc: FoundationDocument): Promise<void> {
+  await getRedis().set(`foundation:${ideaId}:${doc.type}`, JSON.stringify(doc));
+}
+
+export async function getFoundationDoc(ideaId: string, docType: FoundationDocType): Promise<FoundationDocument | null> {
+  const data = await getRedis().get(`foundation:${ideaId}:${docType}`);
+  if (!data) return null;
+  return parseValue<FoundationDocument>(data);
+}
+
+export async function getAllFoundationDocs(ideaId: string): Promise<Partial<Record<FoundationDocType, FoundationDocument>>> {
+  const result: Partial<Record<FoundationDocType, FoundationDocument>> = {};
+  for (const docType of FOUNDATION_DOC_TYPES) {
+    const doc = await getFoundationDoc(ideaId, docType);
+    if (doc) result[docType] = doc;
+  }
+  return result;
+}
+
+export async function deleteFoundationDoc(ideaId: string, docType: FoundationDocType): Promise<void> {
+  await getRedis().del(`foundation:${ideaId}:${docType}`);
+}
+
+export async function deleteAllFoundationDocs(ideaId: string): Promise<void> {
+  for (const docType of FOUNDATION_DOC_TYPES) {
+    await getRedis().del(`foundation:${ideaId}:${docType}`);
+  }
+}
+
+// Foundation Progress
+export async function saveFoundationProgress(ideaId: string, progress: FoundationProgress): Promise<void> {
+  await getRedis().set(`foundation_progress:${ideaId}`, JSON.stringify(progress), { ex: 3600 });
+}
+
+export async function getFoundationProgress(ideaId: string): Promise<FoundationProgress | null> {
+  const data = await getRedis().get(`foundation_progress:${ideaId}`);
+  if (!data) return null;
+  return data as FoundationProgress;
 }
 
 export async function getAllContentCalendars(): Promise<ContentCalendar[]> {
