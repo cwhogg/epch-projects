@@ -71,31 +71,46 @@ The EPCH app does not currently have an advisor persona concept. The VBOA app (`
 
 ```
 src/lib/advisors/
-├── prompts/                    # Markdown persona files
-│   ├── richard-rumelt.md       # Strategy advisor
-│   ├── april-dunford.md        # Positioning + editor
-│   ├── andy-raskin.md          # Strategic narrative
-│   ├── shirin-oreizy.md        # Behavioral science / CRO
-│   ├── copywriter.md           # New: brand copywriter
-│   └── seo-expert.md           # New: SEO specialist
+├── prompts/
+│   ├── richard-rumelt.ts       # Strategy advisor — exports prompt string
+│   ├── april-dunford.ts        # Positioning + editor
+│   ├── andy-raskin.ts           # Strategic narrative
+│   ├── shirin-oreizy.ts        # Behavioral science / CRO
+│   ├── copywriter.ts           # New: brand copywriter
+│   ├── seo-expert.ts           # New: SEO specialist
+│   └── index.ts                # Re-exports all prompts as a Record<string, string>
 ├── registry.ts                 # Advisor metadata array
-└── prompt-loader.ts            # Server-side fs reader with in-memory cache
+└── prompt-loader.ts            # Simple import-based lookup (no filesystem access)
 ```
 
-**Loader pattern** (same as va-web-app's `prompt-loader.ts`):
+**Prompt storage — TypeScript string exports, not filesystem reads.** Using `fs.readFileSync` with `process.cwd()` fails on Vercel serverless functions because the `src/` directory structure is not preserved in the deployed bundle. Different API routes produce different function bundles with potentially different file inclusions, and `process.cwd()` doesn't reliably point to the project root. Rather than debugging `includeFiles` in `vercel.json`, store prompts as TypeScript string constants which are bundled by the compiler:
 
 ```typescript
-// Server-side only — reads from filesystem, caches in memory
-const promptCache = new Map<string, string>();
+// src/lib/advisors/prompts/richard-rumelt.ts
+export const prompt = `You are Richard Rumelt, ...`;
+
+// src/lib/advisors/prompts/index.ts
+export { prompt as richardRumelt } from './richard-rumelt';
+export { prompt as aprilDunford } from './april-dunford';
+// ... etc
+
+// src/lib/advisors/prompt-loader.ts
+import * as prompts from './prompts';
+
+const promptMap: Record<string, string> = {
+  'richard-rumelt': prompts.richardRumelt,
+  'april-dunford': prompts.aprilDunford,
+  // ... etc
+};
 
 export function getAdvisorSystemPrompt(advisorId: string): string {
-  if (promptCache.has(advisorId)) return promptCache.get(advisorId)!;
-  const filePath = path.join(process.cwd(), 'src/lib/advisors/prompts', `${advisorId}.md`);
-  const content = fs.readFileSync(filePath, 'utf-8');
-  promptCache.set(advisorId, content);
-  return content;
+  const prompt = promptMap[advisorId];
+  if (!prompt) throw new Error(`Unknown advisor: ${advisorId}`);
+  return prompt;
 }
 ```
+
+This eliminates the filesystem dependency entirely. For ~6 advisor prompts of 1-2KB each, embedding as string constants is trivial. The prompt content is copied from VBOA markdown files — just wrap in a template literal.
 
 **Registry** — minimal metadata needed by the pipeline:
 
@@ -107,17 +122,15 @@ interface AdvisorEntry {
 }
 ```
 
-Advisor prompt files are copied from the VBOA's `va-web-app/src/lib/advisors/prompts/` directory for existing advisors. New advisors (Copywriter, SEO Expert) are created fresh. The VBOA remains the canonical source for advisor development — prompts are copied here as a deployment artifact, not maintained in two places.
-
-**External dependency:** Advisor prompts originate in the `va-web-app` repository. The VBOA's `/add-advisor` skill is used to create new advisors there. Prompts are then copied to this codebase's `src/lib/advisors/prompts/` directory. Long-term, a shared package or build step could sync these, but for now a manual copy suffices.
+**External dependency:** Advisor prompts originate in the `va-web-app` repository. The VBOA's `/add-advisor` skill is used to create new advisors there. Prompt content is then copied to this codebase's `src/lib/advisors/prompts/*.ts` files as TypeScript string exports. The VBOA remains the canonical source — prompts here are deployment artifacts, not maintained in two places.
 
 ### Key Architectural Insight
 
 The existing agent tools already make their own Claude API calls with specific prompts (e.g., `design_brand` in `website.ts` calls Claude with `buildBrandIdentityPrompt()`). The agent-runtime system prompt governs the **orchestrator**. The advisor-specific work happens inside tools.
 
 This means:
-- **April Dunford runs as the orchestrator agent** — her persona is the runtime's system prompt. She reads critiques and decides approve or revise.
-- **Each advisor's work happens inside tools** — `generate_draft` calls Claude with the copywriter's system prompt; `run_parallel_critiques` calls Claude with each critic's system prompt.
+- **The orchestrator is a neutral pipeline executor** — its system prompt contains procedural instructions for the critique cycle, not a persona. It reads critiques, applies the decision rubric, and calls the appropriate tools. Giving the orchestrator a persona (e.g., April Dunford) conflates three roles — agent orchestration, domain expertise, and editorial judgment — requiring three different prompt strategies that compete with each other. The persona framing makes the model narrate instead of executing tools.
+- **Each advisor's work happens inside tools** — `generate_draft` calls Claude with the copywriter's system prompt; `run_parallel_critiques` calls Claude with each critic's system prompt. April Dunford's positioning expertise appears as one of the critique calls inside `run_parallel_critiques`, not as the orchestrator.
 - No changes to `agent-runtime.ts`.
 
 ---
@@ -153,6 +166,8 @@ Before generating the Strategy document, the UI prompts the user for three strat
 
 These are optional fields on `ProductIdea` (or a separate `StrategicInputs` type stored alongside). If the user skips them, the Strategy document is generated with inline markers: `[ASSUMPTION: The LLM inferred this strategic choice — review and confirm]`. This makes the generic parts visible rather than hiding them in plausible prose.
 
+**Downstream blocking:** If the Strategy document contains `[ASSUMPTION]` markers, the UI shows a warning on the Strategy card: "Contains assumptions — review before generating downstream documents." Downstream generation (Positioning, etc.) is not blocked, but the markers are stripped before passing Strategy as context to downstream calls. Instead, downstream prompts receive a note: "Note: Strategy was auto-generated without full user input. Strategic claims should be treated as provisional." This prevents markers from leaking into or confusing downstream LLM calls while preserving the human-facing signal.
+
 ### Data Model
 
 ```typescript
@@ -180,8 +195,13 @@ interface FoundationDocument {
 
 | Key Pattern | Type | TTL | Purpose |
 |-------------|------|-----|---------|
-| `foundation:{ideaId}` | Hash | None | All foundation docs for an idea (field = docType, value = JSON) |
+| `foundation:{ideaId}:{docType}` | String (JSON) | None | One foundation document per key |
 | `foundation_progress:{ideaId}` | String (JSON) | 1hr | Generation progress tracking |
+| `foundation_lock:{ideaId}` | String | 10min | Idempotency lock for "Generate All" |
+
+Foundation documents are stored as individual keys (not a hash) to avoid Upstash payload size limits. A single Redis hash storing all 6 documents could approach the 1MB REST API request body limit after editing, and `HGETALL` on large hashes is slow over HTTP. Individual keys also enable per-document reads without loading the full set.
+
+**Key enumeration for cleanup:** Deleting an idea requires deleting all 6 doc type keys. The `deleteIdeaFromDb()` function enumerates all `FoundationDocType` values and deletes: `foundation:{id}:strategy`, `foundation:{id}:positioning`, etc. No pattern scan needed — the doc types are a fixed enum.
 
 ### Creation Flow
 
@@ -209,21 +229,27 @@ Every content output runs through the same pattern. What changes per content typ
 
 ```
 STEP 1: GENERATE DRAFT
-  One advisor writes the draft with all foundation docs + research data as context.
+  One advisor writes the draft with recipe-specified foundation docs + research data as context.
 
-STEP 2: PARALLEL CRITIQUE
-  Multiple advisors critique in parallel (Promise.all inside a single tool).
-  Each returns structured feedback as AdvisorCritique.
+STEP 2: CRITIQUES (concurrency-limited)
+  Multiple advisors critique via a single tool. Runs with concurrency limit of 2
+  (not fully parallel) to avoid Anthropic rate limits. Each returns AdvisorCritique
+  via Anthropic tool_use for schema enforcement.
 
-STEP 3: EDITOR QUALITY GATE
-  April Dunford (the orchestrator) reads all critiques + the draft.
-  Decision: APPROVE or REVISE.
-  If REVISE: she writes a revision brief synthesizing what needs to change.
+STEP 3: ORCHESTRATOR DECISION
+  The orchestrator (neutral pipeline executor, NOT a persona) reads all critiques.
+  Calls the `editor_decision` tool with decision: 'approve' | 'revise' and optional brief.
+  Decision is mechanical: APPROVE if zero high-severity issues. REVISE otherwise.
+  Safety valve: if average score < 4, always REVISE regardless of severity.
 
-STEP 4a (APPROVE): Save final content, proceed to deployment.
-STEP 4b (REVISE): Original author rewrites using editor's brief → back to Step 2.
+STEP 4a (APPROVE): Call `save_content`. Proceed to deployment.
+STEP 4b (REVISE): Call `revise_draft` with brief → SUMMARIZE round → back to Step 2.
 
-Loop continues until the editor approves or maxRevisionRounds is reached.
+STEP 5 (between rounds): Call `summarize_round` to compress previous round's data.
+  This prevents conversation history from growing unbounded across rounds.
+
+Loop continues until approved or maxRevisionRounds reached.
+On max rounds reached: save content with status 'max-rounds-reached' (not fake approval).
 ```
 
 ### Pause/Resume During Critique Cycles
@@ -249,18 +275,87 @@ This stateless pattern avoids the closure problem entirely. It also means the "G
 
 **Pre-existing bug:** The `planStore` in `common.ts` (an in-memory Map) has the same problem — plans are lost on resume. The orchestrator's conversation history contains the plan (as a `create_plan` tool result), so Claude "knows" the plan, but `update_plan` calls will fail on an empty array. This should be fixed separately or worked around by not using plan tools in the critique orchestrator.
 
-**Turn budget estimate:** One full critique round = ~3 orchestrator turns (generate_draft + run_parallel_critiques + editor decision). With `maxTurns: 20`, the system supports up to ~5-6 revision rounds before hitting the turn limit, well above the `maxRevisionRounds: 3` safety limit.
+**Turn budget estimate:** One full critique round = ~4 orchestrator turns (generate_draft + run_critiques + editor_decision + summarize_round). With `maxTurns: 20`, the system supports up to ~4-5 revision rounds before hitting the turn limit, above the `maxRevisionRounds: 3` safety limit.
+
+### Context Window Management
+
+**Problem:** Without mitigation, conversation history grows by ~20,000-30,000 tokens per critique round (draft text + 3-4 full critique JSONs + editor response + revision brief + revised draft). By round 2, the orchestrator's `messages.create` call sends 60,000-90,000 input tokens. This degrades attention on foundation documents, inflates costs, and risks hitting context limits.
+
+**Mitigation — round summarization:** After each round's `editor_decision`, the orchestrator calls `summarize_round`. This tool:
+1. Saves the full round data to Redis at `critique_round:{runId}:{round}` (preserving detail for the critique history UI).
+2. Returns a compressed summary to the conversation: "Round N: Draft scored [avg]. High issues: [list]. Editor decision: revise. Brief: [text]."
+
+The orchestrator then calls `revise_draft`, which loads the latest draft from Redis (not from conversation history). The revised draft flows into the next `run_critiques` call. The conversation carries only summaries of prior rounds, not the raw data.
+
+**Token budget per call (estimated):**
+| Call | Input Tokens | Notes |
+|------|-------------|-------|
+| `generate_draft` (inside tool) | ~12,000-18,000 | System prompt + foundation docs + research data |
+| Each critic call (inside tool) | ~6,000-12,000 | Critic prompt + draft + tailored context docs |
+| Orchestrator turn (round 1) | ~8,000-12,000 | System prompt + tool definitions + critique results |
+| Orchestrator turn (round 2) | ~10,000-15,000 | Above + round 1 summary (~500 tokens) |
+
+With round summarization, the orchestrator's context grows by ~500 tokens per round instead of ~25,000. This keeps costs linear rather than quadratic.
 
 ### Editor Decision Logic
 
-April Dunford's orchestrator system prompt instructs her to:
-- **APPROVE** if all critiques score above threshold and no high-severity issues remain
-- **REVISE** if any critique has high-severity issues, with a brief synthesizing actionable changes
-- She can override a low score if she judges the concern doesn't apply (editorial discretion)
+The orchestrator's system prompt contains a **procedural decision rubric**, not a persona:
+
+```
+You are a content pipeline orchestrator. After receiving critiques from `run_critiques`,
+apply these rules:
+
+1. If ANY critique contains a high-severity issue → call `editor_decision` with
+   decision='revise' and a brief synthesizing what needs to change.
+   Focus the revision brief on HIGH and MEDIUM issues only. Instruct the author:
+   "Address only the high-severity issues. Do not change aspects that scored well."
+2. If NO high-severity issues AND average score >= 4 → call `editor_decision`
+   with decision='approve'.
+3. If NO high-severity issues BUT average score < 4 → call `editor_decision`
+   with decision='revise' (safety valve for "technically okay but clearly bad").
+4. If critiques show oscillation (scores decreasing from previous round) →
+   call `editor_decision` with decision='approve' and note the best-scoring round.
+
+Do NOT narrate your reasoning. Call the tool.
+```
+
+The `editor_decision` tool is the **only mechanism** for advancing the pipeline. This eliminates ambiguity — the system cannot proceed on free-text responses. Scores are used for reporting/visibility; severity drives the actual decision.
+
+**No editorial discretion.** The previous design gave the editor override power, which produces non-deterministic behavior. The rubric is mechanical. If the rubric produces bad results for a specific content type, adjust the recipe's critic configs and evaluation prompts — don't add LLM judgment at the decision layer.
 
 ### Structured Critique Output
 
-Each critique tool returns the same shape, extending the existing `Evaluation` pattern with advisor attribution and issue severity:
+Critics return structured feedback via **Anthropic tool_use** (not raw JSON in text). Each critique call defines `submit_critique` as a tool the critic must call, enforcing the schema at the API level:
+
+```typescript
+// Tool definition passed to each critic call
+const submitCritiqueTool = {
+  name: 'submit_critique',
+  description: 'Submit your structured evaluation of the content.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      score: { type: 'number', minimum: 1, maximum: 10 },
+      pass: { type: 'boolean' },
+      issues: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            severity: { type: 'string', enum: ['high', 'medium', 'low'] },
+            description: { type: 'string' },
+            suggestion: { type: 'string' },
+          },
+          required: ['severity', 'description', 'suggestion'],
+        },
+      },
+    },
+    required: ['score', 'pass', 'issues'],
+  },
+};
+```
+
+This eliminates the fragile JSON-in-text parsing problem. The critic's response is guaranteed to match the schema. The `run_critiques` tool extracts the tool_use block from each critic response and wraps it with `advisorId` and `domain`:
 
 ```typescript
 interface CritiqueIssue {
@@ -278,8 +373,6 @@ interface AdvisorCritique {
 }
 ```
 
-The severity field gives the editor a concrete rubric: APPROVE if no high-severity issues remain (regardless of numeric score). REVISE if any high-severity issue exists, synthesizing the revision brief from high and medium issues. Low-severity issues are noted but don't block approval.
-
 ### Content Recipe Schema
 
 ```typescript
@@ -287,10 +380,10 @@ interface ContentRecipe {
   contentType: string;
   authorAdvisor: string;
   authorPromptBuilder: string;
+  authorContextDocs: FoundationDocType[];  // which docs the author receives
   critics: CriticConfig[];
-  editorThreshold: number;        // min average score to auto-approve (e.g., 7)
-  maxRevisionRounds: number;      // safety limit (e.g., 3)
-  foundationDocs: FoundationDocType[];
+  minAggregateScore: number;              // safety valve — always revise below this (e.g., 4)
+  maxRevisionRounds: number;              // safety limit (e.g., 3)
 }
 
 interface CriticConfig {
@@ -300,6 +393,8 @@ interface CriticConfig {
   contextDocs: FoundationDocType[]; // which foundation docs this critic receives
 }
 ```
+
+Note: `editorThreshold` removed. The decision is severity-driven, not score-driven. `minAggregateScore` is a safety valve only (catches "no high issues but everything is 2/10"). `foundationDocs` on the recipe replaced with `authorContextDocs` — each critic already specifies its own `contextDocs`, and the author should also receive a tailored subset to manage token budgets.
 
 ---
 
@@ -315,10 +410,9 @@ Highest-stakes output. Broadest critique panel.
 | Critic | April Dunford | Does the copy reflect positioning? Are competitive alternatives clear? Is the "why now" compelling? **Context:** Positioning, Strategy |
 | Critic | SEO Expert (new) | Keyword density in headlines, meta description, heading hierarchy, internal link opportunities. **Context:** SEO Strategy, research keyword data |
 | Critic | Shirin Oreizy | CTA clarity, friction reduction, cognitive load, social proof approach, urgency without manipulation. **Context:** target user description only |
-| Editor | April Dunford | Synthesizes all critiques. Approves or sends back. |
 
-**Foundation docs consumed by author:** Strategy, Positioning, Brand Voice, Design Principles, SEO Strategy
-**Foundation docs consumed by critics:** Each critic receives a tailored subset (shown above) to keep prompts focused and reduce token cost.
+**Author context docs:** Positioning, Brand Voice, SEO Strategy (3 docs, ~4,000-8,000 tokens). Strategy and Design Principles omitted from the author call to stay within token budget — the positioning statement already distills the strategy, and design principles inform the site build, not the copy.
+**Critic context docs:** Each critic receives a tailored subset (shown above) to keep prompts focused and reduce token cost.
 
 After copy is approved, it flows into the existing deployment pipeline: `assemble_site_files` (enhanced to read approved copy + Design Principles) → `validate_code` → `create_repo` → `push_files` → deploy.
 
@@ -354,7 +448,14 @@ Lighter-weight — fewer critics, faster cycle.
 
 ### Must Create
 
-1. **Copywriter** — Senior brand copywriter. Writes in the brand voice defined by foundation docs. Expert at headlines, CTAs, long-form and short-form. Executes at the copy level, not the strategy level. The brand voice doc should include 5-10 concrete example sentences across contexts (headline, CTA, paragraph opening, technical explanation) — the copywriter's prompt is instructed to mimic the examples, not just interpret abstract tone descriptions like "warm and conversational." This prevents the chain-of-LLM-telephone problem where abstract style descriptions produce generic prose.
+1. **Copywriter** — Senior brand copywriter. Writes in the brand voice defined by foundation docs. Expert at headlines, CTAs, long-form and short-form. Executes at the copy level, not the strategy level.
+
+   **Brand voice exemplar requirements:** The brand voice foundation doc must include:
+   - 5-10 concrete example sentences across **specified contexts** (headline, CTA, paragraph opening, technical explanation, error message). The generation prompt explicitly requires one example per context type.
+   - A **counter-examples** section: "The brand voice does NOT sound like: [3-5 examples of wrong tone]." Counter-examples are surprisingly effective at constraining LLM output.
+   - The generation prompt includes a self-check: "Verify each example is stylistically distinct and serves its specific context — a headline example should not read like a paragraph opening."
+
+   The copywriter's prompt is instructed to mimic the examples, not interpret abstract tone descriptions like "warm and conversational." This prevents the chain-of-LLM-telephone problem where abstract style descriptions produce generic prose.
 
 2. **SEO Expert** — Technical and content SEO specialist. Keyword optimization, SERP strategy, heading hierarchy, schema markup, internal linking. Evaluates content for search performance. Adds judgment calls beyond what `seo-knowledge.ts` handles deterministically.
 
@@ -378,23 +479,41 @@ Lighter-weight — fewer critics, faster cycle.
 
 | Tool | Purpose |
 |------|---------|
-| `generate_draft` | Call Claude with the copywriter's system prompt + foundation docs + content-specific context. Returns draft text. |
-| `run_parallel_critiques` | Takes draft + list of critic configs. Makes parallel Claude calls (`Promise.allSettled`), each with a task-focused critique prompt (see below) and the critic's relevant foundation docs. Returns `AdvisorCritique[]` with partial results if a critic fails. |
-| `revise_draft` | Call Claude with the copywriter's system prompt + original draft + editor's revision brief. Returns revised draft. |
-| `save_content` | Save approved content to Redis. Optionally triggers deployment for websites. |
+| `generate_draft` | Call Claude with the copywriter's system prompt + recipe-specified foundation docs + content-specific context. Saves draft to Redis at `draft:{runId}` (TTL = 2hr). Returns draft text. |
+| `run_critiques` | Reads draft from Redis. Runs critic calls with **concurrency limit of 2** (see below). Each critic uses Anthropic `tool_use` for structured output. Returns `AdvisorCritique[]` with partial results on failure. |
+| `editor_decision` | Called by the orchestrator to advance the pipeline. Input: `{ decision: 'approve' | 'revise', brief?: string }`. This is the **only way** to proceed — no free-text decisions. |
+| `revise_draft` | Reads previous draft from Redis. Calls Claude with copywriter's system prompt + draft + editor's revision brief. Saves revised draft to `draft:{runId}`. Returns revised text. |
+| `summarize_round` | Saves full round data to `critique_round:{runId}:{round}` in Redis. Returns a compressed ~500-token summary for the conversation history. |
+| `save_content` | Reads final draft from Redis. Saves approved content. Optionally triggers deployment. Records `quality: 'approved' | 'max-rounds-reached'`. |
 
-`run_parallel_critiques` is a single tool that internally runs `Promise.allSettled()` across multiple Claude calls. If one critic call fails (rate limit, timeout, malformed response), the other critiques are still returned. Failed critics are marked with `{ advisorId, domain, error: "..." }` so the editor can decide whether to proceed or retry. The orchestrator calls one tool and gets all critiques back, keeping agent turn count low.
+**Draft key scoping:** Drafts use `draft:{runId}` (not `draft:{ideaId}:{contentType}`). Each agent run has a unique `runId`, preventing collisions when multiple content pipelines run concurrently for the same idea. TTL matches `STATE_TTL` (2 hours) so drafts auto-expire with agent state.
 
-**Critique prompt strategy:** Critic calls use **task-focused critique prompts**, not the full VBOA persona prompts. Full persona prompts (with biographical narrative, speaking style, and conversational scaffolding) encourage the model to roleplay rather than analyze. Critique prompts instead use a template:
+**Concurrency-limited critiques:** `run_critiques` does NOT fire all critics in parallel. Anthropic rate limits (especially tokens-per-minute) make 3-4 simultaneous calls risky — each critique sends 6,000-12,000 input tokens, and a parallel burst of 4 calls can exceed Tier 1 TPM limits. Instead, use a concurrency limiter (e.g., `p-limit(2)`) with `Promise.allSettled`. Each failed critic (rate limit, timeout, malformed tool_use response) is marked with `{ advisorId, domain, error: "..." }`. The orchestrator sees partial results and decides whether to proceed.
+
+**Critique prompt strategy:** Critic calls use **task-focused critique prompts**, not the full VBOA persona prompts. Full persona prompts (with biographical narrative, speaking style, and conversational scaffolding) encourage the model to roleplay rather than analyze. Critique prompts use a focused template, and critics return structured output via Anthropic `tool_use` (not raw JSON in text — see `submit_critique` tool definition above):
 
 ```
 You are evaluating this content as a [domain] expert.
 Your expertise: [2-3 sentence summary of relevant frameworks from the advisor's prompt].
 Evaluation criteria: [from CriticConfig.evaluationPrompt]
-Respond with structured JSON matching the AdvisorCritique schema.
+Use the submit_critique tool to provide your evaluation.
 ```
 
 Full persona prompts are reserved for the interactive foundation doc editing chat (Phase 4), where persona fidelity matters.
+
+### All Redis Keys (Complete Reference)
+
+| Key Pattern | Type | TTL | Purpose |
+|-------------|------|-----|---------|
+| `foundation:{ideaId}:{docType}` | String (JSON) | None | Foundation document |
+| `foundation_progress:{ideaId}` | String (JSON) | 1hr | Foundation generation progress |
+| `foundation_lock:{ideaId}` | String | 10min | "Generate All" idempotency lock |
+| `draft:{runId}` | String | 2hr | Current draft for a pipeline run |
+| `critique_round:{runId}:{round}` | String (JSON) | 2hr | Full round data for critique history UI |
+| `pipeline_progress:{runId}` | String (JSON) | 2hr | Structured progress for frontend polling |
+| `agent_state:{runId}` | String (JSON) | 2hr | Agent state (existing) |
+| `active_run:{agentId}:{entityId}` | String | 2hr | Active run mapping (existing) |
+| `scratchpad:{ideaId}` | Hash | None | Scratchpad (existing) |
 
 ### Reused Tools (No Changes)
 
@@ -425,7 +544,13 @@ Six cards in creation order, each showing:
 - **Generated** — content exists. All buttons active.
 - **Manually edited** — shows `editedAt` badge.
 
-**"Generate All" button** at the top runs the full foundation hierarchy: Strategy → Positioning → (Brand Voice, Design Principles, SEO Strategy, Social Media Strategy in parallel). Progress shown inline on each card.
+**"Generate All" button** at the top runs the full foundation hierarchy: Strategy → Positioning → (Brand Voice, Design Principles, SEO Strategy, Social Media Strategy sequentially within a batch tool). Progress shown inline on each card.
+
+**Idempotency:** "Generate All" acquires a Redis lock (`SETNX foundation_lock:{ideaId} {runId} EX 600`). If the lock exists, the button is disabled with "Generation in progress." The lock is released on completion or expires after 10 minutes.
+
+**Error recovery:** If generation fails partway (e.g., Strategy succeeds but SEO Strategy fails), the UI shows per-card status. Each card gets an individual **Retry** button. "Generate All" checks which docs already exist and skips them — so clicking it again only generates missing documents, not re-running everything.
+
+**Foundation batch tool:** Items 3-6 cannot run truly in parallel inside the agent runtime (the runtime processes tool calls sequentially). Instead, a single `generate_foundation_batch` tool handles items 3-6 internally, using `Promise.allSettled` with concurrency limit of 2 (same pattern as critiques, same rate limit concern). This keeps the orchestrator turn count low while achieving partial parallelism inside the tool.
 
 ### View 2: Foundation Doc Editor
 
@@ -472,10 +597,11 @@ After completion:
 
 ```typescript
 interface PipelineProgress {
-  status: 'running' | 'complete' | 'error';
+  status: 'running' | 'complete' | 'error' | 'max-rounds-reached';
   currentStep: string;
   round: number;
   maxRounds: number;
+  quality: 'approved' | 'max-rounds-reached' | null;
   steps: PipelineStep[];
   critiqueHistory: CritiqueRound[];
 }
@@ -488,11 +614,28 @@ interface CritiqueRound {
 }
 ```
 
+**Progress storage:** Critique tools write structured progress to `pipeline_progress:{runId}` in Redis (2hr TTL). The frontend polls this key alongside agent state. The existing `onProgress(status, detail)` callback is string-only and cannot carry structured critique data, so progress updates go directly to Redis rather than through the callback.
+
+**Max rounds reached:** When `maxRevisionRounds` is hit without approval, the content is saved with `quality: 'max-rounds-reached'`. The UI displays: "This content reached the maximum revision rounds. Review the critique history and consider editing manually." Remaining high-severity issues are shown. This is explicitly NOT a silent approval.
+
 Cards, progress bars, and polling are existing patterns. The streaming chat (Phase 4) is new infrastructure — see View 2 note above.
 
 ---
 
 ## Implementation Phases
+
+### Phase 0: Validation (Before Building)
+
+**Goal:** Prove that foundation documents actually improve content quality before investing in the full pipeline.
+
+**Method:**
+1. Take an existing idea with research data.
+2. Manually generate a Strategy and Positioning document (single Claude call each, or by hand).
+3. Generate a blog post WITH those documents as context.
+4. Generate a blog post WITHOUT them (current single-pass approach).
+5. Compare qualitatively. If the improvement isn't obvious and significant, the content pipeline integration needs a different approach (e.g., extracting key phrases rather than passing whole documents).
+
+This takes ~30 minutes and costs ~$1. It validates the core premise before building anything. If the improvement is marginal, the foundation document system is still valuable as a strategic planning tool for the user, but the critique pipeline may be over-engineering.
 
 ### Phase 1: Foundation Data Layer + Autonomous Generation
 
@@ -538,20 +681,33 @@ Uses existing advisors (Richard Rumelt, April Dunford) with simple prompts. New 
 
 **Test:** Generate content calendar, select pieces, watch each blog post go through critique.
 
-### Phase 4: Interactive Editing + Social Media
+### Phase 4a: Interactive Editing (Streaming Chat Infrastructure)
 
-**Goal:** Foundation docs editable via advisor chat. Social media recipe works.
+**Goal:** Foundation docs editable via advisor chat.
 
-**Build (note: this is the largest phase due to new streaming infrastructure):**
+**Note: This is the largest phase.** The EPCH codebase has zero streaming chat infrastructure. This phase builds a fundamentally new UI pattern. Consider whether an intermediate non-streaming editor (form-based: user submits revision request, polls for result using existing patterns) could ship first and defer streaming to a later iteration.
+
+**Build:**
 - Streaming chat API route using Vercel AI SDK `streamText` — `POST /api/foundation/[ideaId]/[docType]/chat`
 - Client-side `useChatStream` hook (port pattern from va-web-app or build fresh)
 - Message display component with streaming text rendering
 - Foundation doc editor page with split layout (document + chat)
 - Document save/discard flow with `editedAt` tracking
 - Manual-edit badge on foundation cards
-- Social media post recipe and generation flow
+- Chat history persistence (or ephemeral — decide during implementation)
+- Error handling for stream interruptions
 
 **Test:** Edit positioning statement via chat with April Dunford, then regenerate website to see changes reflected.
+
+### Phase 4b: Social Media Recipe
+
+**Goal:** Social media post recipe works through the critique cycle.
+
+**Build:**
+- Social media post recipe and generation flow
+- Social media content type in content calendar
+
+**Test:** Generate social media posts through critique cycle. Lighter-weight than website/blog recipes.
 
 ---
 
@@ -559,23 +715,29 @@ Uses existing advisors (Richard Rumelt, April Dunford) with simple prompts. New 
 
 - **Closure state on pause/resume** is a pre-existing architectural issue affecting all agents. The critique tools are designed stateless (Redis-backed) to avoid it, but the existing website and content agent tools still have this bug. Should be addressed in a separate refactor.
 - **`planStore` in-memory Map** (`common.ts`) is lost on resume. The critique orchestrator should avoid using `create_plan` / `update_plan` tools, or the plan tools should be refactored to use Redis.
-- **Foundation doc cleanup** must be added to `deleteIdeaFromDb()` in `src/lib/db.ts` — add `await r.del('foundation:${id}')`.
-- **Advisor .md files on Vercel** — verify that `src/lib/advisors/prompts/*.md` files are included in the serverless function bundle. May require `includeFiles` in Vercel config. The existing `fs.readFileSync` usage in `painted-door-templates.ts` works for the `content/` directory, so the pattern should work, but needs verification.
+- **Foundation doc cleanup** must be added to `deleteIdeaFromDb()` in `src/lib/db.ts` — delete all 6 doc type keys: `foundation:{id}:strategy`, `foundation:{id}:positioning`, etc.
 - **`buildBaseContext()` in `content-prompts.ts`** does not reference `foundationDocs` — adding the field to `ContentContext` propagates the data, but the prompt builders must be updated to actually include it in the prompt text.
+- **Multi-persona overhead vs. value:** The advisor persona system adds maintenance burden (registry, loader, prompt copying from VBOA). For the critique pipeline, the actual value comes from the evaluation criteria in `CriticConfig.evaluationPrompt` and the `submit_critique` tool schema, not the persona wrapper. The persona layer is most valuable for interactive editing (Phase 4a) and organizational clarity. If maintenance cost becomes excessive, consider collapsing to rubric-only evaluation for critics.
+- **Revision loop oscillation:** If two critics have contradictory requirements (SEO wants keywords, positioning wants clean messaging), revisions may oscillate. The `summarize_round` tool tracks score trends to detect this, and the orchestrator rubric says "approve if scores are decreasing." Longer-term, critic prompts should explicitly state which aspects are non-negotiable vs. nice-to-have.
+- **`p-limit` dependency:** The concurrency limiter for critique and foundation batch tools requires `p-limit` (or a manual implementation). Small dependency but worth noting.
 
 ## Cost Estimates
 
-| Scenario | Est. API Calls | Est. Cost |
-|----------|---------------|-----------|
-| Single blog post (1 round) | 5 | ~$0.41 |
-| Single blog post (2 rounds) | 8 | ~$0.66 |
-| Website copy (2 rounds) | 8 | ~$0.70 |
-| "Generate All" foundation docs | 6 | ~$0.30 |
-| Full suite (6 foundation + website + 8 blog posts) | ~70 | ~$7.00 |
+**Methodology:** Costs account for context accumulation within tool calls (foundation docs + draft + system prompt per call). Round summarization keeps orchestrator context growth linear (~500 tokens/round) rather than quadratic. Estimates assume Claude Sonnet pricing ($3/M input, $15/M output).
 
-Costs at Claude Sonnet pricing ($3/M input, $15/M output). Economically reasonable for a small SaaS generating content for painted door tests.
+| Scenario | Est. API Calls | Est. Input Tokens | Est. Output Tokens | Est. Cost |
+|----------|---------------|-------------------|--------------------| ----------|
+| Single blog post (1 round) | 5 | ~55K | ~8K | ~$0.29 |
+| Single blog post (2 rounds) | 8 | ~90K | ~14K | ~$0.48 |
+| Website copy (2 rounds) | 8 | ~100K | ~16K | ~$0.54 |
+| "Generate All" foundation docs | 6 | ~60K | ~12K | ~$0.36 |
+| Full suite (6 foundation + website + 8 blog posts) | ~70 | ~800K | ~130K | ~$4.35 |
+
+**Realistic early usage:** Expect 2-3x happy-path costs as users iterate — regenerating Strategy after reviewing, re-running content after editing foundation docs. Budget ~$10-15 for a full suite with iteration, not $4.35.
 
 **Latency note:** A full content suite (~70 API calls) requires 3-5 pause/resume cycles across multiple Vercel function invocations. Total wall-clock time: 10-20 minutes depending on API response times. The frontend polling UI handles this transparently.
+
+**Minimum Anthropic API tier:** Tier 2+ recommended. Tier 1 (40K TPM) may be exceeded by concurrency-limited critique calls during heavy usage. Tier 2 (80K+ TPM) provides comfortable headroom.
 
 ## Out of Scope
 
