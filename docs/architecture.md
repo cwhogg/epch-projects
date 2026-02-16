@@ -47,6 +47,7 @@ graph TB
         FOUNDATION["Foundation Agent<br/>foundation-agent.ts"]
         PAINTED_DOOR["Website Agent<br/>painted-door-agent.ts"]
         ANALYTICS_AGENT["Analytics Agent<br/>analytics-agent.ts"]
+        CRITIQUE["Content Critique Agent<br/>content-critique-agent.ts"]
         RUNTIME["Agent Runtime<br/>agent-runtime.ts"]
     end
 
@@ -119,6 +120,7 @@ graph TB
         A_FOUNDATION["foundation-agent"]
         A_PAINTED_DOOR["painted-door-agent"]
         A_ANALYTICS["analytics-agent"]
+        A_CRITIQUE["content-critique-agent"]
     end
 
     subgraph Core["Core Lib (src/lib/)"]
@@ -152,6 +154,7 @@ graph TB
         T_WEBSITE["website"]
         T_ANALYTICS["analytics"]
         T_FOUNDATION["foundation"]
+        T_CRITIQUE["critique<br/>(generate_draft, run_critiques,<br/>editor_decision, revise_draft,<br/>summarize_round, save_content)"]
     end
 
     Agents --> L_RUNTIME
@@ -169,6 +172,9 @@ graph TB
     A_ANALYTICS --> S_ANALYTICS_DB
     A_ANALYTICS --> S_GSC
     A_FOUNDATION --> S_ADVISORS
+    A_CRITIQUE --> L_RUNTIME
+    A_CRITIQUE --> S_ADVISORS
+    A_CRITIQUE --> T_CRITIQUE
 
     S_SEO --> L_ANTHROPIC
     S_SEO --> L_OPENAI
@@ -537,6 +543,10 @@ graph LR
         S_SITE_SNAP["analytics:site_snapshot:{weekId}<br/>Site totals (26wk TTL)"]
         S_REPORT["analytics:report:{weekId}<br/>WeeklyReport (52wk TTL)"]
         S_LATEST["analytics:report:latest<br/>Latest WeeklyReport"]
+        S_DRAFT["draft:{runId}<br/>Current draft (2hr TTL)"]
+        S_CRIT_ROUND["critique_round:{runId}:{round}<br/>Full round data (2hr TTL)"]
+        S_PIPE_PROG["pipeline_progress:{runId}<br/>Structured progress (2hr TTL)"]
+        S_APPROVED["approved_content:{runId}<br/>Approved content (2hr TTL)"]
     end
 
     subgraph Sets["Sets (SADD/SMEMBERS)"]
@@ -668,6 +678,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Analytics Report | `/api/analytics/report` | GET | Fetch weekly report |
 | Cron: Publish | `/api/cron/publish` | GET, POST | Cron + manual publish trigger |
 | Cron: Analytics | `/api/cron/analytics` | GET, POST | Cron + manual analytics trigger |
+| Content Pipeline | `/api/content-pipeline/[ideaId]` | POST, GET | POST triggers critique pipeline; GET polls progress |
 
 ### Agents
 
@@ -678,6 +689,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 6 strategic foundation documents |
 | Website | `src/lib/painted-door-agent.ts` | `agent-tools/website.ts` | Brand identity → GitHub repo → Vercel deploy |
 | Analytics | `src/lib/analytics-agent.ts` | `agent-tools/analytics.ts` | Weekly GSC data collection and performance reports |
+| Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Multi-advisor critique cycle with dynamic selection |
 
 All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` env var. All share `agent-tools/common.ts` (plan, scratchpad, evaluation helpers).
 
@@ -710,6 +722,8 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/utils.ts` | slugify, fuzzyMatchPair, buildLeaderboard |
 | `src/lib/llm-utils.ts` | parseLLMJson, cleanJSONString |
 | `src/lib/data.ts` | Filesystem fallback: ideas.json, experiments/ markdown parser |
+| `src/lib/content-recipes.ts` | Content recipe definitions and LLM-based critic selection |
+| `src/lib/editor-decision.ts` | Mechanical editor rubric for critique pipeline |
 
 ### Components
 

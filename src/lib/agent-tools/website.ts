@@ -4,7 +4,7 @@ import { buildContentContext, generateContentCalendar } from '@/lib/content-agen
 import { detectVertical } from '@/lib/seo-knowledge';
 import { getIdeaFromDb } from '@/lib/db';
 import { buildBrandIdentityPrompt } from '@/lib/painted-door-prompts';
-import { assembleAllFiles } from '@/lib/painted-door-templates';
+import { assembleAllFiles, ApprovedCopy } from '@/lib/painted-door-templates';
 import {
   savePaintedDoorSite,
   saveDynamicPublishTarget,
@@ -309,13 +309,19 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         'Generate the brand identity (colors, typography, voice, landing page copy) using an LLM. Requires get_idea_context to have been called first.',
       input_schema: {
         type: 'object',
-        properties: {},
+        properties: {
+          visualOnly: {
+            type: 'boolean',
+            description: 'If true, generates only visual identity (no copy). Used when critique pipeline provides copy.',
+          },
+        },
         required: [],
       },
-      execute: async () => {
+      execute: async (input) => {
         if (!idea || !ctx) return { error: 'Call get_idea_context first' };
 
-        const prompt = buildBrandIdentityPrompt(idea, ctx);
+        const visualOnly = (input.visualOnly as boolean) || false;
+        const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly);
         const response = await getAnthropic().messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 2048,
@@ -330,7 +336,8 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
           siteName: brand.siteName,
           tagline: brand.tagline,
           seoDescription: brand.seoDescription,
-          heroHeadline: brand.landingPage.heroHeadline,
+          heroHeadline: brand.landingPage?.heroHeadline,
+          mode: visualOnly ? 'visual-only' : 'full',
         };
       },
     },
@@ -344,13 +351,23 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         'Assemble all site files from templates using the brand identity. Instant — no LLM call needed. Requires design_brand to have been called first.',
       input_schema: {
         type: 'object',
-        properties: {},
+        properties: {
+          approvedCopy: {
+            type: 'object',
+            description: 'Optional approved copy from critique pipeline. When provided, overrides brand copy.',
+            properties: {
+              landingPage: { type: 'object' },
+              seoDescription: { type: 'string' },
+            },
+          },
+        },
         required: [],
       },
-      execute: async () => {
+      execute: async (input) => {
         if (!brand || !ctx) return { error: 'Call design_brand first' };
 
-        allFiles = assembleAllFiles(brand, ctx);
+        const approvedCopy = input.approvedCopy as ApprovedCopy | undefined;
+        allFiles = assembleAllFiles(brand, ctx, approvedCopy);
 
         return {
           success: true,
@@ -379,35 +396,37 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         const primaryKeyword = ctx.topKeywords[0]?.keyword || '';
 
         // Check seoDescription
-        if (primaryKeyword) {
+        if (primaryKeyword && brand.seoDescription) {
           evals.push(checkMetaDescription(brand.seoDescription, primaryKeyword));
         }
 
-        // Check heroHeadline contains primary keyword
-        if (primaryKeyword) {
-          const headlineLower = brand.landingPage.heroHeadline.toLowerCase();
-          const kwLower = primaryKeyword.toLowerCase();
-          const hasKeyword = headlineLower.includes(kwLower);
-          evals.push({
-            pass: hasKeyword,
-            score: hasKeyword ? 10 : 3,
-            issues: hasKeyword ? [] : [`Hero headline does not contain primary keyword "${primaryKeyword}"`],
-            suggestions: hasKeyword ? [] : [`Rewrite headline to naturally include "${primaryKeyword}"`],
-          });
-        }
+        if (brand.landingPage) {
+          // Check heroHeadline contains primary keyword
+          if (primaryKeyword) {
+            const headlineLower = brand.landingPage.heroHeadline.toLowerCase();
+            const kwLower = primaryKeyword.toLowerCase();
+            const hasKeyword = headlineLower.includes(kwLower);
+            evals.push({
+              pass: hasKeyword,
+              score: hasKeyword ? 10 : 3,
+              issues: hasKeyword ? [] : [`Hero headline does not contain primary keyword "${primaryKeyword}"`],
+              suggestions: hasKeyword ? [] : [`Rewrite headline to naturally include "${primaryKeyword}"`],
+            });
+          }
 
-        // Check heroSubheadline includes at least one secondary keyword
-        if (ctx.topKeywords.length > 1) {
-          const subLower = brand.landingPage.heroSubheadline.toLowerCase();
-          const secondaryHit = ctx.topKeywords.slice(1, 4).some(
-            (k) => subLower.includes(k.keyword.toLowerCase()),
-          );
-          evals.push({
-            pass: secondaryHit,
-            score: secondaryHit ? 10 : 5,
-            issues: secondaryHit ? [] : ['Hero subheadline does not contain any secondary keywords'],
-            suggestions: secondaryHit ? [] : [`Incorporate one of: ${ctx.topKeywords.slice(1, 4).map((k) => `"${k.keyword}"`).join(', ')}`],
-          });
+          // Check heroSubheadline includes at least one secondary keyword
+          if (ctx.topKeywords.length > 1) {
+            const subLower = brand.landingPage.heroSubheadline.toLowerCase();
+            const secondaryHit = ctx.topKeywords.slice(1, 4).some(
+              (k) => subLower.includes(k.keyword.toLowerCase()),
+            );
+            evals.push({
+              pass: secondaryHit,
+              score: secondaryHit ? 10 : 5,
+              issues: secondaryHit ? [] : ['Hero subheadline does not contain any secondary keywords'],
+              suggestions: secondaryHit ? [] : [`Incorporate one of: ${ctx.topKeywords.slice(1, 4).map((k) => `"${k.keyword}"`).join(', ')}`],
+            });
+          }
         }
 
         // Check color contrast (basic: ensure text and background differ significantly)
@@ -440,25 +459,29 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         }
 
         // Check value props target different keywords
-        const vpTitles = brand.landingPage.valueProps.map((vp) => vp.title.toLowerCase());
-        const vpKeywordHits = ctx.topKeywords.slice(0, 6).filter(
-          (k) => vpTitles.some((t) => t.includes(k.keyword.toLowerCase())),
-        );
-        evals.push({
-          pass: vpKeywordHits.length >= 2,
-          score: Math.min(10, vpKeywordHits.length * 3),
-          issues: vpKeywordHits.length < 2 ? [`Only ${vpKeywordHits.length} value props incorporate target keywords`] : [],
-          suggestions: vpKeywordHits.length < 2 ? ['Rewrite value prop titles to naturally include secondary keywords'] : [],
-        });
+        let vpKeywordHitCount = 0;
+        if (brand.landingPage) {
+          const vpTitles = brand.landingPage.valueProps.map((vp) => vp.title.toLowerCase());
+          const vpKeywordHits = ctx.topKeywords.slice(0, 6).filter(
+            (k) => vpTitles.some((t) => t.includes(k.keyword.toLowerCase())),
+          );
+          vpKeywordHitCount = vpKeywordHits.length;
+          evals.push({
+            pass: vpKeywordHits.length >= 2,
+            score: Math.min(10, vpKeywordHits.length * 3),
+            issues: vpKeywordHits.length < 2 ? [`Only ${vpKeywordHits.length} value props incorporate target keywords`] : [],
+            suggestions: vpKeywordHits.length < 2 ? ['Rewrite value prop titles to naturally include secondary keywords'] : [],
+          });
+        }
 
         const combined = combineEvaluations(evals);
 
         return {
           ...combined,
           primaryKeyword,
-          seoDescriptionLength: brand.seoDescription.length,
+          seoDescriptionLength: brand.seoDescription?.length ?? 0,
           headlineHasKeyword: evals[1]?.pass ?? null,
-          valuePropsWithKeywords: vpKeywordHits.length,
+          valuePropsWithKeywords: vpKeywordHitCount,
         };
       },
     },

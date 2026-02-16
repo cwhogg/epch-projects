@@ -168,7 +168,7 @@ export interface GSCAnalyticsSummary {
 export interface BrandIdentity {
   siteName: string;
   tagline: string;
-  seoDescription: string;
+  seoDescription?: string;
   targetDemographic: string;
   voice: { tone: string; personality: string; examples: string[] };
   colors: {
@@ -183,7 +183,7 @@ export interface BrandIdentity {
     border: string;
   };
   typography: { headingFont: string; bodyFont: string; monoFont: string };
-  landingPage: {
+  landingPage?: {
     heroHeadline: string;
     heroSubheadline: string;
     ctaText: string;
@@ -396,4 +396,58 @@ export interface StrategicInputs {
   differentiation?: string;      // "What makes your approach fundamentally different?"
   deliberateTradeoffs?: string;  // "What are you deliberately choosing NOT to do?"
   antiTarget?: string;           // "Who specifically are you NOT targeting?"
+}
+
+// Content Pipeline Phase 2: Critique Engine Types
+
+export interface PipelineProgress {
+  status: 'running' | 'complete' | 'error' | 'max-rounds-reached';
+  contentType: string;
+  currentStep: string;
+  round: number;
+  maxRounds: number;
+  quality: 'approved' | 'max-rounds-reached' | null;
+  selectedCritics: { advisorId: string; name: string }[];
+  steps: PipelineStep[];
+  critiqueHistory: CritiqueRound[];
+}
+
+export interface PipelineStep {
+  name: string;
+  status: 'pending' | 'running' | 'complete' | 'error';
+  detail?: string;
+}
+
+export interface CritiqueRound {
+  round: number;
+  critiques: AdvisorCritique[];
+  editorDecision: 'approve' | 'revise';
+  revisionBrief?: string;
+  fixedItems: string[];
+  wellScoredAspects: string[];
+}
+
+export interface AdvisorCritique {
+  advisorId: string;
+  name: string;
+  score: number;
+  pass: boolean;
+  issues: CritiqueIssue[];
+  error?: string;
+}
+
+export interface CritiqueIssue {
+  severity: 'high' | 'medium' | 'low';
+  description: string;
+  suggestion: string;
+}
+
+export interface RoundSummary {
+  round: number;
+  avgScore: number;
+  highIssueCount: number;
+  editorDecision: 'approve' | 'revise';
+  brief: string;
+  fixedItems: string[];
+  wellScoredAspects: string[];
 }
