@@ -2,25 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-function isActive(pathname: string, href: string): boolean {
-  switch (href) {
-    case '/ideation':
-      return pathname === '/ideation';
-    case '/analysis':
-      return pathname === '/analysis' || pathname.startsWith('/analyses/') && !pathname.includes('/content') && !pathname.includes('/analytics') && !pathname.includes('/painted-door') || pathname.startsWith('/ideas/');
-    case '/website':
-      return pathname === '/website' || pathname.includes('/painted-door');
-    case '/content':
-      return pathname === '/content' || pathname.includes('/content');
-    case '/testing':
-      return pathname === '/testing' || pathname.includes('/analytics');
-    case '/optimization':
-      return pathname === '/optimization';
-    default:
-      return false;
-  }
-}
+import { isActive } from '@/lib/nav-utils';
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -44,6 +26,17 @@ export default function MobileNav() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      ),
+    },
+    {
+      href: '/foundation',
+      label: 'Foundation',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <rect x="7" y="7" width="10" height="10" rx="1" />
+          <rect x="10" y="10" width="4" height="4" rx="0.5" />
         </svg>
       ),
     },
