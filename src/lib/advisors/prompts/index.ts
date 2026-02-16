@@ -3,3 +3,8 @@ export { prompt as aprilDunford } from './april-dunford';
 export { prompt as copywriter } from './copywriter';
 export { prompt as seoExpert } from './seo-expert';
 export { prompt as shirinOreizy } from './shirin-oreizy';
+export { prompt as joePulizzi } from './joe-pulizzi';
+export { prompt as robbWolf } from './robb-wolf';
+export { prompt as robbieKellmanBaxter } from './robbie-kellman-baxter';
+export { prompt as robWalling } from './rob-walling';
+export { prompt as patrickCampbell } from './patrick-campbell';
