@@ -41,4 +41,18 @@ export const advisorRegistry: AdvisorEntry[] = [
       'Does not evaluate brand positioning, narrative quality, or visual design.',
     contextDocs: ['seo-strategy'],
   },
+  {
+    id: 'shirin-oreizy',
+    name: 'Shirin Oreizy',
+    role: 'critic',
+    evaluationExpertise:
+      'Evaluates through behavioral science lens. CTA clarity and friction, ' +
+      'cognitive load management, social proof approach, urgency without ' +
+      'manipulation, working memory limits (5-9 chunks max). Homer vs Spock — ' +
+      'does content activate both emotional and rational decision paths? ' +
+      'Evaluates whether the page design respects how real humans actually decide.',
+    doesNotEvaluate:
+      'Does not evaluate SEO keyword strategy, brand positioning accuracy, or technical implementation.',
+    contextDocs: [],
+  },
 ];

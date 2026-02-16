@@ -5,6 +5,7 @@ const promptMap: Record<string, string> = {
   'april-dunford': prompts.aprilDunford,
   'copywriter': prompts.copywriter,
   'seo-expert': prompts.seoExpert,
+  'shirin-oreizy': prompts.shirinOreizy,
 };
 
 export function getAdvisorSystemPrompt(advisorId: string): string {
