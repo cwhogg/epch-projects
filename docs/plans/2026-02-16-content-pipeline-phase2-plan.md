@@ -51,7 +51,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 ### Task 2: Add pipeline progress and critique types
 
 **Files:**
-- Modify: `src/types/index.ts` (append after line 399, after `StrategicInputs`)
+- Modify: `src/types/index.ts` (append after line 400, the closing `}` of `StrategicInputs`)
 
 **Step 1: Add types**
 
@@ -1103,6 +1103,7 @@ function findFixedItems(
 
 /**
  * Find aspects with no high/medium issues across all critics.
+ * A critic with no high/medium issues means their evaluation domain scored well.
  */
 function findWellScoredAspects(critiques: AdvisorCritique[]): string[] {
   const aspects: string[] = [];
@@ -1110,7 +1111,7 @@ function findWellScoredAspects(critiques: AdvisorCritique[]): string[] {
     const hasHighMedium = critique.issues.some(
       (i) => i.severity === 'high' || i.severity === 'medium',
     );
-    if (!hasHighMedium && critique.evaluationExpertise) {
+    if (!hasHighMedium) {
       aspects.push(`${critique.name}'s evaluation domain`);
     }
   }
@@ -1608,6 +1609,19 @@ describe('Critique tools', () => {
         tool.execute({ contentContext: 'Test context' }),
       ).rejects.toThrow('API timeout');
     });
+
+    it('throws when Redis set fails', async () => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Draft text' }],
+      });
+      mockRedis.set.mockRejectedValue(new Error('Redis write failed'));
+
+      const tool = tools.find((t) => t.name === 'generate_draft')!;
+
+      await expect(
+        tool.execute({ contentContext: 'Test context' }),
+      ).rejects.toThrow('Redis write failed');
+    });
   });
 
   describe('run_critiques', () => {
@@ -1705,6 +1719,14 @@ describe('Critique tools', () => {
       expect(result.critiques).toHaveLength(2);
       const failedCritic = result.critiques.find((c) => c.error);
       expect(failedCritic).toBeTruthy();
+    });
+
+    it('returns error when Redis get fails', async () => {
+      mockRedis.get.mockRejectedValue(new Error('Redis connection lost'));
+
+      const tool = tools.find((t) => t.name === 'run_critiques')!;
+
+      await expect(tool.execute({})).rejects.toThrow('Redis connection lost');
     });
   });
 
@@ -1885,12 +1907,41 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ### Task 10: Make BrandIdentity.landingPage and seoDescription optional
 
+> **Ordering:** Tasks 10, 11, and 12 all modify `src/lib/agent-tools/website.ts`. Execute them in order (10 → 11 → 12) and resolve merge conflicts if any arise.
+
 **Files:**
 - Modify: `src/types/index.ts` (lines 168-194)
+- Modify: `src/lib/agent-tools/website.ts`
+- Modify: `src/lib/painted-door-templates.ts`
+- Modify: `src/lib/painted-door-agent.ts` (possibly)
 
 **Step 1: Update BrandIdentity interface**
 
-In `src/types/index.ts`, change the `BrandIdentity` interface to make `landingPage` and `seoDescription` optional:
+In `src/types/index.ts`, find the existing `BrandIdentity` interface and make two fields optional. Replace:
+
+```typescript
+  seoDescription: string;
+```
+
+With:
+
+```typescript
+  seoDescription?: string;
+```
+
+And replace:
+
+```typescript
+  landingPage: {
+```
+
+With:
+
+```typescript
+  landingPage?: {
+```
+
+The full interface after changes should look like:
 
 ```typescript
 export interface BrandIdentity {
@@ -1928,39 +1979,45 @@ The type change will cause errors in files that access `brand.landingPage.heroHe
 
 **In `src/lib/agent-tools/website.ts`:**
 
-1. `design_brand` execute (around line 333): Change `brand.landingPage.heroHeadline` to `brand.landingPage?.heroHeadline`:
+1. `design_brand` execute (around line 333): Change `brand.landingPage.heroHeadline` to use optional chaining. Replace:
 
    ```typescript
-   return {
-     success: true,
-     siteName: brand.siteName,
-     tagline: brand.tagline,
-     seoDescription: brand.seoDescription,
-     heroHeadline: brand.landingPage?.heroHeadline,
-   };
+   heroHeadline: brand.landingPage.heroHeadline,
    ```
 
-2. `evaluate_brand` execute (around line 388): Guard `brand.landingPage` accesses:
+   With:
 
    ```typescript
-   // Only run headline checks if landingPage exists
-   if (brand.landingPage && primaryKeyword) {
-     const headlineLower = brand.landingPage.heroHeadline.toLowerCase();
-     // ...existing code
+   heroHeadline: brand.landingPage?.heroHeadline,
+   ```
+
+2. `evaluate_brand` execute (around line 388): Guard `brand.landingPage` accesses. Wrap all code that accesses `brand.landingPage.heroHeadline`, `brand.landingPage.heroSubheadline`, and `brand.landingPage.valueProps` in:
+
+   ```typescript
+   if (brand.landingPage) {
+     // ...existing landingPage checks
    }
    ```
 
-   Similarly guard `brand.landingPage.heroSubheadline` and `brand.landingPage.valueProps` checks. Wrap them in `if (brand.landingPage) { ... }`.
-
 **In `src/lib/painted-door-templates.ts`:**
 
-1. `renderLayout` (line 368): Guard `brand.seoDescription`:
+1. `renderLayout` (line 368): Guard `brand.seoDescription`. Replace:
+
+   ```typescript
+   const seoDesc = esc(brand.seoDescription);
+   ```
+
+   With:
 
    ```typescript
    const seoDesc = esc(brand.seoDescription || '');
    ```
 
-2. `renderLandingPage` (line 424): Guard `brand.landingPage` — this function should only be called when landingPage exists, so add an early return or assertion at the top.
+2. `renderLandingPage` (line 424): Guard `brand.landingPage` — this function should only be called when landingPage exists. Add an early return at the top:
+
+   ```typescript
+   if (!brand.landingPage) return '';
+   ```
 
 **In `src/lib/painted-door-agent.ts`:** The v1 flow generates full brand identity including copy, so `brand.landingPage` will always be present there. No changes needed unless TypeScript complains about the optional type. If it does, add non-null assertions (`brand.landingPage!`) since the v1 prompt always produces landingPage.
 
@@ -1986,6 +2043,8 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 ---
 
 ### Task 11: Add visualOnly mode to design_brand prompt + update tool
+
+> **Depends on:** Task 10 (which also modifies `website.ts`). Execute after Task 10.
 
 **Files:**
 - Modify: `src/lib/painted-door-prompts.ts`
@@ -2051,8 +2110,19 @@ execute: async (input) => {
 
   const visualOnly = (input.visualOnly as boolean) || false;
   const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly);
-  // ... rest stays the same
+  // ... (the rest of the execute function stays the same — brand parsing, Redis save, etc.)
+  // But the return value must use optional chaining since brand.landingPage may be undefined:
+  return {
+    success: true,
+    siteName: brand.siteName,
+    tagline: brand.tagline,
+    seoDescription: brand.seoDescription,
+    heroHeadline: brand.landingPage?.heroHeadline,
+    mode: visualOnly ? 'visual-only' : 'full',
+  };
 ```
+
+> **Note:** The `heroHeadline` return value will be `undefined` when `visualOnly=true` — this is expected. The orchestrator agent uses `mode` to know whether copy was generated.
 
 **Step 3: Verify build**
 
@@ -2076,6 +2146,8 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 ---
 
 ### Task 12: Update assembleAllFiles to accept approved copy
+
+> **Depends on:** Tasks 10 and 11 (which also modify `website.ts`). Execute after Task 11.
 
 **Files:**
 - Modify: `src/lib/painted-door-templates.ts`
@@ -2772,6 +2844,85 @@ describe('Critique pipeline integration', () => {
     })) as { fixedItems: string[] };
     expect(sum2.fixedItems.length).toBeGreaterThan(0);
   });
+
+  it('max-rounds-reached: saves with max-rounds quality after hitting limit', async () => {
+    // Use social-post recipe which has maxRevisionRounds=2
+    const runId = 'integ-max';
+    const ideaId = 'idea-integ';
+    const tools = createCritiqueTools(runId, ideaId, recipes['social-post']);
+
+    // Generate draft
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Social post draft.' }],
+    });
+    const genTool = tools.find((t) => t.name === 'generate_draft')!;
+    await genTool.execute({ contentContext: 'Social context' });
+
+    // Round 1: Critique with high-severity (will revise)
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          id: 'c1',
+          name: 'submit_critique',
+          input: {
+            score: 3,
+            pass: false,
+            issues: [{ severity: 'high', description: 'Weak hook', suggestion: 'Rewrite' }],
+          },
+        },
+      ],
+    });
+    const critTool = tools.find((t) => t.name === 'run_critiques')!;
+    const crit1 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
+
+    const edTool = tools.find((t) => t.name === 'editor_decision')!;
+    const ed1 = (await edTool.execute({ critiques: crit1.critiques })) as { decision: string; brief: string };
+    expect(ed1.decision).toBe('revise');
+
+    const sumTool = tools.find((t) => t.name === 'summarize_round')!;
+    await sumTool.execute({ round: 1, critiques: crit1.critiques, editorDecision: 'revise', brief: ed1.brief });
+
+    // Revise
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Revised social post.' }],
+    });
+    const revTool = tools.find((t) => t.name === 'revise_draft')!;
+    await revTool.execute({ brief: ed1.brief });
+
+    // Round 2: Still failing — hit max rounds
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          id: 'c2',
+          name: 'submit_critique',
+          input: {
+            score: 3,
+            pass: false,
+            issues: [{ severity: 'high', description: 'Still weak', suggestion: 'Try again' }],
+          },
+        },
+      ],
+    });
+    const crit2 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
+
+    const ed2 = (await edTool.execute({ critiques: crit2.critiques })) as { decision: string };
+    expect(ed2.decision).toBe('revise');
+
+    // At this point orchestrator has hit maxRevisionRounds=2, so save with max-rounds-reached
+    const saveTool = tools.find((t) => t.name === 'save_content')!;
+    const saveResult = (await saveTool.execute({
+      quality: 'max-rounds-reached',
+    })) as { success: boolean; quality: string };
+    expect(saveResult.success).toBe(true);
+    expect(saveResult.quality).toBe('max-rounds-reached');
+
+    // Verify content was saved
+    expect(store.has(`approved_content:${runId}`)).toBe(true);
+    const saved = JSON.parse(store.get(`approved_content:${runId}`)!);
+    expect(saved.quality).toBe('max-rounds-reached');
+  });
 });
 ```
 
@@ -2900,10 +3051,11 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 **Chose:** Import `getRedis` from `@/lib/redis` (the central singleton) for all Redis operations in the critique tools.
 
-**Why:** This matches the pattern used by `db.ts` (lines 1-15) and keeps all Redis access through a single lazy singleton. The `common.ts` file creates its own Redis instance — this is an existing inconsistency that shouldn't be propagated. Using the central `@/lib/redis` import ensures a single Redis connection.
+**Why:** This matches the pattern used by `db.ts` (lines 1-15) and keeps all Redis access through a single lazy singleton. Both `common.ts` and `agent-runtime.ts` create their own local Redis singletons — this is an existing inconsistency that shouldn't be propagated. Using the central `@/lib/redis` import ensures new code goes through the canonical path. The `agent-runtime.ts` local singleton (lines 16-28) also has its own lazy init; unifying these is out of scope but noted.
 
 **Alternatives rejected:**
 - common.ts Redis accessor: Would propagate the dual-Redis-singleton inconsistency.
+- agent-runtime.ts pattern (local singleton): Same issue — creates a parallel Redis instance.
 - New db.ts functions for each Redis operation: Over-abstraction for simple key-value operations with TTLs. The critique tools' Redis keys are private to the critique pipeline (not shared with other modules), so db.ts functions would add indirection without value.
 
 #### Decision 3: p-limit import strategy
