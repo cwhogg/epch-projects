@@ -2122,7 +2122,7 @@ execute: async (input) => {
   };
 ```
 
-> **Note:** The `heroHeadline` return value will be `undefined` when `visualOnly=true` — this is expected. The orchestrator agent uses `mode` to know whether copy was generated.
+> **Note:** The `heroHeadline` return value will be `undefined` when `visualOnly=true` — this is expected. The orchestrator agent uses `mode` to know whether copy was generated. Since the tool return is consumed by an LLM agent (not typed TypeScript code), the optional field is sufficient. Alternative for stricter typing: use a discriminated return with separate shapes per mode.
 
 **Step 3: Verify build**
 
@@ -2922,6 +2922,73 @@ describe('Critique pipeline integration', () => {
     expect(store.has(`approved_content:${runId}`)).toBe(true);
     const saved = JSON.parse(store.get(`approved_content:${runId}`)!);
     expect(saved.quality).toBe('max-rounds-reached');
+  });
+
+  it('oscillation guard: approves when scores regress between rounds', async () => {
+    const runId = 'integ-osc';
+    const ideaId = 'idea-integ';
+    const tools = createCritiqueTools(runId, ideaId, recipes.website);
+
+    // Generate draft
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Website copy.' }],
+    });
+    const genTool = tools.find((t) => t.name === 'generate_draft')!;
+    await genTool.execute({ contentContext: 'context' });
+
+    // Round 1: Score 5, below threshold (4 is minAggregateScore for website, but scores 1-10, and 5 is above 4)
+    // Use score 3 with no high-severity issues to trigger "avg < threshold" revise
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          id: 'c1',
+          name: 'submit_critique',
+          input: {
+            score: 3,
+            pass: false,
+            issues: [{ severity: 'medium', description: 'Below threshold', suggestion: 'Improve' }],
+          },
+        },
+      ],
+    });
+    const critTool = tools.find((t) => t.name === 'run_critiques')!;
+    const crit1 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
+
+    const edTool = tools.find((t) => t.name === 'editor_decision')!;
+    const ed1 = (await edTool.execute({ critiques: crit1.critiques })) as { decision: string };
+    expect(ed1.decision).toBe('revise'); // Below threshold
+
+    const sumTool = tools.find((t) => t.name === 'summarize_round')!;
+    await sumTool.execute({ round: 1, critiques: crit1.critiques, editorDecision: 'revise', brief: 'Fix it' });
+
+    // Revise
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Revised copy.' }],
+    });
+    const revTool = tools.find((t) => t.name === 'revise_draft')!;
+    await revTool.execute({ brief: 'Fix it' });
+
+    // Round 2: Score REGRESSED to 2 (lower than round 1's 3) — oscillation guard should approve
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          id: 'c2',
+          name: 'submit_critique',
+          input: {
+            score: 2,
+            pass: false,
+            issues: [{ severity: 'medium', description: 'Still needs work', suggestion: 'Try more' }],
+          },
+        },
+      ],
+    });
+    const crit2 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
+
+    // Editor should approve due to oscillation guard (score went from 3 → 2)
+    const ed2 = (await edTool.execute({ critiques: crit2.critiques })) as { decision: string };
+    expect(ed2.decision).toBe('approve'); // Oscillation guard triggers
   });
 });
 ```
