@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Install test dependencies for component tests
+### ✅ Task 1: Install test dependencies for component tests
 
 **Files:**
 - Modify: `package.json`
@@ -63,7 +63,7 @@ git commit -m "chore: add @testing-library/react and jsdom for component tests"
 
 ---
 
-### Task 2: Extract ScoreRing component
+### ✅ Task 2: Extract ScoreRing component
 
 **Files:**
 - Create: `src/components/ScoreRing.tsx`
@@ -222,7 +222,7 @@ git commit -m "refactor: extract ScoreRing to shared component"
 
 ---
 
-### Task 3: Extract SEODeepDive component
+### ✅ Task 3: Extract SEODeepDive component
 
 **Files:**
 - Create: `src/components/SEODeepDive.tsx`
@@ -272,7 +272,7 @@ git commit -m "refactor: extract SEODeepDive to shared component"
 
 ---
 
-### Task 4: Update NavLinks — 7 tabs to 3
+### ✅ Task 4: Update NavLinks — 7 tabs to 3
 
 **Files:**
 - Modify: `src/components/NavLinks.tsx`
@@ -305,7 +305,7 @@ git commit -m "feat: update desktop nav to 3 tabs (Projects, Ideation, Analytics
 
 ---
 
-### Task 5: Update MobileNav — 7 tabs to 3
+### ✅ Task 5: Update MobileNav — 7 tabs to 3
 
 **Files:**
 - Modify: `src/components/MobileNav.tsx`
@@ -367,7 +367,7 @@ git commit -m "feat: update mobile nav to 3 tabs (Projects, Ideation, Analytics)
 
 ---
 
-### Task 6: Update nav-utils and its tests
+### ✅ Task 6: Update nav-utils and its tests
 
 **Files:**
 - Modify: `src/lib/nav-utils.ts`
@@ -551,7 +551,7 @@ git commit -m "feat: rewrite nav-utils isActive for 3-tab project-centric nav"
 
 ---
 
-### Task 7: Create analysis detail page
+### ✅ Task 7: Create analysis detail page
 
 **Files:**
 - Create: `src/app/analyses/[id]/analysis/page.tsx`
@@ -800,7 +800,7 @@ git commit -m "feat: add analysis detail page at /analyses/[id]/analysis"
 
 ---
 
-### Task 8: Rewrite project dashboard
+### ✅ Task 8: Rewrite project dashboard
 
 **Files:**
 - Modify: `src/app/analyses/[id]/page.tsx` (complete rewrite)
@@ -1268,7 +1268,7 @@ git commit -m "feat: rewrite /analyses/[id] as project dashboard with pipeline s
 
 ---
 
-### Task 9: Rewrite home page as project list
+### ✅ Task 9: Rewrite home page as project list
 
 **Files:**
 - Modify: `src/app/page.tsx` (complete rewrite)
@@ -1545,7 +1545,7 @@ git commit -m "feat: rewrite home page as project list with pipeline progress"
 
 ---
 
-### Task 10: Verify analytics redirect still works
+### ✅ Task 10: Verify analytics redirect still works
 
 **Files:**
 - Read (no change): `src/app/analytics/page.tsx`
