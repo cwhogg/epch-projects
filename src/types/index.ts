@@ -168,7 +168,7 @@ export interface GSCAnalyticsSummary {
 export interface BrandIdentity {
   siteName: string;
   tagline: string;
-  seoDescription: string;
+  seoDescription?: string;
   targetDemographic: string;
   voice: { tone: string; personality: string; examples: string[] };
   colors: {
@@ -183,7 +183,7 @@ export interface BrandIdentity {
     border: string;
   };
   typography: { headingFont: string; bodyFont: string; monoFont: string };
-  landingPage: {
+  landingPage?: {
     heroHeadline: string;
     heroSubheadline: string;
     ctaText: string;

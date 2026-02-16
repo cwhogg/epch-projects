@@ -365,7 +365,7 @@ function renderLayout(brand: BrandIdentity): string {
   const fontsUrl = googleFontsUrl(brand);
   const siteName = esc(brand.siteName);
   const tagline = esc(brand.tagline);
-  const seoDesc = esc(brand.seoDescription);
+  const seoDesc = esc(brand.seoDescription || '');
 
   return `import type { Metadata } from 'next';
 import './globals.css';
@@ -420,6 +420,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 
 function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
+  if (!brand.landingPage) return '';
   const siteName = esc(brand.siteName);
   const lp = brand.landingPage;
   const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
