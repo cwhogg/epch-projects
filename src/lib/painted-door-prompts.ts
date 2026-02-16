@@ -55,6 +55,7 @@ ${INTENT_WEIGHTS.map((i) => `- ${i.intent}: ${i.weight}x`).join('\n')}`;
 export function buildBrandIdentityPrompt(
   idea: ProductIdea,
   ctx: ContentContext,
+  visualOnly = false,
 ): string {
   const vertical = detectVertical(idea);
   const seoContext = buildSEOContext(ctx, vertical);
@@ -81,11 +82,11 @@ ${vertical === 'healthcare-consumer' ? 'For healthcare: use clinical trust signa
 ${vertical === 'b2b-saas' ? 'For B2B SaaS: use professional authority, clean design, data-driven positioning.' : ''}
 
 CRITICAL RULES:
-- Do NOT fabricate testimonials, user counts, or social proof
-- Social proof approach should describe the TYPE of proof to add later (e.g., "early access waitlist count", "beta user testimonials once available")
-- Value props must be derived from the actual problem/solution, not invented features
 - Colors must be accessible (sufficient contrast ratios)
 - Fonts must be from Google Fonts
+${visualOnly ? '' : `- Do NOT fabricate testimonials, user counts, or social proof
+- Social proof approach should describe the TYPE of proof to add later (e.g., "early access waitlist count", "beta user testimonials once available")
+- Value props must be derived from the actual problem/solution, not invented features
 
 SEO REQUIREMENTS:
 - seoDescription: Must naturally include the #1 target keyword AND one secondary keyword. Write for click-through rate — compelling, specific, 150-160 chars.
@@ -93,10 +94,37 @@ SEO REQUIREMENTS:
 - heroSubheadline: Incorporate 1-2 secondary keywords naturally.
 - tagline: Should reinforce the core search intent users have.
 - Value prop titles: Each should target a different secondary keyword or People Also Ask question where possible.
-- ctaText: Use action-oriented language matching the dominant search intent (transactional → "Get Started Free", informational → "Learn How It Works").
+- ctaText: Use action-oriented language matching the dominant search intent (transactional → "Get Started Free", informational → "Learn How It Works").`}
 
 Respond with ONLY valid JSON matching this exact schema:
-{
+${visualOnly ? `{
+  "siteName": "string (the brand name — can differ from product name)",
+  "tagline": "string (concise value prop, 5-10 words)",
+  "targetDemographic": "string (specific audience description)",
+  "voice": {
+    "tone": "string (e.g., 'professional and approachable')",
+    "personality": "string (e.g., 'knowledgeable friend who simplifies complexity')",
+    "examples": ["string (example sentence in brand voice)", "string", "string"]
+  },
+  "colors": {
+    "primary": "#hex",
+    "primaryLight": "#hex (lighter variant of primary)",
+    "background": "#hex (page background, dark theme preferred)",
+    "backgroundElevated": "#hex (card/elevated surface background)",
+    "textPrimary": "#hex (main text color)",
+    "textSecondary": "#hex (secondary text)",
+    "textMuted": "#hex (muted/helper text)",
+    "accent": "#hex (accent for highlights, different from primary)",
+    "border": "#hex (subtle borders)"
+  },
+  "typography": {
+    "headingFont": "string (Google Font name)",
+    "bodyFont": "string (Google Font name)",
+    "monoFont": "string (Google Font name)"
+  }
+}
+
+Do NOT include landingPage, seoDescription, or any copy fields — those are generated separately.` : `{
   "siteName": "string (the brand name — can differ from product name)",
   "tagline": "string (concise value prop, 5-10 words)",
   "seoDescription": "string (150-160 chars for meta description, include primary keyword)",
@@ -138,6 +166,6 @@ Respond with ONLY valid JSON matching this exact schema:
   }
 }
 
-Include 4-6 FAQ items in the faqs array derived from People Also Ask questions in the SERP data. Each answer should be 2-3 sentences, naturally incorporating related keywords.`;
+Include 4-6 FAQ items in the faqs array derived from People Also Ask questions in the SERP data. Each answer should be 2-3 sentences, naturally incorporating related keywords.`}`;
 }
 

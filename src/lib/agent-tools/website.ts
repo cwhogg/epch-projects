@@ -309,13 +309,19 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         'Generate the brand identity (colors, typography, voice, landing page copy) using an LLM. Requires get_idea_context to have been called first.',
       input_schema: {
         type: 'object',
-        properties: {},
+        properties: {
+          visualOnly: {
+            type: 'boolean',
+            description: 'If true, generates only visual identity (no copy). Used when critique pipeline provides copy.',
+          },
+        },
         required: [],
       },
-      execute: async () => {
+      execute: async (input) => {
         if (!idea || !ctx) return { error: 'Call get_idea_context first' };
 
-        const prompt = buildBrandIdentityPrompt(idea, ctx);
+        const visualOnly = (input.visualOnly as boolean) || false;
+        const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly);
         const response = await getAnthropic().messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 2048,
@@ -331,6 +337,7 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
           tagline: brand.tagline,
           seoDescription: brand.seoDescription,
           heroHeadline: brand.landingPage?.heroHeadline,
+          mode: visualOnly ? 'visual-only' : 'full',
         };
       },
     },
