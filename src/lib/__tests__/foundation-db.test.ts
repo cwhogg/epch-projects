@@ -146,7 +146,7 @@ describe('Foundation DB functions', () => {
           'social-media-strategy': 'pending',
         },
       };
-      mockRedis.get.mockResolvedValue(progress);
+      mockRedis.get.mockResolvedValue(JSON.stringify(progress));
       const result = await getFoundationProgress('idea-123');
       expect(result).toEqual(progress);
     });

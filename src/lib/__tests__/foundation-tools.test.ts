@@ -188,6 +188,52 @@ describe('Foundation agent tools', () => {
       const tool = tools.find(t => t.name === 'generate_foundation_doc')!;
       await expect(tool.execute({ docType: 'strategy' })).rejects.toThrow('Rate limit exceeded');
     });
+
+    it('calls onDocProgress with running then complete when generating a doc', async () => {
+      const onDocProgress = vi.fn();
+      const toolsWithProgress = createFoundationTools(ideaId, onDocProgress);
+
+      vi.mocked(buildContentContext).mockResolvedValue(mockContext);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Generated strategy' }],
+      });
+
+      const tool = toolsWithProgress.find(t => t.name === 'generate_foundation_doc')!;
+      await tool.execute({ docType: 'strategy' });
+
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'running');
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'complete');
+    });
+
+    it('calls onDocProgress with error when Claude API fails', async () => {
+      const onDocProgress = vi.fn();
+      const toolsWithProgress = createFoundationTools(ideaId, onDocProgress);
+
+      vi.mocked(buildContentContext).mockResolvedValue(mockContext);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+      mockCreate.mockRejectedValue(new Error('Rate limit exceeded'));
+
+      const tool = toolsWithProgress.find(t => t.name === 'generate_foundation_doc')!;
+      await expect(tool.execute({ docType: 'strategy' })).rejects.toThrow('Rate limit exceeded');
+
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'running');
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'error');
+    });
+
+    it('does NOT call onDocProgress when upstream doc is missing', async () => {
+      const onDocProgress = vi.fn();
+      const toolsWithProgress = createFoundationTools(ideaId, onDocProgress);
+
+      vi.mocked(buildContentContext).mockResolvedValue(mockContext);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+
+      const tool = toolsWithProgress.find(t => t.name === 'generate_foundation_doc')!;
+      const result = await tool.execute({ docType: 'positioning' }) as Record<string, unknown>;
+
+      expect(result.error).toContain('strategy');
+      expect(onDocProgress).not.toHaveBeenCalled();
+    });
   });
 
   describe('load_design_seed', () => {

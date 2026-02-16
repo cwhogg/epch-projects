@@ -347,6 +347,11 @@ h1, h2, h3 {
   50% { box-shadow: 0 0 40px rgba(255, 107, 91, 0.5); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .animate-shimmer {
   background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--bg-card) 50%, var(--bg-elevated) 100%);
   background-size: 200% 100%;
