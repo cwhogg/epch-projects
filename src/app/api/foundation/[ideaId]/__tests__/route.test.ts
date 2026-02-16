@@ -113,6 +113,7 @@ describe('Foundation API route', () => {
           'seo-strategy': 'pending',
           'social-media-strategy': 'pending',
         },
+        updatedAt: new Date().toISOString(),
       });
 
       const res = await POST(makeRequest('POST'), { params });
@@ -120,6 +121,56 @@ describe('Foundation API route', () => {
 
       expect(body.message).toContain('Already running');
       expect(runFoundationGeneration).not.toHaveBeenCalled();
+    });
+
+    it('allows restart when running status is stale', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      const staleTime = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      vi.mocked(getFoundationProgress).mockResolvedValue({
+        ideaId: 'idea-123',
+        status: 'running',
+        currentStep: 'Generating...',
+        docs: {
+          strategy: 'complete',
+          positioning: 'pending',
+          'brand-voice': 'pending',
+          'design-principles': 'pending',
+          'seo-strategy': 'pending',
+          'social-media-strategy': 'pending',
+        },
+        updatedAt: staleTime,
+      });
+      vi.mocked(runFoundationGeneration).mockResolvedValue();
+
+      const res = await POST(makeRequest('POST'), { params });
+      const body = await res.json();
+
+      expect(body.message).toContain('started');
+      expect(runFoundationGeneration).toHaveBeenCalled();
+    });
+
+    it('allows restart when running status has no updatedAt', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      vi.mocked(getFoundationProgress).mockResolvedValue({
+        ideaId: 'idea-123',
+        status: 'running',
+        currentStep: 'Generating...',
+        docs: {
+          strategy: 'complete',
+          positioning: 'pending',
+          'brand-voice': 'pending',
+          'design-principles': 'pending',
+          'seo-strategy': 'pending',
+          'social-media-strategy': 'pending',
+        },
+      });
+      vi.mocked(runFoundationGeneration).mockResolvedValue();
+
+      const res = await POST(makeRequest('POST'), { params });
+      const body = await res.json();
+
+      expect(body.message).toContain('started');
+      expect(runFoundationGeneration).toHaveBeenCalled();
     });
 
     it('returns 500 when Redis is not configured', async () => {

@@ -112,6 +112,9 @@ export async function runFoundationGeneration(
       } else if (step === 'complete') {
         progress.status = 'complete';
         progress.currentStep = 'All foundation documents generated!';
+      } else if (step === 'paused') {
+        progress.status = 'paused';
+        progress.currentStep = 'Paused — will resume on next request';
       } else if (step === 'error') {
         progress.status = 'error';
         progress.error = detail;

@@ -386,10 +386,11 @@ export type FoundationDocStatus = 'pending' | 'running' | 'complete' | 'error';
 
 export interface FoundationProgress {
   ideaId: string;
-  status: 'pending' | 'running' | 'complete' | 'error';
+  status: 'pending' | 'running' | 'paused' | 'complete' | 'error';
   currentStep: string;
   docs: Record<FoundationDocType, FoundationDocStatus>;
   error?: string;
+  updatedAt?: string;
 }
 
 export interface StrategicInputs {

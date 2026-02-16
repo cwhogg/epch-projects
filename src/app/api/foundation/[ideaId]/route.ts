@@ -26,13 +26,20 @@ export async function POST(
     );
   }
 
-  // Check if already running
+  // Check if already running (with staleness detection)
   const existing = await getFoundationProgress(ideaId);
   if (existing && existing.status === 'running') {
-    return NextResponse.json(
-      { message: 'Already running', progress: existing },
-      { status: 200 },
-    );
+    const staleThresholdMs = 5 * 60 * 1000; // 5 minutes
+    const isStale = !existing.updatedAt ||
+      Date.now() - new Date(existing.updatedAt).getTime() > staleThresholdMs;
+    if (!isStale) {
+      return NextResponse.json(
+        { message: 'Already running', progress: existing },
+        { status: 200 },
+      );
+    }
+    // Stale "running" status — agent likely died. Allow restart.
+    console.log(`[foundation] Stale running progress for ${ideaId}, allowing restart`);
   }
 
   // Parse optional parameters from request body

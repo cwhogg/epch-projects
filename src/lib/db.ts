@@ -343,6 +343,7 @@ export async function deleteAllFoundationDocs(ideaId: string): Promise<void> {
 
 // Foundation Progress
 export async function saveFoundationProgress(ideaId: string, progress: FoundationProgress): Promise<void> {
+  progress.updatedAt = new Date().toISOString();
   await getRedis().set(`foundation_progress:${ideaId}`, JSON.stringify(progress), { ex: 3600 });
 }
 
