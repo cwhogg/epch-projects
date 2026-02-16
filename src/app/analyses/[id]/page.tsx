@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, getGSCAnalytics, isRedisConfigured } from '@/lib/db';
+import { getAllFoundationDocs } from '@/lib/db';
+import { getPaintedDoorSite, getEmailSignupCount } from '@/lib/painted-door-db';
 import { getAnalysis } from '@/lib/data';
-import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, isRedisConfigured } from '@/lib/db';
-import { getPaintedDoorSite } from '@/lib/painted-door-db';
-import MarkdownContent from '@/components/MarkdownContent';
-import ReanalyzeForm from '@/components/ReanalyzeForm';
-import DeleteButton from '@/components/DeleteButton';
-import { Analysis } from '@/types';
+import ScoreRing from '@/components/ScoreRing';
+import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,339 +13,200 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-interface SEOSynthesisData {
-  synthesis: {
-    topKeywords: { keyword: string; intentType: string; estimatedVolume: string; estimatedCompetitiveness: string; relevanceToMillionARR: string; contentGapHypothesis: string }[];
-    serpValidated: { keyword: string; hasContentGap: boolean; serpInsight: string; competitorDomains: string[]; serpData: { peopleAlsoAsk: { question: string }[] } }[];
-    comparison: { agreedKeywords: string[]; claudeUniqueKeywords: string[]; openaiUniqueKeywords: string[] } | null;
-    dataSources: string[];
-    synthesisNarrative: string;
-  };
-}
-
-interface AnalysisData {
+interface DashboardData {
   analysis: Analysis;
-  content: { main: string; competitors?: string; keywords?: string; seoData?: string };
-  contentCalendarExists: boolean;
-  contentPieceCount: number;
+  seoData?: string;
+  foundationDocs: Partial<Record<FoundationDocType, boolean>>;
+  foundationCount: number;
+  websiteStatus: string | null;
+  websiteDomain: string | null;
+  websiteSignups: number;
+  contentTotal: number;
+  contentComplete: number;
+  contentPending: number;
+  contentTypes: string[];
   hasGSCLink: boolean;
-  paintedDoorSite: { siteUrl: string; status: string } | null;
+  gscImpressions: number | null;
+  gscClicks: number | null;
+  gscCTR: number | null;
+  risks: string[];
+  agreedKeywords: number;
+  serpValidated: number;
 }
 
-async function getAnalysisData(id: string): Promise<AnalysisData | null> {
-  if (isRedisConfigured()) {
-    const analysis = await getAnalysisFromDb(id);
-    if (analysis) {
-      const [content, calendar, pieces, gscLink, pdSite] = await Promise.all([
-        getAnalysisContent(id),
-        getContentCalendar(id),
-        getContentPieces(id),
-        getGSCLink(id),
-        getPaintedDoorSite(id).catch(() => null),
-      ]);
-      return {
-        analysis,
-        content: content || { main: 'Analysis content not available' },
-        contentCalendarExists: !!calendar,
-        contentPieceCount: pieces.filter((p) => p.status === 'complete').length,
-        hasGSCLink: !!gscLink,
-        paintedDoorSite: pdSite ? { siteUrl: pdSite.siteUrl, status: pdSite.status } : null,
-      };
-    }
-  }
-  const fallback = getAnalysis(id);
-  if (!fallback) return null;
-  return { ...fallback, contentCalendarExists: false, contentPieceCount: 0, hasGSCLink: false, paintedDoorSite: null };
-}
+const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
+  'strategy': 'Strategy',
+  'positioning': 'Positioning',
+  'brand-voice': 'Brand Voice',
+  'design-principles': 'Design Principles',
+  'seo-strategy': 'SEO Strategy',
+  'social-media-strategy': 'Social Media',
+};
 
 function getBadgeClass(rec: string) {
   switch (rec) {
-    case 'Tier 1':
-      return 'badge-success';
-    case 'Tier 2':
-      return 'badge-warning';
-    case 'Tier 3':
-      return 'badge-danger';
-    default:
-      return 'badge-neutral';
+    case 'Tier 1': return 'badge-success';
+    case 'Tier 2': return 'badge-warning';
+    case 'Tier 3': return 'badge-danger';
+    default: return 'badge-neutral';
   }
 }
 
 function getConfidenceStyle(conf: string) {
   switch (conf) {
-    case 'High':
-      return { color: 'var(--accent-emerald)' };
-    case 'Medium':
-      return { color: 'var(--accent-amber)' };
-    case 'Low':
-      return { color: 'var(--color-danger)' };
-    default:
-      return { color: 'var(--text-muted)' };
+    case 'High': return { color: 'var(--accent-emerald)' };
+    case 'Medium': return { color: 'var(--accent-amber)' };
+    case 'Low': return { color: 'var(--color-danger)' };
+    default: return { color: 'var(--text-muted)' };
   }
 }
 
-// Score ring component
-function ScoreRing({ score, label, size = 72 }: { score: number | null; label: string; size?: number }) {
-  const strokeWidth = 5;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const percent = score !== null ? score / 10 : 0;
-  const offset = circumference - percent * circumference;
-
-  const getColor = () => {
-    if (score === null) return 'var(--text-muted)';
-    if (score >= 7) return 'var(--accent-emerald)';
-    if (score >= 4) return 'var(--accent-amber)';
-    return 'var(--color-danger)';
-  };
-
-  const getGlow = () => {
-    if (score === null || score < 7) return 'none';
-    return `drop-shadow(0 0 6px ${getColor()}50)`;
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-2 group">
-      <div
-        className="relative transition-transform duration-200 group-hover:scale-105"
-        style={{ width: size, height: size, filter: getGlow() }}
-      >
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="var(--border-default)"
-            strokeWidth={strokeWidth}
-          />
-          {score !== null && (
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={getColor()}
-              strokeWidth={strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-            />
-          )}
-        </svg>
-        <div
-          className="absolute inset-0 flex items-center justify-center font-display font-semibold"
-          style={{ fontSize: size * 0.35, color: score !== null ? getColor() : 'var(--text-muted)' }}
-        >
-          {score !== null ? score : '?'}
-        </div>
-      </div>
-      <span className="text-xs text-center transition-colors group-hover:text-[var(--text-secondary)]" style={{ color: 'var(--text-muted)' }}>{label}</span>
-    </div>
-  );
+function getWebsiteStatusStyle(status: string) {
+  switch (status) {
+    case 'live': return { bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' };
+    case 'deploying':
+    case 'pushing':
+    case 'generating': return { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' };
+    case 'failed': return { bg: 'rgba(248, 113, 113, 0.15)', color: 'var(--color-danger)' };
+    default: return { bg: 'rgba(113, 113, 122, 0.1)', color: 'var(--text-muted)' };
+  }
 }
 
-function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
-  if (!seoDataJson) return null;
+function getWebsiteStatusLabel(status: string) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
-  let seoData: SEOSynthesisData;
-  try {
-    seoData = JSON.parse(seoDataJson) as SEOSynthesisData;
-  } catch (error) {
-    console.debug('[analysis-detail] data fetch failed:', error);
-    return null;
+async function getDashboardData(id: string): Promise<DashboardData | null> {
+  if (isRedisConfigured()) {
+    const analysis = await getAnalysisFromDb(id);
+    if (!analysis) return null;
+
+    const [content, foundationDocsMap, calendar, pieces, gscLink, pdSite] = await Promise.all([
+      getAnalysisContent(id),
+      getAllFoundationDocs(analysis.ideaId).catch(() => ({})),
+      getContentCalendar(id),
+      getContentPieces(id),
+      getGSCLink(id),
+      getPaintedDoorSite(id).catch(() => null),
+    ]);
+
+    // Parse SEO data for analysis card summary
+    let agreedKeywords = 0;
+    let serpValidated = 0;
+    if (content?.seoData) {
+      try {
+        const seo = JSON.parse(content.seoData);
+        agreedKeywords = seo.synthesis?.comparison?.agreedKeywords?.length ?? 0;
+        serpValidated = seo.synthesis?.serpValidated?.filter((v: { hasContentGap: boolean }) => v.hasContentGap)?.length ?? 0;
+      } catch { /* ignore parse errors */ }
+    }
+
+    // Get signup count if site exists
+    const websiteSignups = pdSite ? await getEmailSignupCount(pdSite.id).catch(() => 0) : 0;
+
+    // Get GSC summary metrics if linked
+    let gscImpressions: number | null = null;
+    let gscClicks: number | null = null;
+    let gscCTR: number | null = null;
+    if (gscLink) {
+      const gscData = await getGSCAnalytics(analysis.ideaId).catch(() => null);
+      if (gscData?.timeSeries?.length) {
+        // Sum last 7 days
+        const last7 = gscData.timeSeries.slice(-7);
+        gscImpressions = last7.reduce((sum, d) => sum + d.impressions, 0);
+        gscClicks = last7.reduce((sum, d) => sum + d.clicks, 0);
+        gscCTR = gscImpressions > 0 ? (gscClicks / gscImpressions) * 100 : 0;
+      }
+    }
+
+    const foundationDocs: Partial<Record<FoundationDocType, boolean>> = {};
+    for (const docType of FOUNDATION_DOC_TYPES) {
+      foundationDocs[docType] = docType in foundationDocsMap;
+    }
+
+    const completePieces = pieces.filter(p => p.status === 'complete');
+    const pendingPieces = pieces.filter(p => p.status === 'pending' || p.status === 'generating');
+    const contentTypes = [...new Set(pieces.map(p => p.type))];
+
+    return {
+      analysis,
+      seoData: content?.seoData,
+      foundationDocs,
+      foundationCount: Object.keys(foundationDocsMap).length,
+      websiteStatus: pdSite?.status ?? null,
+      websiteDomain: pdSite?.siteUrl ?? null,
+      websiteSignups,
+      contentTotal: calendar?.pieces.length ?? 0,
+      contentComplete: completePieces.length,
+      contentPending: pendingPieces.length,
+      contentTypes: contentTypes.map(t => t.replace(/-/g, ' ')),
+      hasGSCLink: !!gscLink,
+      gscImpressions,
+      gscClicks,
+      gscCTR,
+      risks: analysis.risks ?? [],
+      agreedKeywords,
+      serpValidated,
+    };
   }
 
-  const { synthesis } = seoData;
-  if (!synthesis) return null;
-
-  return (
-    <div className="card-static p-5 sm:p-6 animate-slide-up stagger-3">
-      <h2 className="font-display text-base mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        SEO Deep Dive
-      </h2>
-
-      <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-        Sources: {synthesis.dataSources.join(' + ')}
-      </p>
-
-      {/* Cross-Reference Summary */}
-      {synthesis.comparison && (
-        <div className="mb-5">
-          <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            LLM Cross-Reference
-          </h3>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-3 rounded-lg" style={{ background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: 'var(--accent-emerald)' }}>
-                {synthesis.comparison.agreedKeywords.length}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Agreed</div>
-            </div>
-            <div className="p-3 rounded-lg" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: 'var(--color-indigo)' }}>
-                {synthesis.comparison.claudeUniqueKeywords.length}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Claude Only</div>
-            </div>
-            <div className="p-3 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-              <div className="text-lg font-display" style={{ color: 'var(--accent-amber)' }}>
-                {synthesis.comparison.openaiUniqueKeywords.length}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>OpenAI Only</div>
-            </div>
-          </div>
-          {synthesis.comparison.agreedKeywords.length > 0 && (
-            <div className="mt-3">
-              <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                Highest confidence:{' '}
-              </span>
-              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {synthesis.comparison.agreedKeywords.slice(0, 8).join(', ')}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SERP Validated Keywords */}
-      {synthesis.serpValidated.length > 0 && (
-        <div className="mb-5">
-          <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            SERP-Validated Keywords
-          </h3>
-          <div className="space-y-2">
-            {synthesis.serpValidated.map((v, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-lg"
-                style={{
-                  background: v.hasContentGap ? 'rgba(52, 211, 153, 0.05)' : 'var(--bg-elevated)',
-                  border: `1px solid ${v.hasContentGap ? 'rgba(52, 211, 153, 0.2)' : 'var(--border-subtle)'}`,
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    &quot;{v.keyword}&quot;
-                  </span>
-                  {v.hasContentGap && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)' }}
-                    >
-                      Content Gap
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {v.serpInsight}
-                </p>
-                {v.serpData.peopleAlsoAsk.length > 0 && (
-                  <div className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    People Also Ask: {v.serpData.peopleAlsoAsk.slice(0, 2).map((q) => `"${q.question}"`).join(', ')}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Keywords */}
-      {synthesis.topKeywords.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            Top Keywords ({synthesis.topKeywords.length})
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ color: 'var(--text-muted)' }}>
-                  <th className="text-left py-2 pr-3 font-medium">Keyword</th>
-                  <th className="text-left py-2 pr-3 font-medium">Intent</th>
-                  <th className="text-left py-2 pr-3 font-medium">Competition</th>
-                  <th className="text-left py-2 font-medium">ARR Relevance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {synthesis.topKeywords.slice(0, 12).map((kw, i) => (
-                  <tr
-                    key={i}
-                    style={{ borderTop: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-                  >
-                    <td className="py-2 pr-3">{kw.keyword}</td>
-                    <td className="py-2 pr-3">{kw.intentType}</td>
-                    <td className="py-2 pr-3">
-                      <span
-                        className="px-1.5 py-0.5 rounded"
-                        style={{
-                          background:
-                            kw.estimatedCompetitiveness === 'Low'
-                              ? 'rgba(52, 211, 153, 0.1)'
-                              : kw.estimatedCompetitiveness === 'Medium'
-                              ? 'rgba(251, 191, 36, 0.1)'
-                              : 'rgba(248, 113, 113, 0.1)',
-                          color:
-                            kw.estimatedCompetitiveness === 'Low'
-                              ? 'var(--accent-emerald)'
-                              : kw.estimatedCompetitiveness === 'Medium'
-                              ? 'var(--accent-amber)'
-                              : 'var(--color-danger)',
-                        }}
-                      >
-                        {kw.estimatedCompetitiveness}
-                      </span>
-                    </td>
-                    <td className="py-2">{kw.relevanceToMillionARR}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // Filesystem fallback
+  const fallback = getAnalysis(id);
+  if (!fallback) return null;
+  return {
+    analysis: fallback.analysis,
+    foundationDocs: {},
+    foundationCount: 0,
+    websiteStatus: null,
+    websiteDomain: null,
+    websiteSignups: 0,
+    contentTotal: 0,
+    contentComplete: 0,
+    contentPending: 0,
+    contentTypes: [],
+    hasGSCLink: false,
+    gscImpressions: null,
+    gscClicks: null,
+    gscCTR: null,
+    risks: fallback.analysis.risks ?? [],
+    agreedKeywords: 0,
+    serpValidated: 0,
+  };
 }
 
-export default async function AnalysisPage({ params }: PageProps) {
+function formatNumber(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
+export default async function ProjectDashboard({ params }: PageProps) {
   const { id } = await params;
-  const result = await getAnalysisData(id);
+  const data = await getDashboardData(id);
 
-  if (!result) {
+  if (!data) {
     notFound();
   }
 
-  const { analysis, content, contentCalendarExists, contentPieceCount, hasGSCLink, paintedDoorSite } = result;
+  const { analysis } = data;
 
-  // Get gradient color based on recommendation
   const getHeaderGradient = () => {
     switch (analysis.recommendation) {
-      case 'Tier 1':
-        return 'radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.1) 0%, transparent 50%)';
-      case 'Tier 2':
-        return 'radial-gradient(ellipse at top left, rgba(251, 191, 36, 0.08) 0%, transparent 50%)';
-      case 'Tier 3':
-        return 'radial-gradient(ellipse at top left, rgba(248, 113, 113, 0.08) 0%, transparent 50%)';
-      default:
-        return 'none';
+      case 'Tier 1': return 'radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.1) 0%, transparent 50%)';
+      case 'Tier 2': return 'radial-gradient(ellipse at top left, rgba(251, 191, 36, 0.08) 0%, transparent 50%)';
+      case 'Tier 3': return 'radial-gradient(ellipse at top left, rgba(248, 113, 113, 0.08) 0%, transparent 50%)';
+      default: return 'none';
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-      {/* Header with ambient gradient */}
+      {/* Header */}
       <header
         className="animate-slide-up stagger-1 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 rounded-xl"
         style={{ background: getHeaderGradient() }}
       >
         <Link
-          href="/analysis"
+          href="/"
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -354,7 +214,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
-          Back
+          Back to Projects
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -375,98 +235,198 @@ export default async function AnalysisPage({ params }: PageProps) {
                 {analysis.confidence}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href={`/analyses/${analysis.id}/painted-door`}
+            {data.websiteStatus === 'live' && data.websiteDomain && (
+              <a
+                href={data.websiteDomain.startsWith('http') ? data.websiteDomain : `https://${data.websiteDomain}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn btn-ghost text-sm"
               >
-                {paintedDoorSite?.status === 'live' ? (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    View Site
-                  </>
-                ) : (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="2" y1="12" x2="22" y2="12" />
-                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                    </svg>
-                    Create Website
-                  </>
-                )}
-              </Link>
-              <Link
-                href={`/analyses/${analysis.id}/foundation`}
-                className="btn btn-ghost text-sm"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-                Foundation Docs
+                View Site
+              </a>
+            )}
+            {!data.websiteStatus && (
+              <Link href={`/analyses/${id}/painted-door`} className="btn btn-ghost text-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+                Create Website
               </Link>
-              <ReanalyzeForm ideaId={analysis.id} />
-              <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
-            </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Scores Grid */}
-      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-2">
-        <h2 className="font-display text-base mb-5" style={{ color: 'var(--text-primary)' }}>
-          Scores
-        </h2>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
-          <ScoreRing score={analysis.scores.seoOpportunity} label="SEO" />
-          <ScoreRing score={analysis.scores.competitiveLandscape} label="Competition" />
-          <ScoreRing score={analysis.scores.willingnessToPay} label="WTP" />
-          <ScoreRing score={analysis.scores.differentiationPotential} label="Differentiation" />
-          <ScoreRing score={analysis.scores.expertiseAlignment} label="Expertise" />
-          <ScoreRing score={analysis.scores.overall} label="Overall" size={80} />
-        </div>
-      </div>
+      {/* Pipeline Summary Cards */}
+      <div className="flex flex-col gap-3">
 
-      {/* Risks */}
-      {analysis.risks && analysis.risks.length > 0 && (
-        <div className="card-static p-5 sm:p-6 animate-slide-up stagger-3">
-          <h2 className="font-display text-base mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            Key Risks
-          </h2>
-          <ul className="space-y-2">
-            {analysis.risks.map((risk, index) => (
-              <li key={index} className="flex items-start gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--color-danger)' }}>•</span>
-                <span>{risk}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {/* Analysis Card */}
+        <Link href={`/analyses/${id}/analysis`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Analysis</span>
+            <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </div>
+          <div className="flex items-center gap-5 mt-3">
+            <ScoreRing score={analysis.scores.overall} label="" size={44} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-display text-base font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {analysis.recommendation} — {analysis.recommendation === 'Tier 1' ? 'Pursue' : analysis.recommendation === 'Tier 2' ? 'Explore' : analysis.recommendation === 'Tier 3' ? 'Deprioritize' : ''}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  SEO {analysis.scores.seoOpportunity ?? '?'} · Competition {analysis.scores.competitiveLandscape ?? '?'} · WTP {analysis.scores.willingnessToPay ?? '?'} · Differentiation {analysis.scores.differentiationPotential ?? '?'} · Expertise {analysis.scores.expertiseAlignment ?? '?'}
+                </span>
+              </div>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                {data.risks.length > 0 ? `${data.risks.length} key risk${data.risks.length !== 1 ? 's' : ''} identified` : 'No risks flagged'}
+                {data.agreedKeywords > 0 ? ` · ${data.agreedKeywords} agreed keywords` : ''}
+                {data.serpValidated > 0 ? ` · ${data.serpValidated} SERP-validated content gaps` : ''}
+              </p>
+            </div>
+          </div>
+        </Link>
 
-      {/* SEO Deep Dive */}
-      <SEODeepDive seoDataJson={content.seoData} />
+        {/* Foundation Card */}
+        <Link href={`/analyses/${id}/foundation`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Foundation Documents</span>
+              <div className="flex items-center gap-1.5">
+                <div className="flex gap-1">
+                  {FOUNDATION_DOC_TYPES.map((dt) => (
+                    <div
+                      key={dt}
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: data.foundationDocs[dt] ? 'var(--accent-emerald)' : 'var(--border-default)' }}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs font-medium" style={{ color: data.foundationCount === 6 ? 'var(--accent-emerald)' : 'var(--text-muted)' }}>
+                  {data.foundationCount}/6
+                </span>
+              </div>
+            </div>
+            <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </div>
+          {data.foundationCount > 0 ? (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3">
+              {FOUNDATION_DOC_TYPES.map((dt) => (
+                <div key={dt} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <div
+                    className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: data.foundationDocs[dt] ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-elevated)',
+                      color: data.foundationDocs[dt] ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                    }}
+                  >
+                    {data.foundationDocs[dt] ? (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                    ) : (
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /></svg>
+                    )}
+                  </div>
+                  {FOUNDATION_LABELS[dt]}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Not started</p>
+          )}
+        </Link>
 
-      {/* Full Analysis */}
-      <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
-        <h2 className="font-display text-base mb-4" style={{ color: 'var(--text-primary)' }}>
-          Full Analysis
-        </h2>
-        <div className="prose-editorial">
-          <MarkdownContent content={content.main} />
-        </div>
+        {/* Website Card */}
+        <Link href={`/analyses/${id}/painted-door`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-4">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Painted Door Site</span>
+            <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </div>
+          {data.websiteStatus ? (
+            <div className="flex items-center gap-4 mt-2 flex-wrap">
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1.5"
+                style={{ background: getWebsiteStatusStyle(data.websiteStatus).bg, color: getWebsiteStatusStyle(data.websiteStatus).color }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />
+                {getWebsiteStatusLabel(data.websiteStatus)}
+              </span>
+              {data.websiteDomain && (
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {data.websiteDomain.replace(/^https?:\/\//, '')}
+                </span>
+              )}
+              {data.websiteStatus === 'live' && data.websiteSignups > 0 && (
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {data.websiteSignups} signup{data.websiteSignups !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Not started</p>
+          )}
+        </Link>
+
+        {/* Content Card */}
+        <Link href={`/analyses/${id}/content`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-5">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Content Pipeline</span>
+            <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </div>
+          {data.contentTotal > 0 ? (
+            <div className="flex items-center gap-6 mt-2 flex-wrap">
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--accent-emerald)' }}>{data.contentComplete}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Complete</div>
+              </div>
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--accent-amber)' }}>{data.contentPending}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Pending</div>
+              </div>
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--text-secondary)' }}>{data.contentTotal}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Total</div>
+              </div>
+              {data.contentTypes.length > 0 && (
+                <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>
+                  {data.contentTypes.join(', ')}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Not started</p>
+          )}
+        </Link>
+
+        {/* Performance Card (conditional) */}
+        {data.hasGSCLink && data.gscImpressions !== null && (
+          <Link href={`/analyses/${id}/analytics`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-6">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Performance</span>
+              <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </div>
+            <div className="flex items-center gap-6 mt-2 flex-wrap">
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--text-primary)' }}>{formatNumber(data.gscImpressions)}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Impressions</div>
+              </div>
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--text-primary)' }}>{formatNumber(data.gscClicks!)}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Clicks</div>
+              </div>
+              <div className="text-center">
+                <div className="font-display text-xl font-medium" style={{ color: 'var(--text-primary)' }}>{data.gscCTR!.toFixed(1)}%</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>CTR</div>
+              </div>
+              <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>Last 7 days · GSC</span>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
