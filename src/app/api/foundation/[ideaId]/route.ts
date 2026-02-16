@@ -35,21 +35,25 @@ export async function POST(
     );
   }
 
-  // Parse optional strategic inputs from request body
+  // Parse optional parameters from request body
   let strategicInputs: StrategicInputs | undefined;
+  let docType: string | undefined;
   try {
     const body = await request.json();
     if (body.strategicInputs) {
       strategicInputs = body.strategicInputs;
     }
+    if (body.docType) {
+      docType = body.docType;
+    }
   } catch {
-    // No body or invalid JSON — that's fine, strategic inputs are optional
+    // No body or invalid JSON — that's fine, all fields are optional
   }
 
   // Run agent in background after response
   after(async () => {
     try {
-      await runFoundationGeneration(ideaId, strategicInputs);
+      await runFoundationGeneration(ideaId, strategicInputs, docType);
     } catch (error) {
       if (error instanceof Error && error.message === 'AGENT_PAUSED') {
         console.log(`[foundation] Agent paused for ${ideaId}, will resume on next request`);

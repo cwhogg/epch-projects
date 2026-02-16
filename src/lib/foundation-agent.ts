@@ -10,7 +10,7 @@ import {
 } from './agent-runtime';
 import { createFoundationTools } from './agent-tools/foundation';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
-import { saveFoundationProgress } from './db';
+import { saveFoundationProgress, getFoundationProgress } from './db';
 import { CLAUDE_MODEL } from './config';
 import type { StrategicInputs } from '@/types';
 
@@ -52,6 +52,7 @@ function makeInitialProgress(ideaId: string): FoundationProgress {
 export async function runFoundationGeneration(
   ideaId: string,
   strategicInputs?: StrategicInputs,
+  docType?: string,
 ): Promise<void> {
   // Check for a paused run to resume
   const existingRunId = await getActiveRunId('foundation', ideaId);
@@ -65,8 +66,20 @@ export async function runFoundationGeneration(
 
   // Progress tracking
   const progress = makeInitialProgress(ideaId);
+  if (docType) {
+    // For single doc generation, preserve existing doc statuses
+    const existingProgress = await getFoundationProgress(ideaId);
+    if (existingProgress?.docs) {
+      Object.assign(progress.docs, existingProgress.docs);
+    }
+    progress.docs[docType as FoundationDocType] = 'pending';
+  }
   progress.status = 'running';
-  progress.currentStep = isResume ? 'Resuming foundation generation...' : 'Starting foundation generation...';
+  progress.currentStep = isResume
+    ? 'Resuming foundation generation...'
+    : docType
+      ? `Generating ${docType.replace(/-/g, ' ')}...`
+      : 'Starting foundation generation...';
   await saveFoundationProgress(ideaId, progress);
 
   const onDocProgress = async (docType: FoundationDocType, status: 'running' | 'complete' | 'error') => {
@@ -109,7 +122,12 @@ export async function runFoundationGeneration(
   };
 
   // Build initial message
-  let initialMessage = `Generate all foundation documents for this idea (ID: ${ideaId}).`;
+  let initialMessage: string;
+  if (docType) {
+    initialMessage = `Generate only the "${docType}" foundation document for idea ID: ${ideaId}.`;
+  } else {
+    initialMessage = `Generate all foundation documents for this idea (ID: ${ideaId}).`;
+  }
   if (strategicInputs) {
     const parts: string[] = [];
     if (strategicInputs.differentiation) {
