@@ -5,13 +5,9 @@ import { usePathname } from 'next/navigation';
 import { isActive } from '@/lib/nav-utils';
 
 const navItems = [
-  { href: '/ideation', label: 'Ideation' },
-  { href: '/analysis', label: 'Analysis' },
-  { href: '/foundation', label: 'Foundation' },
-  { href: '/website', label: 'Website' },
-  { href: '/content', label: 'Content' },
-  { href: '/testing', label: 'Testing' },
-  { href: '/optimization', label: 'Optimization' },
+  { href: '/', label: 'Projects' },
+  { href: '/ideas/new', label: 'Ideation' },
+  { href: '/analytics', label: 'Analytics' },
 ];
 
 export default function NavLinks() {
