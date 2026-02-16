@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generation Progress States — Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#0d0d0f',
+            'bg-secondary': '#16161a',
+            'bg-card': '#1c1c21',
+            'bg-elevated': '#232329',
+            'text-primary': '#f4f4f5',
+            'text-secondary': '#a1a1aa',
+            'text-muted': '#71717a',
+            'accent-coral': '#ff6b5b',
+            'accent-coral-soft': 'rgba(255,107,91,0.15)',
+            'accent-emerald': '#10b981',
+            'color-danger': '#f87171',
+            'color-info': '#60a5fa',
+            'accent-amber': '#f59e0b',
+          },
+          fontFamily: {
+            display: ['Georgia', 'serif'],
+            body: ['system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #0d0d0f;
+      color: #f4f4f5;
+      font-family: system-ui, sans-serif;
+    }
+    .border-subtle { border-color: rgba(255,255,255,0.06); }
+
+    .card-doc {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      background: #0d0d0f;
+    }
+
+    .annotation {
+      background: rgba(255,107,91,0.12);
+      border: 1px solid rgba(255,107,91,0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #ff6b5b;
+      font-family: system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse-dot {
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: 200px 0; }
+    }
+    .shimmer-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #232329 25%, #2a2a32 50%, #232329 75%);
+      background-size: 200px 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .scenario-divider {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin: 2.5rem 0;
+      padding-top: 2rem;
+    }
+  </style>
+</head>
+<body class="p-8">
+
+  <div class="text-center mb-8">
+    <p class="text-xs tracking-widest uppercase text-text-muted mb-1 font-body">Mockup</p>
+    <h1 class="font-display text-xl text-text-primary" style="letter-spacing: -0.02em;">Generation Progress States</h1>
+    <p class="text-text-secondary text-sm mt-1 font-body">Active generation, partial completion, and error recovery</p>
+  </div>
+
+  <div style="max-width: 900px; margin: 0 auto; padding: 0 1rem;">
+
+    <!-- ========================================= -->
+    <!-- SCENARIO A: Active Generation In Progress -->
+    <!-- ========================================= -->
+    <div>
+      <div class="annotation inline-block mb-4">SCENARIO A: Active generation &mdash; 2 complete, 1 generating, 3 pending</div>
+
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;" class="text-text-primary">Foundation Documents</h1>
+          <p class="text-text-secondary text-sm" style="margin: 0.25rem 0 0;">2/6 documents generated</p>
+        </div>
+        <button
+          style="padding: 0.5rem 1.25rem; background: #232329; color: #71717a; border: none; border-radius: 0.375rem; cursor: not-allowed; font-size: 0.875rem; font-weight: 500;"
+        >
+          Generating...
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+        <!-- Strategy: Complete (check) -->
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-accent-emerald text-sm">&#10003;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Strategy</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Richard Rumelt</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            The core strategic challenge for PetPulse is competing in a saturated pet health monitoring market where Whistle, Fi, and existing vet telehealth platforms have established distribution...
+          </p>
+        </div>
+
+        <!-- Positioning: Complete (check) -->
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-accent-emerald text-sm">&#10003;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            For pet owners who worry about their dog's health between vet visits, PetPulse is a continuous health monitoring platform that detects early warning signs...
+          </p>
+        </div>
+
+        <!-- Brand Voice: Currently Generating -->
+        <div class="card-doc" style="border-color: rgba(255,107,91,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-accent-coral text-sm pulse-dot">&#9679;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Brand Voice</h3>
+                <span class="text-xs text-accent-coral">generating...</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Brand Copywriter</p>
+            </div>
+          </div>
+          <div class="mt-3" style="display: flex; flex-direction: column; gap: 6px;">
+            <div class="shimmer-bar" style="width: 85%;"></div>
+            <div class="shimmer-bar" style="width: 60%;"></div>
+          </div>
+        </div>
+
+        <!-- Design Principles: Pending -->
+        <div class="card-doc" style="opacity: 0.5;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-text-muted text-sm">&#9675;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Design Principles</h3>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Derived</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Strategy: Pending -->
+        <div class="card-doc" style="opacity: 0.5;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-text-muted text-sm">&#9675;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">SEO Strategy</h3>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">SEO Expert</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media Strategy: Pending -->
+        <div class="card-doc" style="opacity: 0.5;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-text-muted text-sm">&#9675;</span>
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Social Media Strategy</h3>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">TBD</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SCENARIO B: Partial Failure with Error Recovery -->
+    <!-- ============================================== -->
+    <div class="scenario-divider">
+      <div class="annotation inline-block mb-4">SCENARIO B: Partial failure &mdash; 4 complete, 1 error, 1 pending (blocked)</div>
+
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;" class="text-text-primary">Foundation Documents</h1>
+          <p class="text-text-secondary text-sm" style="margin: 0.25rem 0 0;">4/6 documents generated</p>
+        </div>
+        <button
+          style="padding: 0.5rem 1.25rem; background: #ff6b5b; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;"
+        >
+          Generate All
+        </button>
+      </div>
+
+      <!-- Error banner -->
+      <div style="padding: 0.75rem 1rem; background: rgba(254,242,242,0.06); border: 1px solid rgba(248,113,113,0.2); border-radius: 0.375rem; margin-bottom: 1rem; color: #f87171; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;">
+        <span>Generation completed with errors. 1 document failed &mdash; click "Generate All" to retry failed documents only.</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+        <!-- Strategy: Complete -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Strategy</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Richard Rumelt</p>
+            </div>
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            The core strategic challenge for PetPulse is competing in a saturated pet health monitoring market...
+          </p>
+        </div>
+
+        <!-- Positioning: Complete -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
+            </div>
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            For pet owners who worry about their dog's health between vet visits...
+          </p>
+        </div>
+
+        <!-- Brand Voice: Complete -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Brand Voice</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Brand Copywriter</p>
+            </div>
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            Tone: Confident but warm. Speak like a trusted vet friend...
+          </p>
+        </div>
+
+        <!-- Design Principles: Complete -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Design Principles</h3>
+                <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Derived</p>
+            </div>
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+            Visual language rooted in trust and medical credibility...
+          </p>
+        </div>
+
+        <!-- SEO Strategy: ERROR -->
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">SEO Strategy</h3>
+                <span class="text-xs text-color-danger">error</span>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">SEO Expert</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media Strategy: Ready but not generated (upstream Brand Voice exists) -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Social Media Strategy</h3>
+              </div>
+              <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">TBD</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================================================ -->
+    <!-- SCENARIO C: Generation Complete (all succeeded)   -->
+    <!-- ================================================ -->
+    <div class="scenario-divider">
+      <div class="annotation inline-block mb-4">SCENARIO C: All 6 complete &mdash; steady state after successful "Generate All"</div>
+
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;" class="text-text-primary">Foundation Documents</h1>
+          <p class="text-text-secondary text-sm" style="margin: 0.25rem 0 0;">6/6 documents generated</p>
+        </div>
+        <button
+          style="padding: 0.5rem 1.25rem; background: #ff6b5b; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;"
+        >
+          Generate All
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- All 6 cards in completed state (compact) -->
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Strategy</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">Richard Rumelt</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">The core strategic challenge for PetPulse is competing in a saturated pet health monitoring market...</p>
+        </div>
+
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">April Dunford</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">For pet owners who worry about their dog's health between vet visits...</p>
+        </div>
+
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Brand Voice</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">Brand Copywriter</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">Tone: Confident but warm. Speak like a trusted vet friend...</p>
+        </div>
+
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Design Principles</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">Derived</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">Visual language rooted in trust and medical credibility...</p>
+        </div>
+
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">SEO Strategy</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">SEO Expert</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">Primary keyword clusters: "pet health monitoring", "dog vital signs tracker"...</p>
+        </div>
+
+        <div class="card-doc">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Social Media Strategy</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="text-xs text-text-muted">TBD</span>
+              <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+            </div>
+          </div>
+          <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">Platform priority: Instagram (visual health tips) > TikTok (vet Q&A shorts) > X (industry commentary)...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CRITIQUE: Implementation gaps in progress states ===== -->
+    <div class="scenario-divider">
+      <h2 class="font-display text-lg text-text-primary mb-3" style="letter-spacing: -0.02em;">Implementation Critique: Progress States</h2>
+      <p class="text-text-secondary text-sm mb-3">
+        How the actual implementation handles generation progress vs. what the design doc specifies:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">No visual progress during generation</p>
+              <p class="text-text-secondary text-xs mt-1">The generating card shows only a <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">"generating..."</code> text label. No shimmer/skeleton, no progress bar, no animation. For a generation that takes 10-30 seconds per document, the lack of motion makes the UI feel frozen. The design doc says "Progress shown inline on each card" but the implementation is a static text string.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">No pending/queued state for downstream cards</p>
+              <p class="text-text-secondary text-xs mt-1">During "Generate All", cards 3-6 should show they are queued (pending), distinct from the "empty" state before generation was initiated. Current implementation only tracks <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">docProgress === 'running'</code> per card; no "pending" or "queued" state exists in <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">FoundationProgress</code>. Cards waiting their turn look identical to cards that were never part of the batch.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Error recovery is "Generate All" only</p>
+              <p class="text-text-secondary text-xs mt-1">Design doc specifies per-card Retry buttons and "Generate All checks which docs already exist and skips them." The implementation has no per-card retry. If SEO Strategy fails, the only recovery is clicking "Generate All" again. The design doc's skip-existing behavior depends on the API route checking Redis for existing docs before regenerating &mdash; this logic needs verification in the API route, not just the frontend.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">No success differentiation from pre-existing</p>
+              <p class="text-text-secondary text-xs mt-1">After generation completes, cards that were just generated look identical to cards that already existed. No "just generated" transient state (e.g., brief emerald border flash, checkmark) to give feedback that generation succeeded. Users must compare the counter ("4/6" to "6/6") to confirm progress.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Error message is generic</p>
+              <p class="text-text-secondary text-xs mt-1">The error banner shows <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">err.message</code> from the fetch response. There is no per-card error detail visible. If SEO Strategy fails due to a rate limit but Social Media Strategy fails due to missing Brand Voice context, both show the same "error" label with no explanation of what went wrong or what to do about it.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Polling correctly gates on running state</p>
+              <p class="text-text-secondary text-xs mt-1">The <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">useEffect</code> with 3-second interval only activates when <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">progress.status === 'running'</code>. Cleanup clears the interval. No wasted polling when idle. The pattern matches the existing content generation polling approach.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Generate All button disables correctly</p>
+              <p class="text-text-secondary text-xs mt-1">Button is disabled with "Generating..." text when either the local <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">generating</code> state is true (POST in flight) or <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">isRunning</code> is true (server reports running). This prevents double-submission. The Redis lock provides server-side idempotency as a second layer.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

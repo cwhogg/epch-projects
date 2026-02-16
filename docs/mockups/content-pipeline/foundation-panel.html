@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foundation Documents Panel — Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#0d0d0f',
+            'bg-secondary': '#16161a',
+            'bg-card': '#1c1c21',
+            'bg-elevated': '#232329',
+            'text-primary': '#f4f4f5',
+            'text-secondary': '#a1a1aa',
+            'text-muted': '#71717a',
+            'accent-coral': '#ff6b5b',
+            'accent-coral-soft': 'rgba(255,107,91,0.15)',
+            'accent-emerald': '#10b981',
+            'color-danger': '#f87171',
+            'color-info': '#60a5fa',
+          },
+          fontFamily: {
+            display: ['Georgia', 'serif'],
+            body: ['system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            'sm-token': '0.5rem',
+            'md-token': '0.75rem',
+            'lg-token': '1rem',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #0d0d0f;
+      color: #f4f4f5;
+      font-family: system-ui, sans-serif;
+    }
+    .border-subtle { border-color: rgba(255,255,255,0.06); }
+    .border-default { border-color: rgba(255,255,255,0.1); }
+
+    /* Annotation callouts */
+    .annotation {
+      position: absolute;
+      background: rgba(255,107,91,0.12);
+      border: 1px solid rgba(255,107,91,0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #ff6b5b;
+      font-family: system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .annotation::before {
+      content: '';
+      position: absolute;
+      width: 0; height: 0;
+    }
+    .annotation-left::before {
+      right: -6px; top: 50%; transform: translateY(-50%);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid rgba(255,107,91,0.4);
+    }
+    .annotation-right::before {
+      left: -6px; top: 50%; transform: translateY(-50%);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-right: 6px solid rgba(255,107,91,0.4);
+    }
+    .annotation-bottom::before {
+      top: -6px; left: 50%; transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 6px solid rgba(255,107,91,0.4);
+    }
+
+    .card-doc {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      background: #0d0d0f;
+      transition: all 0.2s;
+    }
+
+    .expanded-content {
+      margin-top: 0.75rem;
+      padding: 1rem;
+      background: #232329;
+      border-radius: 0.375rem;
+      white-space: pre-wrap;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body class="p-8">
+
+  <!-- Page title annotation -->
+  <div class="text-center mb-6">
+    <p class="text-xs tracking-widest uppercase text-text-muted mb-1 font-body">Mockup</p>
+    <h1 class="font-display text-xl text-text-primary" style="letter-spacing: -0.02em;">Foundation Documents Panel</h1>
+    <p class="text-text-secondary text-sm mt-1 font-body">View 1 &mdash; All four card states + expanded document view</p>
+  </div>
+
+  <!-- ===== MAIN PANEL ===== -->
+  <div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;" class="relative">
+
+    <!-- Back link -->
+    <div style="margin-bottom: 1.5rem;">
+      <a href="#" class="text-text-secondary text-sm hover:text-text-primary transition-colors">&larr; Back to Analysis</a>
+    </div>
+
+    <!-- Header row -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;" class="relative">
+      <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;" class="text-text-primary">Foundation Documents</h1>
+        <p class="text-text-secondary text-sm" style="margin: 0.25rem 0 0;">4/6 documents generated</p>
+      </div>
+      <button
+        style="padding: 0.5rem 1.25rem; background: #ff6b5b; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;"
+        class="hover:brightness-110 transition-all"
+      >
+        Generate All
+      </button>
+
+      <!-- Annotation: Generate All -->
+      <div class="annotation annotation-bottom" style="top: -42px; right: 0; white-space: nowrap;">
+        Disabled when generating or when lock exists
+      </div>
+    </div>
+
+    <!-- Cards container -->
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+      <!-- ===== CARD 1: Generated state (Strategy) ===== -->
+      <div class="card-doc relative">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Strategy</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v2</span>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Richard Rumelt</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+        </div>
+        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+          The core strategic challenge for PetPulse is competing in a saturated pet health monitoring market where Whistle, Fi, and existing vet telehealth platforms have established distribution...
+        </p>
+
+        <!-- Annotation: Generated state -->
+        <div class="annotation annotation-left" style="right: -220px; top: 12px; width: 190px;">
+          STATE: Generated<br>Has content, version badge, View button, 3-line preview
+        </div>
+      </div>
+
+      <!-- ===== CARD 2: Manually Edited state (Positioning) ===== -->
+      <div class="card-doc relative">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v3</span>
+              <span class="text-xs px-1.5 py-0.5 rounded" style="background: #232329; color: #ff6b5b;">edited</span>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+        </div>
+        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+          For pet owners who worry about their dog's health between vet visits, PetPulse is a continuous health monitoring platform that detects early warning signs of illness through daily behavior...
+        </p>
+
+        <!-- Annotation: Manually edited -->
+        <div class="annotation annotation-left" style="right: -220px; top: 12px; width: 190px;">
+          STATE: Manually Edited<br>Coral "edited" badge when editedAt is non-null
+        </div>
+      </div>
+
+      <!-- ===== CARD 3: Generated — Brand Voice ===== -->
+      <div class="card-doc">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Brand Voice</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Brand Copywriter</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+        </div>
+        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+          Tone: Confident but warm. Speak like a trusted vet friend — knowledgeable without being clinical, caring without being saccharine. Lead with clarity, follow with reassurance...
+        </p>
+      </div>
+
+      <!-- ===== CARD 4: Generated — Design Principles ===== -->
+      <div class="card-doc">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Design Principles</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Derived</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          </div>
+        </div>
+        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
+          Visual language rooted in trust and medical credibility. Clean whites with teal accents. Data visualizations use rounded corners and progressive disclosure to avoid overwhelming...
+        </p>
+      </div>
+
+      <!-- ===== CARD 5: Ready state (SEO Strategy) ===== -->
+      <div class="card-doc relative">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">SEO Strategy</h3>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">SEO Expert</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <!-- No View button — no content yet -->
+          </div>
+        </div>
+
+        <!-- Annotation: Ready state -->
+        <div class="annotation annotation-left" style="right: -220px; top: 4px; width: 190px;">
+          STATE: Ready<br>Upstream exists (Positioning), but no content generated yet. No buttons shown.
+        </div>
+      </div>
+
+      <!-- ===== CARD 6: Empty state (Social Media Strategy) ===== -->
+      <div class="card-doc relative" style="opacity: 0.6;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Social Media Strategy</h3>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">TBD &mdash; Requires: Brand Voice</p>
+          </div>
+        </div>
+
+        <!-- Annotation: Empty state -->
+        <div class="annotation annotation-left" style="right: -220px; top: 4px; width: 190px;">
+          STATE: Empty<br>Upstream missing (needs Brand Voice). Shows "Requires:" hint. Card is dimmed in this mockup; in the real UI it's full opacity but just has no buttons.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== EXPANDED VIEW ===== -->
+    <div class="mt-10">
+      <div class="text-center mb-4">
+        <p class="text-xs tracking-widest uppercase text-text-muted font-body">Expanded Document View</p>
+        <p class="text-text-secondary text-xs mt-1">When "View" is clicked, content appears inline below the card header</p>
+      </div>
+
+      <div class="card-doc">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
+              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v3</span>
+              <span class="text-xs px-1.5 py-0.5 rounded" style="background: #232329; color: #ff6b5b;">edited</span>
+            </div>
+            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">Hide</button>
+          </div>
+        </div>
+        <!-- No preview when expanded — replaced by full content -->
+        <div class="expanded-content">For pet owners who worry about their dog's health between vet visits, PetPulse is a continuous health monitoring platform that detects early warning signs of illness through daily behavior analysis and biometric tracking.
+
+Unlike general pet fitness trackers (Whistle, Fi) that focus on activity metrics, PetPulse combines veterinary-grade vital sign monitoring with AI pattern recognition to surface clinically meaningful health changes — the kind a vet would want to know about.
+
+The competitive alternatives are:
+  - Whistle/Fi: Activity and GPS trackers. They tell you how far your dog walked, not whether something is wrong.
+  - Vet telehealth (Pawp, Airvet): Reactive — you call when you already suspect a problem. No continuous monitoring.
+  - Pet insurance: Financial backstop, not early detection.
+
+PetPulse occupies the gap between "my dog seems fine" and "we caught it early." The product's fundamental bet is that continuous passive monitoring catches problems days to weeks before behavioral changes become obvious to owners.
+
+Key differentiator: We are NOT a replacement for veterinary care. We are the early warning system that makes vet visits more productive by surfacing data patterns before symptoms are visible. Every communication reinforces: "PetPulse helps your vet help your pet."
+
+Target: Dog owners aged 30-55 who spend $100+/month on pet care and have had at least one scare (emergency vet visit, unexpected diagnosis). They are not price-sensitive on pet health but are time-poor and anxiety-prone about their pet's wellbeing.
+
+NOT targeting: Cat owners (V2), budget pet owners, breeders/professional handlers, people who want a GPS tracker.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== CRITIQUE NOTES ===== -->
+  <div style="max-width: 900px; margin: 3rem auto 0; padding: 0 1rem 2rem;">
+    <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.5rem;">
+      <h2 class="font-display text-lg text-text-primary mb-3" style="letter-spacing: -0.02em;">Implementation Critique</h2>
+      <p class="text-text-secondary text-sm mb-3">
+        Comparing actual implementation (<code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">page.tsx</code>) against the design doc spec:
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Per-card Generate and Edit buttons</p>
+              <p class="text-text-secondary text-xs mt-1">Design doc specifies "Buttons: Generate, Edit, View" per card. Implementation only has "View". No way to generate a single document or enter the editor from the panel.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Per-card Retry button on error</p>
+              <p class="text-text-secondary text-xs mt-1">Design doc specifies individual Retry buttons on failed cards during partial generation failure. Implementation shows "error" text label but no recovery action.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">No timestamp display</p>
+              <p class="text-text-secondary text-xs mt-1">Design doc shows "Generated timestamp" and "Last edited timestamp" per card. Implementation has the data (<code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">generatedAt</code>, <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">editedAt</code>) but only surfaces editedAt as a boolean "edited" badge. No dates visible.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">"Ready" vs "Empty" not visually distinct</p>
+              <p class="text-text-secondary text-xs mt-1">Both un-generated states look identical — no visual indicator that a card <em>can</em> generate vs <em>cannot</em>. The "Requires: X" hint only appears when upstream is missing, but the "ready to generate" state has no affordance. This matters less without per-card Generate buttons, but if those are added, the distinction becomes important.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Dependency logic matches design doc</p>
+              <p class="text-text-secondary text-xs mt-1"><code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">canGenerate()</code> correctly implements the creation hierarchy: Strategy is always ready, Positioning needs Strategy, items 3-6 need Positioning, Social Media also needs Brand Voice, Design Principles needs both Strategy and Positioning.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Polling pattern correct</p>
+              <p class="text-text-secondary text-xs mt-1">3-second polling interval when <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">progress.status === 'running'</code>, stops when generation completes. Matches the existing progress polling conventions.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-doc" style="border-color: rgba(96,165,250,0.3);">
+          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span class="text-color-info text-xs font-semibold mt-0.5">NOTE</span>
+            <div>
+              <p class="text-text-primary text-sm font-medium">Inline styles instead of design system tokens</p>
+              <p class="text-text-secondary text-xs mt-1">Implementation uses inline <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">style={{}}</code> with CSS variable references. This works but bypasses the Tailwind utility class conventions used elsewhere in the codebase. Not a functional problem, but inconsistent with the rest of the app's styling approach.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
