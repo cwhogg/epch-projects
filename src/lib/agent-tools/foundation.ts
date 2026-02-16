@@ -117,7 +117,10 @@ Ground every claim in the strategy document. Don't invent new positioning — de
   return prompt;
 }
 
-export function createFoundationTools(ideaId: string): ToolDefinition[] {
+export function createFoundationTools(
+  ideaId: string,
+  onDocProgress?: (docType: FoundationDocType, status: 'running' | 'complete' | 'error') => void,
+): ToolDefinition[] {
   return [
     {
       name: 'load_foundation_docs',
@@ -191,7 +194,7 @@ export function createFoundationTools(ideaId: string): ToolDefinition[] {
         const docType = input.docType as FoundationDocType;
         const strategicInputs = input.strategicInputs as { differentiation?: string; deliberateTradeoffs?: string; antiTarget?: string } | undefined;
 
-        // Check upstream dependencies
+        // Check upstream dependencies BEFORE signaling 'running'
         const upstreamTypes = DOC_UPSTREAM[docType];
         const upstreamDocs: Record<string, string> = {};
 
@@ -203,78 +206,87 @@ export function createFoundationTools(ideaId: string): ToolDefinition[] {
           upstreamDocs[upType] = doc.content;
         }
 
-        // Build idea context
-        const ctx = await buildContentContext(ideaId);
-        if (!ctx) {
-          return { error: 'No analysis found for this idea. Run analysis first.' };
-        }
+        // Validation passed — NOW signal 'running'
+        onDocProgress?.(docType, 'running');
 
-        let ideaContext = `Name: ${ctx.ideaName}\nDescription: ${ctx.ideaDescription}\nTarget User: ${ctx.targetUser}\nProblem: ${ctx.problemSolved}`;
-        if (ctx.competitors) {
-          ideaContext += `\n\nCompetitors:\n${ctx.competitors}`;
-        }
-        if (ctx.topKeywords.length > 0) {
-          ideaContext += `\n\nTop Keywords:\n${ctx.topKeywords.slice(0, 10).map(k => `- ${k.keyword} (${k.intentType}, competition: ${k.estimatedCompetitiveness})`).join('\n')}`;
-        }
-
-        // Add strategic inputs for strategy doc
-        if (docType === 'strategy' && strategicInputs) {
-          if (strategicInputs.differentiation) {
-            ideaContext += `\n\nDIFFERENTIATION (from user): ${strategicInputs.differentiation}`;
+        try {
+          // Build idea context
+          const ctx = await buildContentContext(ideaId);
+          if (!ctx) {
+            return { error: 'No analysis found for this idea. Run analysis first.' };
           }
-          if (strategicInputs.deliberateTradeoffs) {
-            ideaContext += `\nDELIBERATE TRADEOFFS (from user): ${strategicInputs.deliberateTradeoffs}`;
+
+          let ideaContext = `Name: ${ctx.ideaName}\nDescription: ${ctx.ideaDescription}\nTarget User: ${ctx.targetUser}\nProblem: ${ctx.problemSolved}`;
+          if (ctx.competitors) {
+            ideaContext += `\n\nCompetitors:\n${ctx.competitors}`;
           }
-          if (strategicInputs.antiTarget) {
-            ideaContext += `\nNOT TARGETING (from user): ${strategicInputs.antiTarget}`;
+          if (ctx.topKeywords.length > 0) {
+            ideaContext += `\n\nTop Keywords:\n${ctx.topKeywords.slice(0, 10).map(k => `- ${k.keyword} (${k.intentType}, competition: ${k.estimatedCompetitiveness})`).join('\n')}`;
           }
+
+          // Add strategic inputs for strategy doc
+          if (docType === 'strategy' && strategicInputs) {
+            if (strategicInputs.differentiation) {
+              ideaContext += `\n\nDIFFERENTIATION (from user): ${strategicInputs.differentiation}`;
+            }
+            if (strategicInputs.deliberateTradeoffs) {
+              ideaContext += `\nDELIBERATE TRADEOFFS (from user): ${strategicInputs.deliberateTradeoffs}`;
+            }
+            if (strategicInputs.antiTarget) {
+              ideaContext += `\nNOT TARGETING (from user): ${strategicInputs.antiTarget}`;
+            }
+          }
+
+          // Load design seed for design-principles
+          let designSeed: string | undefined;
+          if (docType === 'design-principles') {
+            designSeed = designPrinciplesSeed;
+          }
+
+          // Build prompt and call Claude
+          const userPrompt = buildGenerationPrompt(docType, ideaContext, upstreamDocs, designSeed);
+          const advisorId = DOC_ADVISOR_MAP[docType];
+          const systemPrompt = getAdvisorSystemPrompt(advisorId);
+
+          const response = await getAnthropic().messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userPrompt }],
+          });
+
+          const content = response.content[0].type === 'text' ? response.content[0].text : '';
+
+          // Check for existing doc to determine version
+          const existing = await getFoundationDoc(ideaId, docType);
+          const version = existing ? existing.version + 1 : 1;
+
+          const doc: FoundationDocument = {
+            id: docType,
+            ideaId,
+            type: docType,
+            content,
+            advisorId,
+            generatedAt: new Date().toISOString(),
+            editedAt: null,
+            version,
+          };
+
+          await saveFoundationDoc(ideaId, doc);
+          onDocProgress?.(docType, 'complete');
+
+          return {
+            success: true,
+            docType,
+            advisorId,
+            version,
+            contentLength: content.length,
+            content,
+          };
+        } catch (err) {
+          onDocProgress?.(docType, 'error');
+          throw err;
         }
-
-        // Load design seed for design-principles
-        let designSeed: string | undefined;
-        if (docType === 'design-principles') {
-          designSeed = designPrinciplesSeed;
-        }
-
-        // Build prompt and call Claude
-        const userPrompt = buildGenerationPrompt(docType, ideaContext, upstreamDocs, designSeed);
-        const advisorId = DOC_ADVISOR_MAP[docType];
-        const systemPrompt = getAdvisorSystemPrompt(advisorId);
-
-        const response = await getAnthropic().messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }],
-        });
-
-        const content = response.content[0].type === 'text' ? response.content[0].text : '';
-
-        // Check for existing doc to determine version
-        const existing = await getFoundationDoc(ideaId, docType);
-        const version = existing ? existing.version + 1 : 1;
-
-        const doc: FoundationDocument = {
-          id: docType,
-          ideaId,
-          type: docType,
-          content,
-          advisorId,
-          generatedAt: new Date().toISOString(),
-          editedAt: null,
-          version,
-        };
-
-        await saveFoundationDoc(ideaId, doc);
-
-        return {
-          success: true,
-          docType,
-          advisorId,
-          version,
-          contentLength: content.length,
-          content,
-        };
       },
     },
 
