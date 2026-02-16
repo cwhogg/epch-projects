@@ -224,7 +224,7 @@ git commit -m "feat: wire per-doc progress callback into generate_foundation_doc
 
 ---
 
-## Task 3: Connect progress callback in foundation agent
+## ✅ Task 3: Connect progress callback in foundation agent
 
 **Files:**
 - Modify: `src/lib/foundation-agent.ts:72-100`
@@ -319,7 +319,7 @@ git commit -m "feat: wire per-doc progress updates through foundation agent"
 
 ---
 
-## Task 4: Add `docType` parameter to POST API route for per-card generation
+## ✅ Task 4: Add `docType` parameter to POST API route for per-card generation
 
 **Files:**
 - Modify: `src/app/api/foundation/[ideaId]/route.ts:9-63`
