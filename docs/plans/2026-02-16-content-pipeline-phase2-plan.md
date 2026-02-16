@@ -213,7 +213,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 4: Add Shirin Oreizy to advisor system
+### ✅ Task 4: Add Shirin Oreizy to advisor system
 
 **Files:**
 - Create: `src/lib/advisors/prompts/shirin-oreizy.ts`
@@ -384,7 +384,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 5: Create content-recipes.ts with recipe definitions
+### ✅ Task 5: Create content-recipes.ts with recipe definitions
 
 **Files:**
 - Create: `src/lib/content-recipes.ts`
@@ -523,7 +523,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 6: TDD — Tests for selectCritics
+### ✅ Task 6: TDD — Tests for selectCritics
 
 **Files:**
 - Create: `src/lib/__tests__/content-recipes.test.ts`
@@ -711,7 +711,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 7: TDD — Editor decision rubric + tests
+### ✅ Task 7: TDD — Editor decision rubric + tests
 
 **Files:**
 - Create: `src/lib/editor-decision.ts`
@@ -931,7 +931,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 8: Create critique tools — all six tools
+### ✅ Task 8: Create critique tools — all six tools
 
 **Files:**
 - Create: `src/lib/agent-tools/critique.ts`
@@ -1489,7 +1489,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 9: Tests for critique tools
+### ✅ Task 9: Tests for critique tools
 
 **Files:**
 - Create: `src/lib/__tests__/critique-tools.test.ts`
@@ -1905,7 +1905,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 10: Make BrandIdentity.landingPage and seoDescription optional
+### ✅ Task 10: Make BrandIdentity.landingPage and seoDescription optional
 
 > **Ordering:** Tasks 10, 11, and 12 all modify `src/lib/agent-tools/website.ts`. Execute them in order (10 → 11 → 12) and resolve merge conflicts if any arise.
 
@@ -2056,7 +2056,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 11: Add visualOnly mode to design_brand prompt + update tool
+### ✅ Task 11: Add visualOnly mode to design_brand prompt + update tool
 
 > **Depends on:** Task 10 (which also modifies `website.ts`). Execute after Task 10.
 
@@ -2159,7 +2159,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 12: Update assembleAllFiles to accept approved copy
+### ✅ Task 12: Update assembleAllFiles to accept approved copy
 
 > **Depends on:** Tasks 10 and 11 (which also modify `website.ts`). Execute after Task 11.
 
@@ -2260,7 +2260,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 13: Create content-critique-agent.ts
+### ✅ Task 13: Create content-critique-agent.ts
 
 **Files:**
 - Create: `src/lib/content-critique-agent.ts`
@@ -2456,7 +2456,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 14: Create API route for content pipeline
+### ✅ Task 14: Create API route for content pipeline
 
 **Files:**
 - Create: `src/app/api/content-pipeline/[ideaId]/route.ts`
@@ -2625,7 +2625,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 15: Integration test for critique pipeline
+### ✅ Task 15: Integration test for critique pipeline
 
 **Files:**
 - Create: `src/lib/__tests__/critique-pipeline.integration.test.ts`
@@ -3028,7 +3028,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 16: Verify build and run full test suite
+### ✅ Task 16: Verify build and run full test suite
 
 **Files:** None — verification only.
 
