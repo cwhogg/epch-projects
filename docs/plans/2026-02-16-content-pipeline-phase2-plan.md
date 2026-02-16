@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Install p-limit dependency
+### ✅ Task 1: Install p-limit dependency
 
 **Files:**
 - Modify: `package.json`
@@ -48,7 +48,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 2: Add pipeline progress and critique types
+### ✅ Task 2: Add pipeline progress and critique types
 
 **Files:**
 - Modify: `src/types/index.ts` (append after line 400, the closing `}` of `StrategicInputs`)
@@ -128,7 +128,7 @@ git -C /Users/ericpage/software/epch-projects/.worktrees/feature/content-pipelin
 
 ---
 
-### Task 3: Enrich AdvisorEntry interface with evaluation metadata
+### ✅ Task 3: Enrich AdvisorEntry interface with evaluation metadata
 
 **Files:**
 - Modify: `src/lib/advisors/registry.ts`
