@@ -446,7 +446,7 @@ export const recipes: Record<string, ContentRecipe> = {
   'social-post': {
     contentType: 'social-post',
     authorAdvisor: 'copywriter',
-    authorContextDocs: ['positioning', 'brand-voice'],
+    authorContextDocs: ['positioning', 'brand-voice', 'social-media-strategy'],
     evaluationNeeds:
       'This is a social media post. Needs review for: positioning consistency ' +
       'and hook effectiveness.',
@@ -1991,7 +1991,21 @@ The type change will cause errors in files that access `brand.landingPage.heroHe
    heroHeadline: brand.landingPage?.heroHeadline,
    ```
 
-2. `evaluate_brand` execute (around line 388): Guard `brand.landingPage` accesses. Wrap all code that accesses `brand.landingPage.heroHeadline`, `brand.landingPage.heroSubheadline`, and `brand.landingPage.valueProps` in:
+2. `evaluate_brand` execute (around line 383): Guard `brand.seoDescription` for the `checkMetaDescription` call. Replace:
+
+   ```typescript
+   evals.push(checkMetaDescription(brand.seoDescription, primaryKeyword));
+   ```
+
+   With:
+
+   ```typescript
+   if (brand.seoDescription) {
+     evals.push(checkMetaDescription(brand.seoDescription, primaryKeyword));
+   }
+   ```
+
+3. `evaluate_brand` execute (around line 388): Guard `brand.landingPage` accesses. Wrap all code that accesses `brand.landingPage.heroHeadline`, `brand.landingPage.heroSubheadline`, and `brand.landingPage.valueProps` in:
 
    ```typescript
    if (brand.landingPage) {
