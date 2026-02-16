@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desktop Nav - 7 Tabs with Foundation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#0d0d0f',
+            'bg-secondary': '#16161a',
+            'bg-card': '#1c1c21',
+            'bg-elevated': '#232329',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            body: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            'sm': '0.5rem',
+            'md': '0.75rem',
+            'lg': '1rem',
+            'xl': '1.5rem',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-default: rgba(255,255,255,0.1);
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255,107,91,0.15);
+    }
+
+    body {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: var(--text-primary);
+    }
+
+    .nav-blur {
+      background: rgba(13, 13, 15, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-link {
+      padding: 8px 12px;
+      border-radius: 0.5rem;
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-link.active {
+      color: var(--accent-coral);
+    }
+
+    .annotation {
+      position: absolute;
+      font-size: 11px;
+      color: var(--accent-coral);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .annotation-line {
+      position: absolute;
+      background: var(--accent-coral);
+      opacity: 0.4;
+    }
+
+    .callout-box {
+      border: 1px dashed rgba(255, 107, 91, 0.3);
+      border-radius: 0.75rem;
+      padding: 16px 20px;
+      background: rgba(255, 107, 91, 0.05);
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      opacity: 0.02;
+      z-index: 100;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+  </style>
+</head>
+<body>
+  <!-- Title -->
+  <div style="padding: 40px 24px 24px;">
+    <p style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Mockup</p>
+    <h1 style="font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.02em;">
+      Desktop Navigation &mdash; 7 Tabs
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+      Foundation tab inserted between Analysis and Website, following pipeline order.
+    </p>
+  </div>
+
+  <!-- Scenario 1: Foundation tab active -->
+  <div style="padding: 0 24px; margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Scenario 1</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">User is on <code style="color: var(--accent-coral); background: var(--accent-coral-soft); padding: 1px 6px; border-radius: 4px; font-size: 12px;">/foundation</code> &mdash; Foundation tab highlighted in coral</p>
+    </div>
+
+    <nav class="nav-blur" style="position: relative; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <!-- Logo -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <!-- Nav links -->
+        <div style="display: flex; align-items: center; gap: 2px;">
+          <a class="nav-link" href="#">Ideation</a>
+          <a class="nav-link" href="#">Analysis</a>
+          <a class="nav-link active" href="#">Foundation</a>
+          <a class="nav-link" href="#">Website</a>
+          <a class="nav-link" href="#">Content</a>
+          <a class="nav-link" href="#">Testing</a>
+          <a class="nav-link" href="#">Optimization</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Scenario 2: Analysis tab active -->
+  <div style="padding: 0 24px; margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Scenario 2</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">User is on <code style="color: var(--accent-coral); background: var(--accent-coral-soft); padding: 1px 6px; border-radius: 4px; font-size: 12px;">/analysis</code> &mdash; Analysis tab highlighted, Foundation is not</p>
+    </div>
+
+    <nav class="nav-blur" style="position: relative; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px;">
+          <a class="nav-link" href="#">Ideation</a>
+          <a class="nav-link active" href="#">Analysis</a>
+          <a class="nav-link" href="#">Foundation</a>
+          <a class="nav-link" href="#">Website</a>
+          <a class="nav-link" href="#">Content</a>
+          <a class="nav-link" href="#">Testing</a>
+          <a class="nav-link" href="#">Optimization</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Scenario 3: Foundation detail page (via /analyses/[id]/foundation) -->
+  <div style="padding: 0 24px; margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Scenario 3</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">User is on <code style="color: var(--accent-coral); background: var(--accent-coral-soft); padding: 1px 6px; border-radius: 4px; font-size: 12px;">/analyses/abc123/foundation</code> &mdash; Foundation tab highlighted (path contains "/foundation")</p>
+    </div>
+
+    <nav class="nav-blur" style="position: relative; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px;">
+          <a class="nav-link" href="#">Ideation</a>
+          <a class="nav-link" href="#">Analysis</a>
+          <a class="nav-link active" href="#">Foundation</a>
+          <a class="nav-link" href="#">Website</a>
+          <a class="nav-link" href="#">Content</a>
+          <a class="nav-link" href="#">Testing</a>
+          <a class="nav-link" href="#">Optimization</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Spacing comparison -->
+  <div style="padding: 0 24px; margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Comparison</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">Before (6 tabs) vs After (7 tabs) &mdash; gap reduced from <code style="color: var(--text-primary); background: var(--bg-elevated); padding: 1px 6px; border-radius: 4px; font-size: 12px;">gap-1</code> to <code style="color: var(--text-primary); background: var(--bg-elevated); padding: 1px 6px; border-radius: 4px; font-size: 12px;">gap-0.5</code> (2px). All labels still fit comfortably at 1280px.</p>
+    </div>
+
+    <!-- Before -->
+    <p style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Before &mdash; 6 tabs</p>
+    <nav class="nav-blur" style="position: relative; border-radius: 12px; overflow: hidden; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <a class="nav-link" href="#">Ideation</a>
+          <a class="nav-link active" href="#">Analysis</a>
+          <a class="nav-link" href="#">Website</a>
+          <a class="nav-link" href="#">Content</a>
+          <a class="nav-link" href="#">Testing</a>
+          <a class="nav-link" href="#">Optimization</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- After -->
+    <p style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">After &mdash; 7 tabs</p>
+    <nav class="nav-blur" style="position: relative; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px;">
+          <a class="nav-link" href="#">Ideation</a>
+          <a class="nav-link active" href="#">Analysis</a>
+          <a class="nav-link" href="#" style="position: relative;">
+            Foundation
+            <span style="position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent-coral);"></span>
+          </a>
+          <a class="nav-link" href="#">Website</a>
+          <a class="nav-link" href="#">Content</a>
+          <a class="nav-link" href="#">Testing</a>
+          <a class="nav-link" href="#">Optimization</a>
+        </div>
+      </div>
+    </nav>
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px; padding-left: 4px;">
+      <span style="color: var(--accent-coral);">&bull;</span> Dot indicates the new tab in the comparison.
+    </p>
+  </div>
+
+  <!-- Interactive demo -->
+  <div style="padding: 0 24px; margin-bottom: 60px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Interactive</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">Click any tab to see the active state move. Hover states are live.</p>
+    </div>
+
+    <nav class="nav-blur" id="interactive-nav" style="position: relative; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+          </div>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px;">
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Ideation</a>
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Analysis</a>
+          <a class="nav-link interactive-tab active" href="#" onclick="setActive(this); return false;">Foundation</a>
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Website</a>
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Content</a>
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Testing</a>
+          <a class="nav-link interactive-tab" href="#" onclick="setActive(this); return false;">Optimization</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    function setActive(el) {
+      document.querySelectorAll('.interactive-tab').forEach(tab => tab.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foundation Aggregate Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#0d0d0f',
+            'bg-secondary': '#16161a',
+            'bg-card': '#1c1c21',
+            'bg-elevated': '#232329',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            body: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            'card': '1rem',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-default: rgba(255,255,255,0.1);
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255,107,91,0.15);
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+    }
+
+    body {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: var(--text-primary);
+      padding: 0 24px 80px;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      opacity: 0.02;
+      z-index: 100;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .nav-blur {
+      background: rgba(13, 13, 15, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-link {
+      padding: 8px 12px;
+      border-radius: 0.5rem;
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-link.active {
+      color: var(--accent-coral);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card:hover {
+      border-color: var(--border-default);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,107,91,0.1);
+      transform: translateY(-3px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b5b, #ff8f6b);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 0.75rem;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 12px rgba(255,107,91,0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 20px rgba(255,107,91,0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+      padding: 8px 16px;
+      border-radius: 0.75rem;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card);
+      border-color: rgba(255,255,255,0.15);
+      color: var(--text-primary);
+    }
+
+    .dot-complete {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      flex-shrink: 0;
+    }
+
+    .dot-pending {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      opacity: 0.35;
+      flex-shrink: 0;
+    }
+
+    .doc-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    .doc-tag.complete {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent-emerald);
+    }
+
+    .doc-tag.pending {
+      background: rgba(113, 113, 122, 0.12);
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--bg-elevated);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s ease forwards;
+      opacity: 0;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+  </style>
+</head>
+<body>
+  <!-- Sticky Nav -->
+  <nav class="nav-blur" style="position: sticky; top: 0; z-index: 50; margin: 0 -24px; padding: 0 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; height: 56px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #ff6b5b, #ff8f6b); display: flex; align-items: center; justify-content: center;">
+          <span style="color: white; font-family: Fraunces; font-weight: 600; font-size: 14px;">E</span>
+        </div>
+        <span style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 16px; color: var(--text-primary); letter-spacing: -0.02em;">EPCH</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 2px;">
+        <a class="nav-link" href="#">Ideation</a>
+        <a class="nav-link" href="#">Analysis</a>
+        <a class="nav-link active" href="#">Foundation</a>
+        <a class="nav-link" href="#">Website</a>
+        <a class="nav-link" href="#">Content</a>
+        <a class="nav-link" href="#">Testing</a>
+        <a class="nav-link" href="#">Optimization</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div style="margin-top: 32px; display: flex; flex-direction: column; gap: 32px;">
+
+    <!-- Header -->
+    <header class="animate-slide-up stagger-1" style="position: relative;">
+      <!-- Decorative glow - using a warm neutral since Foundation is a new stage -->
+      <div style="position: absolute; top: -80px; right: -80px; width: 256px; height: 256px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 107, 91, 0.1) 0%, transparent 70%); filter: blur(40px);"></div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h1 style="font-family: Fraunces, Georgia, serif; font-size: 28px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.02em; position: relative;">
+            Foundation Documents
+          </h1>
+          <p style="margin-top: 8px; font-size: 15px; color: var(--text-secondary); position: relative;">
+            Strategic foundation docs across all analyzed ideas.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Card: SecondLook - 4/6 docs (partial) -->
+    <div class="card animate-slide-up stagger-2" style="padding: 24px;">
+      <div style="display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <h3 style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 18px; color: var(--text-primary); letter-spacing: -0.02em;">SecondLook</h3>
+            <span style="font-size: 13px; font-weight: 600; color: var(--accent-coral); font-variant-numeric: tabular-nums;">4/6</span>
+            <span style="font-size: 11px; color: var(--text-muted);">documents</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <a class="btn-primary" href="#">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Generate Missing
+          </a>
+          <a class="btn-secondary" href="#">
+            View Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-bg" style="margin-bottom: 16px;">
+        <div class="progress-bar-fill" style="width: 66.6%; background: linear-gradient(90deg, var(--accent-emerald), #34d399);"></div>
+      </div>
+
+      <!-- Status dots row -->
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+      </div>
+
+      <!-- Document tags -->
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="doc-tag complete">Strategy</span>
+        <span class="doc-tag complete">Positioning</span>
+        <span class="doc-tag complete">Brand Voice</span>
+        <span class="doc-tag complete">Design Principles</span>
+        <span class="doc-tag pending">SEO Strategy</span>
+        <span class="doc-tag pending">Social Media Strategy</span>
+      </div>
+    </div>
+
+    <!-- Card: N of One - 0/6 docs (empty) -->
+    <div class="card animate-slide-up stagger-3" style="padding: 24px;">
+      <div style="display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <h3 style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 18px; color: var(--text-primary); letter-spacing: -0.02em;">N of One</h3>
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums;">0/6</span>
+            <span style="font-size: 11px; color: var(--text-muted);">documents</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <a class="btn-primary" href="#">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Generate All
+          </a>
+          <a class="btn-secondary" href="#">
+            View Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Progress bar (empty) -->
+      <div class="progress-bar-bg" style="margin-bottom: 16px;">
+        <div class="progress-bar-fill" style="width: 0%;"></div>
+      </div>
+
+      <!-- Status dots row -->
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+        <span class="dot-pending"></span>
+      </div>
+
+      <!-- Empty state text -->
+      <p style="font-size: 13px; color: var(--text-muted);">No documents generated</p>
+    </div>
+
+    <!-- Card: ThirdIdea - 6/6 docs (complete) -->
+    <div class="card animate-slide-up stagger-4" style="padding: 24px;">
+      <div style="display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <h3 style="font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 18px; color: var(--text-primary); letter-spacing: -0.02em;">FocusFrame</h3>
+            <span style="font-size: 13px; font-weight: 600; color: var(--accent-emerald); font-variant-numeric: tabular-nums;">6/6</span>
+            <span style="font-size: 11px; color: var(--text-muted);">documents</span>
+            <span style="font-size: 10px; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.12); color: var(--accent-emerald); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Complete</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <a class="btn-secondary" href="#">
+            View Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Progress bar (full) -->
+      <div class="progress-bar-bg" style="margin-bottom: 16px;">
+        <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--accent-emerald), #34d399);"></div>
+      </div>
+
+      <!-- Status dots row -->
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+        <span class="dot-complete"></span>
+      </div>
+
+      <!-- Document tags -->
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="doc-tag complete">Strategy</span>
+        <span class="doc-tag complete">Positioning</span>
+        <span class="doc-tag complete">Brand Voice</span>
+        <span class="doc-tag complete">Design Principles</span>
+        <span class="doc-tag complete">SEO Strategy</span>
+        <span class="doc-tag complete">Social Media Strategy</span>
+      </div>
+    </div>
+
+    <!-- Empty State variant (shown when no analyses exist) -->
+    <div class="animate-slide-up stagger-5" style="margin-top: 16px;">
+      <div style="border: 1px dashed rgba(255, 107, 91, 0.3); border-radius: 0.75rem; padding: 12px 16px; background: rgba(255, 107, 91, 0.05); margin-bottom: 16px;">
+        <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Empty State</p>
+        <p style="font-size: 13px; color: var(--text-secondary);">Shown when no analyses exist yet. Guides user to create their first analysis.</p>
+      </div>
+
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 1rem; padding: 48px 32px; text-align: center;">
+        <div style="width: 64px; height: 64px; margin: 0 auto 24px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: var(--accent-coral-soft);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="4" rx="1"/>
+            <rect x="4" y="12" width="16" height="4" rx="1"/>
+            <rect x="6" y="18" width="12" height="4" rx="1"/>
+          </svg>
+        </div>
+        <h2 style="font-family: Fraunces, Georgia, serif; font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">
+          No foundation documents yet
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">
+          Run an analysis first, then generate foundation documents from the analysis detail page.
+        </p>
+        <a class="btn-primary" href="#" style="display: inline-flex;">
+          Go to Analysis
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

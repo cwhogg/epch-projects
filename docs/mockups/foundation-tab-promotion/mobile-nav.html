@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Bottom Nav - 7 Tabs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            body: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-default: rgba(255,255,255,0.1);
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255,107,91,0.15);
+    }
+
+    body {
+      max-width: 375px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: var(--text-primary);
+      position: relative;
+    }
+
+    .mobile-nav {
+      background: rgba(13, 13, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 56px;
+      text-decoration: none;
+      transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .tab-item:hover {
+      color: var(--text-secondary);
+    }
+
+    .tab-item.active {
+      color: var(--accent-coral);
+    }
+
+    .tab-label {
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .callout-box {
+      border: 1px dashed rgba(255, 107, 91, 0.3);
+      border-radius: 0.75rem;
+      padding: 12px 16px;
+      background: rgba(255, 107, 91, 0.05);
+    }
+
+    .phone-frame {
+      border: 2px solid var(--border-default);
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-primary);
+    }
+
+    .phone-notch {
+      width: 120px;
+      height: 28px;
+      background: #000;
+      border-radius: 0 0 16px 16px;
+      margin: 0 auto;
+    }
+
+    /* Noise overlay */
+    .phone-frame::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      opacity: 0.02;
+      z-index: 10;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .width-marker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .width-marker .line {
+      flex: 1;
+      height: 1px;
+      background: var(--border-default);
+    }
+  </style>
+</head>
+<body style="max-width: 800px; padding: 40px 24px;">
+  <!-- Title -->
+  <div style="margin-bottom: 32px;">
+    <p style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Mockup</p>
+    <h1 style="font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.02em;">
+      Mobile Bottom Nav &mdash; 7 Tabs
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+      All 7 pipeline stages in the fixed bottom tab bar at 375px width. Each tab gets ~53px.
+    </p>
+  </div>
+
+  <!-- Phone mockup: Foundation active -->
+  <div style="margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Foundation Active</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">Foundation tab highlighted. Uses a layers/document icon. Label "Foundation" fits at 10px.</p>
+    </div>
+
+    <div style="display: flex; justify-content: center;">
+      <div class="phone-frame" style="width: 375px; height: 520px;">
+        <div class="phone-notch"></div>
+
+        <!-- Simulated page content -->
+        <div style="padding: 20px 16px; height: 400px;">
+          <h2 style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.02em;">
+            Foundation Documents
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+            Strategic docs across all analyzed ideas.
+          </p>
+
+          <!-- Placeholder cards -->
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: Fraunces; font-weight: 500; font-size: 15px; color: var(--text-primary);">SecondLook</span>
+                <span style="font-size: 12px; color: var(--accent-coral);">4/6</span>
+              </div>
+              <div style="display: flex; gap: 4px; margin-top: 10px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+              </div>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: Fraunces; font-weight: 500; font-size: 15px; color: var(--text-primary);">N of One</span>
+                <span style="font-size: 12px; color: var(--text-muted);">0/6</span>
+              </div>
+              <div style="display: flex; gap: 4px; margin-top: 10px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); opacity: 0.4;"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom nav bar -->
+        <div class="mobile-nav" style="position: absolute; bottom: 0; left: 0; right: 0;">
+          <div style="display: flex; align-items: center; justify-content: space-around; height: 56px;">
+            <!-- Ideas -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+              </svg>
+              <span class="tab-label">Ideas</span>
+            </a>
+            <!-- Analysis -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span class="tab-label">Analysis</span>
+            </a>
+            <!-- Foundation (active) -->
+            <a class="tab-item active" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="4" rx="1"/>
+                <rect x="4" y="12" width="16" height="4" rx="1"/>
+                <rect x="6" y="18" width="12" height="4" rx="1"/>
+              </svg>
+              <span class="tab-label">Foundation</span>
+            </a>
+            <!-- Website -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span class="tab-label">Website</span>
+            </a>
+            <!-- Content -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span class="tab-label">Content</span>
+            </a>
+            <!-- Testing -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
+              </svg>
+              <span class="tab-label">Testing</span>
+            </a>
+            <!-- Optimize -->
+            <a class="tab-item" onclick="setActive(this); return false;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+              </svg>
+              <span class="tab-label">Optimize</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Width annotation -->
+    <div style="display: flex; justify-content: center; margin-top: 12px;">
+      <div class="width-marker" style="width: 375px;">
+        <span class="line"></span>
+        <span>375px &mdash; ~53px per tab</span>
+        <span class="line"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Before/After comparison side by side -->
+  <div style="margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Before / After</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">6 tabs vs 7 tabs. Labels remain readable. Icon is the primary touch target.</p>
+    </div>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+      <!-- Before: 6 tabs -->
+      <div>
+        <p style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; text-align: center;">Before &mdash; 6 tabs</p>
+        <div style="width: 375px; border: 2px solid var(--border-default); border-radius: 16px; overflow: hidden;">
+          <div class="mobile-nav">
+            <div style="display: flex; align-items: center; justify-content: space-around; height: 56px;">
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+                <span class="tab-label">Ideas</span>
+              </div>
+              <div class="tab-item active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="tab-label">Analysis</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span class="tab-label">Website</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span class="tab-label">Content</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                <span class="tab-label">Testing</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <span class="tab-label">Optimize</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 6px;">~62px per tab</p>
+      </div>
+
+      <!-- After: 7 tabs -->
+      <div>
+        <p style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; text-align: center;">After &mdash; 7 tabs</p>
+        <div style="width: 375px; border: 2px solid var(--border-default); border-radius: 16px; overflow: hidden;">
+          <div class="mobile-nav">
+            <div style="display: flex; align-items: center; justify-content: space-around; height: 56px;">
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+                <span class="tab-label">Ideas</span>
+              </div>
+              <div class="tab-item active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="tab-label">Analysis</span>
+              </div>
+              <div class="tab-item" style="color: var(--text-secondary); position: relative;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="6" width="20" height="4" rx="1"/>
+                  <rect x="4" y="12" width="16" height="4" rx="1"/>
+                  <rect x="6" y="18" width="12" height="4" rx="1"/>
+                </svg>
+                <span class="tab-label">Foundation</span>
+                <span style="position: absolute; top: 2px; right: 2px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-coral);"></span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span class="tab-label">Website</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span class="tab-label">Content</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                <span class="tab-label">Testing</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <span class="tab-label">Optimize</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 6px;">~53px per tab &mdash; <span style="color: var(--accent-coral);">&bull;</span> new tab</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Label fit test -->
+  <div style="margin-bottom: 48px;">
+    <div class="callout-box" style="margin-bottom: 16px;">
+      <p style="font-size: 12px; color: var(--accent-coral); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Label Fit Test</p>
+      <p style="font-size: 13px; color: var(--text-secondary);">Character counts at 10px. "Foundation" (10 chars) is the longest label but still fits in ~53px at this font size. "Optimize" is 8 chars for comparison.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 400px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Ideas</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 30px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">5 chars</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Analysis</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 48px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">8 chars</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--accent-coral); width: 80px;">Foundation</span>
+        <div style="height: 6px; background: var(--accent-coral-soft); border-radius: 3px; width: 60px;"></div>
+        <span style="font-size: 11px; color: var(--accent-coral);">10 chars (longest)</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Website</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 42px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">7 chars</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Content</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 42px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">7 chars</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Testing</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 42px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">7 chars</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 500; color: var(--text-muted); width: 80px;">Optimize</span>
+        <div style="height: 6px; background: var(--bg-elevated); border-radius: 3px; width: 48px;"></div>
+        <span style="font-size: 11px; color: var(--text-muted);">8 chars</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setActive(el) {
+      const nav = el.closest('.mobile-nav') || el.closest('[style]').querySelector('.mobile-nav');
+      const items = el.parentElement.querySelectorAll('.tab-item');
+      items.forEach(item => item.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>
