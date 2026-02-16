@@ -572,6 +572,8 @@ import MarkdownContent from '@/components/MarkdownContent';
 export default function CollapsibleAnalysis({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false);
 
+  if (!content) return null;
+
   return (
     <div className="card-static p-5 sm:p-6 animate-slide-up stagger-4">
       <h2 className="font-display text-base mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -804,6 +806,8 @@ git commit -m "feat: add analysis detail page at /analyses/[id]/analysis"
 - Modify: `src/app/analyses/[id]/page.tsx` (complete rewrite)
 
 The existing analysis detail page becomes the project dashboard with pipeline summary cards. All analysis content has been moved to `/analyses/[id]/analysis` in Task 7.
+
+> **Behavior change:** The dashboard header no longer includes "Foundation Docs", "Reanalyze", and "Delete" buttons. Foundation access moves to the Foundation summary card link. Reanalyze/Delete move to the analysis detail page at `/analyses/[id]/analysis`. The "View Site" / "Create Website" button remains in the header.
 
 **Step 1: Rewrite the page**
 
@@ -1686,7 +1690,7 @@ git commit -m "docs: update architecture reference for project-centric navigatio
 
 #### Decision 4: Home page GSC check
 **Chose:** Skip GSC link checks on the home page, show `--` in the Analytics column.
-**Why:** The design doc explicitly acknowledges this trade-off: "Per-project `getAllFoundationDocs` is the only N-call. For < 20 projects (~120 Redis calls total), this is acceptable." Adding GSC link checks would add another N Redis calls. The home page's Analytics column provides minimal value compared to the project dashboard's Performance card, which does show GSC data. The design doc's mockup shows `Active` vs `--` for analytics, but since we can't check GSC links without N+1, we show `--` consistently and let the Performance card on the dashboard tell the full story.
+**Why:** `getAllFoundationDocs` makes 6 serial Redis GET calls per project (one per doc type). For 20 projects that's ~120 Redis calls on the home page load. Adding GSC link checks would add another N calls for marginal UX benefit. The home page's Analytics column provides minimal value compared to the project dashboard's Performance card, which does show GSC data. The design doc's mockup shows `Active` vs `--` for analytics, but since we can't check GSC links without N+1, we show `--` consistently and let the Performance card on the dashboard tell the full story. If foundation doc loading becomes slow, add a `project_summary:{ideaId}` cache key.
 **Alternatives rejected:**
 - Check all GSC links: Adds N+1 Redis calls for marginal UX benefit on the home page.
 - Batch check: No batch GSC link API exists; would need to implement one.
