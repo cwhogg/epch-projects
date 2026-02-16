@@ -72,15 +72,16 @@ The EPCH app does not currently have an advisor persona concept. The VBOA app (`
 ```
 src/lib/advisors/
 ├── prompts/
-│   ├── richard-rumelt.ts       # Strategy advisor — exports prompt string
-│   ├── april-dunford.ts        # Positioning + editor
-│   ├── andy-raskin.ts           # Strategic narrative
-│   ├── shirin-oreizy.ts        # Behavioral science / CRO
-│   ├── copywriter.ts           # New: brand copywriter
-│   ├── seo-expert.ts           # New: SEO specialist
+│   ├── richard-rumelt.ts       # Strategy advisor — exports prompt string (Phase 1)
+│   ├── april-dunford.ts        # Positioning + editor (Phase 1)
+│   ├── copywriter.ts           # Brand copywriter (Phase 1)
+│   ├── seo-expert.ts           # SEO specialist (Phase 1)
+│   ├── andy-raskin.ts           # Strategic narrative (Phase 2 — blog post critic)
+│   ├── shirin-oreizy.ts        # Behavioral science / CRO (Phase 2 — website critic)
 │   └── index.ts                # Re-exports all prompts as a Record<string, string>
 ├── registry.ts                 # Advisor metadata array
-└── prompt-loader.ts            # Simple import-based lookup (no filesystem access)
+├── prompt-loader.ts            # Simple import-based lookup (no filesystem access)
+└── design-seed.ts              # Design principles content as TypeScript string constant (Phase 1)
 ```
 
 **Prompt storage — TypeScript string exports, not filesystem reads.** Using `fs.readFileSync` with `process.cwd()` fails on Vercel serverless functions because the `src/` directory structure is not preserved in the deployed bundle. Different API routes produce different function bundles with potentially different file inclusions, and `process.cwd()` doesn't reliably point to the project root. Rather than debugging `includeFiles` in `vercel.json`, store prompts as TypeScript string constants which are bundled by the compiler:
@@ -424,7 +425,6 @@ After copy is approved, it flows into the existing deployment pipeline: `assembl
 | Critic | April Dunford | Does the post reinforce positioning? On-brand? Right audience? **Context:** Positioning |
 | Critic | SEO Expert (new) | Keyword placement, heading structure, PAA coverage, meta description, internal linking. **Context:** SEO Strategy, keyword data |
 | Critic | Andy Raskin | Compelling narrative arc? Opens with a shift in the world, not a product pitch? **Context:** draft only (narrative is self-evident) |
-| Editor | April Dunford | Quality gate. |
 
 **Foundation docs consumed:** Positioning, Brand Voice, SEO Strategy
 
@@ -438,7 +438,7 @@ Lighter-weight — fewer critics, faster cycle.
 |------|---------|-------|
 | Author | Copywriter (new) | Short-form content matching brand voice and platform conventions. |
 | Critic | SEO Expert / Social advisor | Hashtag strategy, hook effectiveness, CTA clarity. |
-| Editor | April Dunford | Quick pass — on-brand and on-positioning? |
+| Critic | April Dunford | On-brand and on-positioning? **Context:** Positioning, Brand Voice |
 
 **Foundation docs consumed:** Positioning, Brand Voice, Social Media Strategy
 
@@ -459,9 +459,9 @@ Lighter-weight — fewer critics, faster cycle.
 
 2. **SEO Expert** — Technical and content SEO specialist. Keyword optimization, SERP strategy, heading hierarchy, schema markup, internal linking. Evaluates content for search performance. Adds judgment calls beyond what `seo-knowledge.ts` handles deterministically.
 
-### Enable (Existing, Currently Disabled)
+### Port from VBOA (Phase 2)
 
-3. **Shirin Oreizy** — Behavioral science / CRO expert. "Homer vs Spock" framework. Conversion optimization, cognitive friction, working memory limits. Already exists in the VBOA at `va-web-app/src/lib/advisors/prompts/shirin-oreizy.md` (currently disabled). Copy prompt to this codebase's `src/lib/advisors/prompts/shirin-oreizy.md` and add to local registry.
+3. **Shirin Oreizy** — Behavioral science / CRO expert. "Homer vs Spock" framework. Conversion optimization, cognitive friction, working memory limits. Exists in the VBOA codebase at `va-web-app/src/lib/advisors/prompts/shirin-oreizy.md` — does not yet exist in this codebase. Port prompt to `src/lib/advisors/prompts/shirin-oreizy.ts` and add to local registry.
 
 ---
 
@@ -507,7 +507,7 @@ Full persona prompts are reserved for the interactive foundation doc editing cha
 |-------------|------|-----|---------|
 | `foundation:{ideaId}:{docType}` | String (JSON) | None | Foundation document |
 | `foundation_progress:{ideaId}` | String (JSON) | 1hr | Foundation generation progress |
-| `foundation_lock:{ideaId}` | String | 10min | "Generate All" idempotency lock |
+| `foundation_lock:{ideaId}` | String | 10min | "Generate All" idempotency lock *(deferred — see Known Issues)* |
 | `draft:{runId}` | String | 2hr | Current draft for a pipeline run |
 | `critique_round:{runId}:{round}` | String (JSON) | 2hr | Full round data for critique history UI |
 | `pipeline_progress:{runId}` | String (JSON) | 2hr | Structured progress for frontend polling |
@@ -533,42 +533,67 @@ Full persona prompts are reserved for the interactive foundation doc editing cha
 Six cards in creation order, each showing:
 - Document type and version number
 - Primary advisor name
-- Generated timestamp
-- Last edited timestamp (if manually edited — shown as a badge)
+- "edited" badge (if manually edited via conversation)
 - Preview (first 2-3 lines of content)
-- Buttons: Generate, Edit, View
+- Buttons: **Generate** (per card), **View** (expands inline)
+
+Timestamps (`generatedAt`, `editedAt`) are shown only in the **expanded document view** (via View button), not on card summaries.
 
 **Card states:**
-- **Empty** — upstream docs missing. Generate disabled. Shows "Requires: Strategy" hint.
-- **Ready** — upstream docs exist. Generate enabled.
-- **Generated** — content exists. All buttons active.
-- **Manually edited** — shows `editedAt` badge.
+- **Empty** — upstream docs missing. Generate disabled. Shows "Requires: Strategy" hint. Card visually dimmed.
+- **Ready** — upstream docs exist but no content generated. **Generate button enabled.**
+- **Generated** — content exists. Generate button becomes "Regenerate." View button active.
+- **Manually edited** — shows `editedAt` badge. Same buttons as Generated.
 
-**"Generate All" button** at the top runs the full foundation hierarchy: Strategy → Positioning → (Brand Voice, Design Principles, SEO Strategy, Social Media Strategy sequentially within a batch tool). Progress shown inline on each card.
+**Per-card Generate button:** Each card has its own Generate button, gated by `canGenerate()` (disabled when upstream dependencies are missing). The API route accepts an optional `docType` parameter — when provided, only that single document is generated. This enables per-card generation and per-card retry on error without forcing a full "Generate All."
 
-**Idempotency:** "Generate All" acquires a Redis lock (`SETNX foundation_lock:{ideaId} {runId} EX 600`). If the lock exists, the button is disabled with "Generation in progress." The lock is released on completion or expires after 10 minutes.
+**"Generate All" button** at the top runs the full foundation hierarchy: Strategy → Positioning → Brand Voice → Design Principles → SEO Strategy → Social Media Strategy (sequential generation via the orchestrator).
 
-**Error recovery:** If generation fails partway (e.g., Strategy succeeds but SEO Strategy fails), the UI shows per-card status. Each card gets an individual **Retry** button. "Generate All" checks which docs already exist and skips them — so clicking it again only generates missing documents, not re-running everything.
+**Idempotency:** The API route checks `foundation_progress` status for an active run. *(Phase 1 implementation note: a `SETNX` Redis lock was designed but deferred — the progress-check approach is acceptable for 2 users but has a race window. Add the lock if concurrent usage increases.)*
 
-**Foundation batch tool:** Items 3-6 cannot run truly in parallel inside the agent runtime (the runtime processes tool calls sequentially). Instead, a single `generate_foundation_batch` tool handles items 3-6 internally, using `Promise.allSettled` with concurrency limit of 2 (same pattern as critiques, same rate limit concern). This keeps the orchestrator turn count low while achieving partial parallelism inside the tool.
+**Error recovery:** If generation fails partway (e.g., Strategy succeeds but SEO Strategy fails), the UI shows per-card status. Each failed card shows a **Generate** button to retry that single document. "Generate All" also checks which docs already exist and skips them.
 
-### View 2: Foundation Doc Editor
+**Expanded document view:** Clicking "View" expands the card inline to show the full document content, timestamps, and a **"Update via conversation"** link that navigates to the advisor interview/editing chat (View 2). This is the entry point for both first-time guided creation and revisions via conversation.
 
-**Route:** `/analyses/[id]/foundation/[docType]/edit`
+**Generation mode (per card):** Each document supports two creation paths:
+1. **Auto-generate** — Click "Generate." The assigned advisor generates the document in one pass using upstream docs and research data as context. Fast, fully autonomous.
+2. **Interview mode** — Click "Update via conversation" (in expanded view or on empty cards as a prominent option). The assigned advisor interviews the user through their framework to co-create the document. For Strategy, Richard Rumelt walks through Diagnosis → Guiding Policy → Coherent Actions. For Positioning, April Dunford walks through Competitive Alternatives → Unique Attributes → Value → Target Customer → Market Category. The resulting document is richer because it captures the user's domain knowledge rather than inferring it.
 
-**Note: This is new infrastructure.** The EPCH codebase has zero streaming chat infrastructure — no `ReadableStream` responses, no server-sent events, no chat state management, no streaming text rendering. The VBOA (`va-web-app`) has all of this, but none of it exists here. Phase 4 must build:
+**Sequential generation (Phase 1):** Items 3-6 are generated sequentially via individual `generate_foundation_doc` tool calls. *(The design originally specified a `generate_foundation_batch` tool with `Promise.allSettled` and concurrency limit of 2 for partial parallelism. This was simplified to sequential generation in Phase 1 to avoid the `p-limit` dependency. The orchestrator calls each doc type in order, adding ~60-120s of overhead but eliminating complexity.)*
+
+### View 2: Advisor Interview / Document Editor
+
+**Route:** `/analyses/[id]/foundation/[docType]/chat`
+
+This view serves two modes through the same interface:
+
+1. **Interview mode (creation):** When no document exists (or user chooses "Update via conversation" on an empty card), the advisor interviews the user through their framework to co-create the document. The advisor asks questions one at a time, building the document incrementally from the user's answers.
+2. **Edit mode (revision):** When a document exists, the advisor loads it as context and guides revisions. User describes what to change, advisor proposes specific revisions.
+
+Both modes use the assigned advisor's **full persona prompt** as system prompt — this is the one place where persona fidelity matters (critics use task-focused prompts; the interview/editor uses the full persona for conversational quality).
+
+**Interview flow example (Strategy with Richard Rumelt):**
+- Rumelt: "Let's build your strategy. First: what's the core challenge this product addresses? Not the solution — the problem."
+- User answers
+- Rumelt: "Good. Now, what's your guiding policy — the fundamental approach? What are you saying NO to?"
+- User answers
+- Rumelt synthesizes into a draft Strategy document
+- User reviews, requests changes
+- Save finalizes the document
+
+**Note: This is new infrastructure.** The EPCH codebase has zero streaming chat infrastructure — no `ReadableStream` responses, no server-sent events, no chat state management, no streaming text rendering. The VBOA (`va-web-app`) has all of this, but none of it exists here. This view must build:
 
 1. A streaming chat API route (POST returning `ReadableStream` via Vercel AI SDK's `streamText`)
-2. A client-side chat hook (similar to va-web-app's `useChatStream`)
+2. A client-side chat hook (port from va-web-app or build fresh)
 3. Message display component with streaming text rendering
 4. Document state management (current version, pending edits, save/discard)
 
 The UI pattern:
-- Current document displayed alongside the chat
-- Assigned advisor's full persona prompt as system prompt (this is the one place where full persona fidelity matters)
-- Existing document content loaded as context
-- User describes changes, advisor proposes revisions
-- Save button persists to Redis, updates `editedAt`
+- Current document (or "draft in progress" placeholder) displayed alongside the chat
+- Chat on one side, live document preview on the other
+- Save button persists to Redis, updates `editedAt`, sets "edited" badge on card
+
+**Mockup:** `docs/mockups/content-pipeline/advisor-interview.html` — shows the split layout with advisor's first question, mid-conversation state, and document-in-progress view. This mockup is the visual target for Phase 4a.
 
 ### View 3: Content Generation with Critique Visibility
 
@@ -674,7 +699,7 @@ Uses existing advisors (Richard Rumelt, April Dunford) with simple prompts. New 
 
 **Build:**
 - Wire blog post recipe into content agent flow
-- Add `foundationDocs?: Record<FoundationDocType, string>` to `ContentContext` type (in `src/lib/content-prompts.ts`). Update `buildContentContext()` in `src/lib/content-agent.ts` to load foundation docs from Redis when available. This propagates to all prompt builders via the existing `ctx` parameter — no signature changes to `buildBlogPostPrompt()`, `buildComparisonPrompt()`, etc. The three call sites (`content-agent.ts:356`, `content-agent.ts:365`, `agent-tools/content.ts:302`) pass `ctx` unchanged.
+- Add `foundationDocs?: Record<FoundationDocType, string>` to `ContentContext` type (in `src/lib/content-prompts.ts`). Update `buildContentContext()` in `src/lib/content-agent.ts` to load foundation docs from Redis when available. This propagates to all prompt builders via the existing `ctx` parameter — no signature changes to `buildBlogPostPrompt()`, `buildComparisonPrompt()`, etc. The prompt builder calls in `generateSinglePiece()`'s `switch(piece.type)` block (`content-agent.ts`) and the equivalent block in `content.ts`'s `write_content_piece` tool pass `ctx` unchanged.
 - Blog posts go through critique cycle before saving
 - Content calendar generation reads foundation docs for better topic selection
 - Critique history visible on content piece viewer page
@@ -683,21 +708,24 @@ Uses existing advisors (Richard Rumelt, April Dunford) with simple prompts. New 
 
 ### Phase 4a: Interactive Editing (Streaming Chat Infrastructure)
 
-**Goal:** Foundation docs editable via advisor chat.
+**Goal:** Foundation docs editable via advisor-guided conversation — both interview-based creation (View 2 interview mode) and revision of existing documents (View 2 edit mode).
 
-**Note: This is the largest phase.** The EPCH codebase has zero streaming chat infrastructure. This phase builds a fundamentally new UI pattern. Consider whether an intermediate non-streaming editor (form-based: user submits revision request, polls for result using existing patterns) could ship first and defer streaming to a later iteration.
+**Note: This is the largest phase.** The EPCH codebase has zero streaming chat infrastructure. This phase builds a fundamentally new UI pattern. The design for interview mode and edit mode is specified in View 2 above — this phase implements the infrastructure to support it. Consider whether an intermediate non-streaming editor (form-based: user submits revision request, polls for result using existing patterns) could ship first and defer streaming to a later iteration.
 
 **Build:**
 - Streaming chat API route using Vercel AI SDK `streamText` — `POST /api/foundation/[ideaId]/[docType]/chat`
 - Client-side `useChatStream` hook (port pattern from va-web-app or build fresh)
 - Message display component with streaming text rendering
-- Foundation doc editor page with split layout (document + chat)
+- Foundation doc editor/interview page with split layout (document + chat) — implements View 2
+- Interview mode: advisor's full persona prompt + framework-specific interview flow
+- Edit mode: existing document loaded as context, advisor guides revisions
 - Document save/discard flow with `editedAt` tracking
 - Manual-edit badge on foundation cards
+- "Update via conversation" link on expanded card view (View 1)
 - Chat history persistence (or ephemeral — decide during implementation)
 - Error handling for stream interruptions
 
-**Test:** Edit positioning statement via chat with April Dunford, then regenerate website to see changes reflected.
+**Test:** Create positioning statement via interview with April Dunford (she walks through Competitive Alternatives → Unique Attributes → Value → Target Customer → Market Category). Then edit it via conversation. Regenerate website to see changes reflected.
 
 ### Phase 4b: Social Media Recipe
 
@@ -713,13 +741,28 @@ Uses existing advisors (Richard Rumelt, April Dunford) with simple prompts. New 
 
 ## Known Issues / Technical Debt
 
+### Pre-existing / Architectural
+
 - **Closure state on pause/resume** is a pre-existing architectural issue affecting all agents. The critique tools are designed stateless (Redis-backed) to avoid it, but the existing website and content agent tools still have this bug. Should be addressed in a separate refactor.
 - **`planStore` in-memory Map** (`common.ts`) is lost on resume. The critique orchestrator should avoid using `create_plan` / `update_plan` tools, or the plan tools should be refactored to use Redis.
-- **Foundation doc cleanup** must be added to `deleteIdeaFromDb()` in `src/lib/db.ts` — delete all 6 doc type keys: `foundation:{id}:strategy`, `foundation:{id}:positioning`, etc.
+
+### Phase 1 Implementation Gaps
+
+- **~~Foundation doc cleanup~~** *(resolved)* — `deleteIdeaFromDb()` in `src/lib/db.ts` already enumerates all `FoundationDocType` values and deletes foundation keys.
+- **Pause/resume frontend gap:** The foundation panel has no awareness of agent paused state. If a generation run pauses mid-pipeline (time budget exceeded), the UI continues polling but has no mechanism to trigger resume. The API route's POST handler checks `getActiveRunId` for resume but the frontend never sends a resume POST. For 2 users and 6 sequential doc generations (~2-3 minutes total), this is unlikely to trigger but needs fixing before adding longer-running operations.
+- **Per-doc progress not wired:** `FoundationProgress.docs` is a `Record<FoundationDocType, FoundationDocStatus>` (where `FoundationDocStatus = 'pending' | 'running' | 'complete' | 'error'`) but the orchestrator's `onProgress` callback only updates `currentStep` (a string). Individual `progress.docs[docType]` entries are never updated during generation — the UI can only show overall status, not per-card generating/done indicators. The `generate_foundation_doc` tool does save the doc to Redis on success, so `load_foundation_docs` can infer completion, but the progress record itself is stale. **Must be wired during the UI rewrite** — have `generate_foundation_doc` update `progress.docs[docType]` in Redis after each doc completes.
+- **Per-card generation not wired:** The design specifies per-card Generate buttons and per-card retry on error, but the API route (`POST /api/foundation/[ideaId]`) does not accept a `docType` parameter. Only "Generate All" is supported. The frontend has `canGenerate()` dependency logic but no per-card generation handler. Add `docType` as an optional field in the POST body; when present, generate only that single document.
+- **API route test coverage:** `src/app/api/foundation/[ideaId]/route.ts` has no tests. The POST handler uses `after()` for background execution, and the GET handler has serialization logic that should be tested.
+- **Inconsistent deserialization:** `getFoundationProgress` in `db.ts` uses `as FoundationProgress` type assertion, while `getFoundationDoc` uses `parseValue()` with proper error handling. Both should use the same pattern.
+- **UI design system drift:** The foundation panel uses CSS variables that don't exist in `globals.css` (`--border-primary`, `--accent-primary`, `--bg-error`, `--text-error`). Cards use `var(--bg-primary)` (page background) instead of `var(--bg-card)`, making them invisible against the page background in dark mode. Missing Fraunces display font, entrance animations, and responsive breakpoints per the design principles. The existing `page.tsx` needs a full rewrite to match the mockups at `docs/mockups/content-pipeline/`. The mockups are the target state for the UI.
+- **"Update via conversation" link:** The expanded document view mockup shows this link, but it targets the Phase 4a interview/chat route (`/analyses/[id]/foundation/[docType]/chat`). Phase 1 should either omit the link or render it as disabled with a "Coming soon" indicator.
+
+### Future Phases
+
 - **`buildBaseContext()` in `content-prompts.ts`** does not reference `foundationDocs` — adding the field to `ContentContext` propagates the data, but the prompt builders must be updated to actually include it in the prompt text.
 - **Multi-persona overhead vs. value:** The advisor persona system adds maintenance burden (registry, loader, prompt copying from VBOA). For the critique pipeline, the actual value comes from the evaluation criteria in `CriticConfig.evaluationPrompt` and the `submit_critique` tool schema, not the persona wrapper. The persona layer is most valuable for interactive editing (Phase 4a) and organizational clarity. If maintenance cost becomes excessive, consider collapsing to rubric-only evaluation for critics.
 - **Revision loop oscillation:** If two critics have contradictory requirements (SEO wants keywords, positioning wants clean messaging), revisions may oscillate. The `summarize_round` tool tracks score trends to detect this, and the orchestrator rubric says "approve if scores are decreasing." Longer-term, critic prompts should explicitly state which aspects are non-negotiable vs. nice-to-have.
-- **`p-limit` dependency:** The concurrency limiter for critique and foundation batch tools requires `p-limit` (or a manual implementation). Small dependency but worth noting.
+- **`p-limit` dependency:** The concurrency limiter for critique tools requires `p-limit` (or a manual implementation). Small dependency but worth noting. *(Foundation generation was simplified to sequential in Phase 1, avoiding this dependency until the critique pipeline is built.)*
 
 ## Cost Estimates
 

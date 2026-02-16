@@ -3,401 +3,719 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Foundation Documents Panel — Mockup</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'bg-primary': '#0d0d0f',
-            'bg-secondary': '#16161a',
-            'bg-card': '#1c1c21',
-            'bg-elevated': '#232329',
-            'text-primary': '#f4f4f5',
-            'text-secondary': '#a1a1aa',
-            'text-muted': '#71717a',
-            'accent-coral': '#ff6b5b',
-            'accent-coral-soft': 'rgba(255,107,91,0.15)',
-            'accent-emerald': '#10b981',
-            'color-danger': '#f87171',
-            'color-info': '#60a5fa',
-          },
-          fontFamily: {
-            display: ['Georgia', 'serif'],
-            body: ['system-ui', 'sans-serif'],
-          },
-          borderRadius: {
-            'sm-token': '0.5rem',
-            'md-token': '0.75rem',
-            'lg-token': '1rem',
-          },
-        }
-      }
-    }
-  </script>
+  <title>Foundation Documents Panel — All Card States</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    /* =============================================
+       EPCH Design System — Exact Token Reproduction
+       ============================================= */
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255, 107, 91, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+
+      --color-danger: #f87171;
+      --color-purple-light: #a78bfa;
+      --color-info: #60a5fa;
+
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.1);
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.5rem;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
-      max-width: 1280px;
-      margin: 0 auto;
-      min-height: 100vh;
-      background: #0d0d0f;
-      color: #f4f4f5;
-      font-family: system-ui, sans-serif;
-    }
-    .border-subtle { border-color: rgba(255,255,255,0.06); }
-    .border-default { border-color: rgba(255,255,255,0.1); }
-
-    /* Annotation callouts */
-    .annotation {
-      position: absolute;
-      background: rgba(255,107,91,0.12);
-      border: 1px solid rgba(255,107,91,0.4);
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 11px;
-      color: #ff6b5b;
-      font-family: system-ui, sans-serif;
-      letter-spacing: 0.02em;
-      line-height: 1.4;
-      pointer-events: none;
-      z-index: 50;
-    }
-    .annotation::before {
-      content: '';
-      position: absolute;
-      width: 0; height: 0;
-    }
-    .annotation-left::before {
-      right: -6px; top: 50%; transform: translateY(-50%);
-      border-top: 5px solid transparent;
-      border-bottom: 5px solid transparent;
-      border-left: 6px solid rgba(255,107,91,0.4);
-    }
-    .annotation-right::before {
-      left: -6px; top: 50%; transform: translateY(-50%);
-      border-top: 5px solid transparent;
-      border-bottom: 5px solid transparent;
-      border-right: 6px solid rgba(255,107,91,0.4);
-    }
-    .annotation-bottom::before {
-      top: -6px; left: 50%; transform: translateX(-50%);
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 6px solid rgba(255,107,91,0.4);
-    }
-
-    .card-doc {
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 0.5rem;
-      padding: 1rem 1.25rem;
-      background: #0d0d0f;
-      transition: all 0.2s;
-    }
-
-    .expanded-content {
-      margin-top: 0.75rem;
-      padding: 1rem;
-      background: #232329;
-      border-radius: 0.375rem;
-      white-space: pre-wrap;
-      font-size: 0.8125rem;
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
       line-height: 1.6;
-      max-height: 400px;
-      overflow: auto;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    /* Typography */
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* Navigation */
+    .nav-blur {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(13, 13, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 1.5rem;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .nav-links a {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text-secondary); }
+    .nav-links a.active { color: var(--accent-coral); }
+
+    /* Container */
+    .container-app {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Card base */
+    .card-static {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(255, 107, 91, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 107, 91, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card);
+      border-color: var(--text-muted);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.8125rem;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-neutral {
+      background: rgba(113, 113, 122, 0.15);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+    }
+
+    .badge-coral {
+      background: var(--accent-coral-soft);
+      color: var(--accent-coral);
+      border: 1px solid rgba(255, 107, 91, 0.3);
+    }
+
+    /* Animations */
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+    .stagger-6 { animation-delay: 0.3s; }
+    .stagger-7 { animation-delay: 0.35s; }
+    .stagger-8 { animation-delay: 0.4s; }
+
+    /* Foundation-specific styles */
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .doc-card.state-empty {
+      opacity: 0.5;
+    }
+
+    .doc-card.state-ready {
+      opacity: 1;
+    }
+
+    .doc-card.state-generated {
+      opacity: 1;
+    }
+
+    .doc-card.state-edited {
+      opacity: 1;
+    }
+
+    .doc-card:not(.state-empty):hover {
+      border-color: var(--border-default);
+    }
+
+    .doc-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .doc-card-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .doc-card-meta {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .doc-card-preview {
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .doc-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .version-tag {
+      font-family: var(--font-body);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .edited-badge {
+      font-family: var(--font-body);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent-coral);
+      background: var(--accent-coral-soft);
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .requires-hint {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Page header */
+    .page-header {
+      position: relative;
+      padding: 2rem 0 1.5rem;
+    }
+
+    .page-header-gradient {
+      position: absolute;
+      top: -40px;
+      left: -80px;
+      width: 400px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(167, 139, 250, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .breadcrumb {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: color 0.2s;
+      margin-bottom: 1rem;
+    }
+
+    .breadcrumb:hover {
+      color: var(--accent-coral);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.75rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .header-subtitle {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* State label pill */
+    .state-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-family: var(--font-body);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.625rem;
+      border-radius: var(--radius-full);
+    }
+
+    .state-label.empty {
+      background: rgba(113, 113, 122, 0.1);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .state-label.ready {
+      background: rgba(96, 165, 250, 0.1);
+      color: var(--color-info);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+    }
+
+    .state-label.generated {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .state-label.edited {
+      background: var(--accent-coral-soft);
+      color: var(--accent-coral);
+      border: 1px solid rgba(255, 107, 91, 0.2);
+    }
+
+    /* Annotation callout for mockup explanation */
+    .annotation {
+      position: relative;
+      margin-top: 0.375rem;
+    }
+
+    .annotation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-body);
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.1875rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--accent-violet);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
   </style>
 </head>
-<body class="p-8">
-
-  <!-- Page title annotation -->
-  <div class="text-center mb-6">
-    <p class="text-xs tracking-widest uppercase text-text-muted mb-1 font-body">Mockup</p>
-    <h1 class="font-display text-xl text-text-primary" style="letter-spacing: -0.02em;">Foundation Documents Panel</h1>
-    <p class="text-text-secondary text-sm mt-1 font-body">View 1 &mdash; All four card states + expanded document view</p>
-  </div>
-
-  <!-- ===== MAIN PANEL ===== -->
-  <div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;" class="relative">
-
-    <!-- Back link -->
-    <div style="margin-bottom: 1.5rem;">
-      <a href="#" class="text-text-secondary text-sm hover:text-text-primary transition-colors">&larr; Back to Analysis</a>
-    </div>
-
-    <!-- Header row -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;" class="relative">
-      <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;" class="text-text-primary">Foundation Documents</h1>
-        <p class="text-text-secondary text-sm" style="margin: 0.25rem 0 0;">4/6 documents generated</p>
-      </div>
-      <button
-        style="padding: 0.5rem 1.25rem; background: #ff6b5b; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;"
-        class="hover:brightness-110 transition-all"
-      >
-        Generate All
-      </button>
-
-      <!-- Annotation: Generate All -->
-      <div class="annotation annotation-bottom" style="top: -42px; right: 0; white-space: nowrap;">
-        Disabled when generating or when lock exists
+<body>
+  <!-- Sticky Nav -->
+  <nav class="nav-blur">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">EPCH</a>
+      <div class="nav-links">
+        <a href="#">Pipeline</a>
+        <a href="#">Analysis</a>
+        <a href="#" class="active">Content</a>
+        <a href="#">Sites</a>
+        <a href="#">Analytics</a>
+        <a href="#">Settings</a>
       </div>
     </div>
+  </nav>
 
-    <!-- Cards container -->
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-
-      <!-- ===== CARD 1: Generated state (Strategy) ===== -->
-      <div class="card-doc relative">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  <main class="container-app" style="max-width: 900px; padding-bottom: 4rem;">
+    <!-- Page Header with decorative purple gradient -->
+    <div class="page-header animate-slide-up stagger-1">
+      <div class="page-header-gradient"></div>
+      <div class="page-header-content">
+        <a href="#" class="breadcrumb">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+          </svg>
+          Back to Analysis
+        </a>
+        <div class="header-row">
           <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Strategy</h3>
-              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v2</span>
-            </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Richard Rumelt</p>
+            <h1 class="header-title">Foundation Documents</h1>
+            <p class="header-subtitle">3/6 documents generated</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          <button class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Generate All
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div style="display: flex; flex-direction: column; gap: 0.875rem; margin-top: 0.5rem;">
+
+      <!-- ======================================= -->
+      <!-- CARD 1: Strategy — GENERATED state      -->
+      <!-- ======================================= -->
+      <div class="doc-card state-generated animate-slide-up stagger-2">
+        <div class="doc-card-header">
+          <div>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Strategy
+              <span class="version-tag">v1</span>
+              <span class="state-label generated">Generated</span>
+            </div>
+            <p class="doc-card-meta">Richard Rumelt</p>
+          </div>
+          <div class="doc-card-actions">
+            <button class="btn btn-ghost btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Regenerate</button>
           </div>
         </div>
-        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
-          The core strategic challenge for PetPulse is competing in a saturated pet health monitoring market where Whistle, Fi, and existing vet telehealth platforms have established distribution...
+        <p class="doc-card-preview">
+          The core challenge is that small business owners need product concept validation but lack the research tools and analytical frameworks that enterprise product teams use. Our guiding policy is to automate the research-to-validation pipeline...
         </p>
-
-        <!-- Annotation: Generated state -->
-        <div class="annotation annotation-left" style="right: -220px; top: 12px; width: 190px;">
-          STATE: Generated<br>Has content, version badge, View button, 3-line preview
+        <div class="annotation">
+          <span class="annotation-pill">State: Generated</span>
         </div>
       </div>
 
-      <!-- ===== CARD 2: Manually Edited state (Positioning) ===== -->
-      <div class="card-doc relative">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <!-- ======================================= -->
+      <!-- CARD 2: Positioning — MANUALLY EDITED   -->
+      <!-- ======================================= -->
+      <div class="doc-card state-edited animate-slide-up stagger-3">
+        <div class="doc-card-header">
           <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
-              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v3</span>
-              <span class="text-xs px-1.5 py-0.5 rounded" style="background: #232329; color: #ff6b5b;">edited</span>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Positioning Statement
+              <span class="version-tag">v3</span>
+              <span class="edited-badge">Edited</span>
+              <span class="state-label edited">Manually Edited</span>
             </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
+            <p class="doc-card-meta">April Dunford</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          <div class="doc-card-actions">
+            <button class="btn btn-ghost btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Regenerate</button>
           </div>
         </div>
-        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
-          For pet owners who worry about their dog's health between vet visits, PetPulse is a continuous health monitoring platform that detects early warning signs of illness through daily behavior...
+        <p class="doc-card-preview">
+          For aspiring SaaS founders who struggle to validate product ideas before building, EPCH is a research automation platform that replaces weeks of manual market research with a one-click pipeline producing SEO analysis, competitive landscape...
         </p>
-
-        <!-- Annotation: Manually edited -->
-        <div class="annotation annotation-left" style="right: -220px; top: 12px; width: 190px;">
-          STATE: Manually Edited<br>Coral "edited" badge when editedAt is non-null
+        <div class="annotation">
+          <span class="annotation-pill">State: Manually Edited (shows "edited" badge + v3)</span>
         </div>
       </div>
 
-      <!-- ===== CARD 3: Generated — Brand Voice ===== -->
-      <div class="card-doc">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <!-- ======================================= -->
+      <!-- CARD 3: Brand Voice — GENERATED state   -->
+      <!-- ======================================= -->
+      <div class="doc-card state-generated animate-slide-up stagger-4">
+        <div class="doc-card-header">
           <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Brand Voice</h3>
-              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Brand Voice
+              <span class="version-tag">v1</span>
+              <span class="state-label generated">Generated</span>
             </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Brand Copywriter</p>
+            <p class="doc-card-meta">Brand Copywriter</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          <div class="doc-card-actions">
+            <button class="btn btn-ghost btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Regenerate</button>
           </div>
         </div>
-        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
-          Tone: Confident but warm. Speak like a trusted vet friend — knowledgeable without being clinical, caring without being saccharine. Lead with clarity, follow with reassurance...
+        <p class="doc-card-preview">
+          Tone: Confident and direct, like a sharp-eyed editor who respects your time. We explain complex data simply without dumbing it down. We use active voice, short sentences, and concrete examples over abstractions...
         </p>
+        <div class="annotation">
+          <span class="annotation-pill">State: Generated</span>
+        </div>
       </div>
 
-      <!-- ===== CARD 4: Generated — Design Principles ===== -->
-      <div class="card-doc">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <!-- ======================================= -->
+      <!-- CARD 4: Design Principles — READY state -->
+      <!-- ======================================= -->
+      <div class="doc-card state-ready animate-slide-up stagger-5">
+        <div class="doc-card-header">
           <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Design Principles</h3>
-              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v1</span>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              Design Principles
+              <span class="state-label ready">Ready</span>
             </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">Derived</p>
+            <p class="doc-card-meta">Derived &mdash; requires Positioning + Strategy</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">View</button>
+          <div class="doc-card-actions">
+            <button class="btn btn-primary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Generate
+            </button>
           </div>
         </div>
-        <p class="text-text-secondary" style="font-size: 0.8125rem; margin: 0.5rem 0 0; line-height: 1.4;">
-          Visual language rooted in trust and medical credibility. Clean whites with teal accents. Data visualizations use rounded corners and progressive disclosure to avoid overwhelming...
+        <div class="annotation">
+          <span class="annotation-pill">State: Ready (upstream docs exist, Generate enabled)</span>
+        </div>
+      </div>
+
+      <!-- ======================================= -->
+      <!-- CARD 5: SEO Strategy — READY state      -->
+      <!-- ======================================= -->
+      <div class="doc-card state-ready animate-slide-up stagger-6">
+        <div class="doc-card-header">
+          <div>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              SEO Strategy
+              <span class="state-label ready">Ready</span>
+            </div>
+            <p class="doc-card-meta">SEO Expert &mdash; requires Positioning</p>
+          </div>
+          <div class="doc-card-actions">
+            <button class="btn btn-primary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Generate
+            </button>
+          </div>
+        </div>
+        <div class="annotation">
+          <span class="annotation-pill">State: Ready</span>
+        </div>
+      </div>
+
+      <!-- ======================================= -->
+      <!-- CARD 6: Social Media — EMPTY state      -->
+      <!-- ======================================= -->
+      <div class="doc-card state-empty animate-slide-up stagger-7">
+        <div class="doc-card-header">
+          <div>
+            <div class="doc-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              Social Media Strategy
+              <span class="state-label empty">Blocked</span>
+            </div>
+            <p class="doc-card-meta">TBD &mdash; Requires: Brand Voice</p>
+          </div>
+          <div class="doc-card-actions">
+            <button class="btn btn-secondary btn-sm" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Generate
+            </button>
+          </div>
+        </div>
+        <p class="requires-hint" style="margin-top: 0.5rem;">
+          Waiting for Brand Voice to be generated before this document can be created.
         </p>
-      </div>
-
-      <!-- ===== CARD 5: Ready state (SEO Strategy) ===== -->
-      <div class="card-doc relative">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">SEO Strategy</h3>
-            </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">SEO Expert</p>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <!-- No View button — no content yet -->
-          </div>
-        </div>
-
-        <!-- Annotation: Ready state -->
-        <div class="annotation annotation-left" style="right: -220px; top: 4px; width: 190px;">
-          STATE: Ready<br>Upstream exists (Positioning), but no content generated yet. No buttons shown.
-        </div>
-      </div>
-
-      <!-- ===== CARD 6: Empty state (Social Media Strategy) ===== -->
-      <div class="card-doc relative" style="opacity: 0.6;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Social Media Strategy</h3>
-            </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">TBD &mdash; Requires: Brand Voice</p>
-          </div>
-        </div>
-
-        <!-- Annotation: Empty state -->
-        <div class="annotation annotation-left" style="right: -220px; top: 4px; width: 190px;">
-          STATE: Empty<br>Upstream missing (needs Brand Voice). Shows "Requires:" hint. Card is dimmed in this mockup; in the real UI it's full opacity but just has no buttons.
+        <div class="annotation">
+          <span class="annotation-pill">State: Empty (upstream missing, generate disabled, card dimmed)</span>
         </div>
       </div>
 
     </div>
-
-    <!-- ===== EXPANDED VIEW ===== -->
-    <div class="mt-10">
-      <div class="text-center mb-4">
-        <p class="text-xs tracking-widest uppercase text-text-muted font-body">Expanded Document View</p>
-        <p class="text-text-secondary text-xs mt-1">When "View" is clicked, content appears inline below the card header</p>
-      </div>
-
-      <div class="card-doc">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; margin: 0;" class="text-text-primary">Positioning Statement</h3>
-              <span class="text-xs text-text-muted px-1.5 py-0.5 rounded" style="background: #232329;">v3</span>
-              <span class="text-xs px-1.5 py-0.5 rounded" style="background: #232329; color: #ff6b5b;">edited</span>
-            </div>
-            <p class="text-xs text-text-muted" style="margin: 0.25rem 0 0;">April Dunford</p>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button style="padding: 0.25rem 0.75rem; background: #232329; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.25rem; cursor: pointer; font-size: 0.8125rem; color: #f4f4f5;">Hide</button>
-          </div>
-        </div>
-        <!-- No preview when expanded — replaced by full content -->
-        <div class="expanded-content">For pet owners who worry about their dog's health between vet visits, PetPulse is a continuous health monitoring platform that detects early warning signs of illness through daily behavior analysis and biometric tracking.
-
-Unlike general pet fitness trackers (Whistle, Fi) that focus on activity metrics, PetPulse combines veterinary-grade vital sign monitoring with AI pattern recognition to surface clinically meaningful health changes — the kind a vet would want to know about.
-
-The competitive alternatives are:
-  - Whistle/Fi: Activity and GPS trackers. They tell you how far your dog walked, not whether something is wrong.
-  - Vet telehealth (Pawp, Airvet): Reactive — you call when you already suspect a problem. No continuous monitoring.
-  - Pet insurance: Financial backstop, not early detection.
-
-PetPulse occupies the gap between "my dog seems fine" and "we caught it early." The product's fundamental bet is that continuous passive monitoring catches problems days to weeks before behavioral changes become obvious to owners.
-
-Key differentiator: We are NOT a replacement for veterinary care. We are the early warning system that makes vet visits more productive by surfacing data patterns before symptoms are visible. Every communication reinforces: "PetPulse helps your vet help your pet."
-
-Target: Dog owners aged 30-55 who spend $100+/month on pet care and have had at least one scare (emergency vet visit, unexpected diagnosis). They are not price-sensitive on pet health but are time-poor and anxiety-prone about their pet's wellbeing.
-
-NOT targeting: Cat owners (V2), budget pet owners, breeders/professional handlers, people who want a GPS tracker.</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== CRITIQUE NOTES ===== -->
-  <div style="max-width: 900px; margin: 3rem auto 0; padding: 0 1rem 2rem;">
-    <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.5rem;">
-      <h2 class="font-display text-lg text-text-primary mb-3" style="letter-spacing: -0.02em;">Implementation Critique</h2>
-      <p class="text-text-secondary text-sm mb-3">
-        Comparing actual implementation (<code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">page.tsx</code>) against the design doc spec:
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-
-        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">Per-card Generate and Edit buttons</p>
-              <p class="text-text-secondary text-xs mt-1">Design doc specifies "Buttons: Generate, Edit, View" per card. Implementation only has "View". No way to generate a single document or enter the editor from the panel.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(248,113,113,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-color-danger text-xs font-semibold mt-0.5">MISSING</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">Per-card Retry button on error</p>
-              <p class="text-text-secondary text-xs mt-1">Design doc specifies individual Retry buttons on failed cards during partial generation failure. Implementation shows "error" text label but no recovery action.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">No timestamp display</p>
-              <p class="text-text-secondary text-xs mt-1">Design doc shows "Generated timestamp" and "Last edited timestamp" per card. Implementation has the data (<code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">generatedAt</code>, <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">editedAt</code>) but only surfaces editedAt as a boolean "edited" badge. No dates visible.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(245,158,11,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-accent-amber text-xs font-semibold mt-0.5">GAP</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">"Ready" vs "Empty" not visually distinct</p>
-              <p class="text-text-secondary text-xs mt-1">Both un-generated states look identical — no visual indicator that a card <em>can</em> generate vs <em>cannot</em>. The "Requires: X" hint only appears when upstream is missing, but the "ready to generate" state has no affordance. This matters less without per-card Generate buttons, but if those are added, the distinction becomes important.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">Dependency logic matches design doc</p>
-              <p class="text-text-secondary text-xs mt-1"><code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">canGenerate()</code> correctly implements the creation hierarchy: Strategy is always ready, Positioning needs Strategy, items 3-6 need Positioning, Social Media also needs Brand Voice, Design Principles needs both Strategy and Positioning.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(16,185,129,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-accent-emerald text-xs font-semibold mt-0.5">GOOD</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">Polling pattern correct</p>
-              <p class="text-text-secondary text-xs mt-1">3-second polling interval when <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">progress.status === 'running'</code>, stops when generation completes. Matches the existing progress polling conventions.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-doc" style="border-color: rgba(96,165,250,0.3);">
-          <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-            <span class="text-color-info text-xs font-semibold mt-0.5">NOTE</span>
-            <div>
-              <p class="text-text-primary text-sm font-medium">Inline styles instead of design system tokens</p>
-              <p class="text-text-secondary text-xs mt-1">Implementation uses inline <code class="text-xs bg-bg-elevated px-1 py-0.5 rounded">style={{}}</code> with CSS variable references. This works but bypasses the Tailwind utility class conventions used elsewhere in the codebase. Not a functional problem, but inconsistent with the rest of the app's styling approach.</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
+  </main>
 </body>
 </html>
