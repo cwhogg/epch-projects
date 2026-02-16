@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis — SecondLook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255, 107, 91, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+
+      --color-danger: #f87171;
+      --color-info: #60a5fa;
+      --color-indigo: #818cf8;
+
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.1);
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* Navigation */
+    .nav-blur {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(13, 13, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 1.5rem;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 2.5rem;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .nav-links a {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-links a.active {
+      color: var(--accent-coral);
+    }
+
+    /* Container */
+    .container-app {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      padding-bottom: 4rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn-ghost.danger {
+      color: var(--color-danger);
+    }
+
+    .btn-ghost.danger:hover {
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Animations */
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: color 0.2s;
+      margin-bottom: 0.75rem;
+    }
+
+    .breadcrumb:hover {
+      color: var(--accent-coral);
+    }
+
+    /* Score Rings */
+    .score-rings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      justify-items: center;
+    }
+
+    @media (min-width: 640px) {
+      .score-rings-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 2rem;
+      }
+    }
+
+    .score-ring {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s;
+    }
+
+    .score-ring:hover {
+      transform: scale(1.05);
+    }
+
+    .score-ring-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .score-ring.overall {
+      grid-column: 1 / -1;
+    }
+
+    @media (min-width: 640px) {
+      .score-ring.overall {
+        grid-column: auto;
+      }
+    }
+
+    /* Annotation */
+    .annotation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-body);
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.1875rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--accent-violet);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(13, 13, 15, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .mobile-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 56px;
+    }
+
+    .mobile-nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .mobile-nav-tab.active {
+      color: var(--accent-coral);
+    }
+
+    .mobile-nav-tab span {
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 640px) {
+      .mobile-nav { display: block; }
+      .desktop-nav-links { display: none; }
+      body { padding-bottom: 80px; }
+    }
+
+    /* Collapsible */
+    .collapsible-wrapper {
+      position: relative;
+    }
+
+    .collapsible-content {
+      max-height: 200px;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+
+    .collapsible-content.expanded {
+      max-height: 2000px;
+    }
+
+    .collapsible-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--bg-card));
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .collapsible-fade.hidden {
+      opacity: 0;
+    }
+
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      width: 100%;
+      padding: 0.625rem 0;
+      margin-top: 0.5rem;
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--accent-coral);
+      background: transparent;
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .collapsible-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    .collapsible-toggle svg {
+      transition: transform 0.3s;
+    }
+
+    .collapsible-toggle.expanded svg {
+      transform: rotate(180deg);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+  </style>
+</head>
+<body>
+  <!-- Sticky Nav -->
+  <nav class="nav-blur">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+          <circle cx="10" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none"/>
+          <circle cx="18" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none" opacity="0.5"/>
+        </svg>
+        EPCH
+      </a>
+      <div class="nav-links desktop-nav-links">
+        <a href="#" class="active">Projects</a>
+        <a href="#">Ideation</a>
+        <a href="#">Analytics</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-app">
+    <!-- Page Header -->
+    <header class="animate-slide-up stagger-1" style="position: relative; padding: 1.5rem 0 1rem; background: radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.08) 0%, transparent 50%); margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; border-radius: var(--radius-lg);">
+      <a href="#" class="breadcrumb">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5"></path>
+          <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+        Back to Project
+      </a>
+
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-top: 0.5rem;">
+        <div>
+          <h1 style="font-size: 1.75rem; color: var(--text-primary);">Analysis — SecondLook</h1>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Analyzed on Feb 10, 2026
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <span class="badge badge-success">Tier 1</span>
+          <span style="font-size: 0.875rem; font-weight: 500; color: var(--accent-emerald);">High Confidence</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+        <button class="btn btn-ghost" style="font-size: 0.8125rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2v6h-6" />
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+            <path d="M3 22v-6h6" />
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+          </svg>
+          Reanalyze
+        </button>
+        <button class="btn btn-ghost danger" style="font-size: 0.8125rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Delete
+        </button>
+      </div>
+    </header>
+
+    <!-- Score Rings -->
+    <div class="card animate-slide-up stagger-2" style="margin-top: 1.5rem;">
+      <h2 style="font-size: 1rem; margin-bottom: 1.25rem; color: var(--text-primary);">Scores</h2>
+      <div class="score-rings-grid">
+        <!-- SEO -->
+        <div class="score-ring">
+          <div style="position: relative; width: 72px; height: 72px; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="210.5" stroke-dashoffset="42.1" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">
+              8
+            </div>
+          </div>
+          <span class="score-ring-label">SEO</span>
+        </div>
+
+        <!-- Competition -->
+        <div class="score-ring">
+          <div style="position: relative; width: 72px; height: 72px; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="210.5" stroke-dashoffset="63.15" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">
+              7
+            </div>
+          </div>
+          <span class="score-ring-label">Competition</span>
+        </div>
+
+        <!-- WTP -->
+        <div class="score-ring">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--accent-amber)" stroke-width="5"
+                stroke-dasharray="210.5" stroke-dashoffset="84.2" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-amber);">
+              6
+            </div>
+          </div>
+          <span class="score-ring-label">WTP</span>
+        </div>
+
+        <!-- Differentiation -->
+        <div class="score-ring">
+          <div style="position: relative; width: 72px; height: 72px; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="210.5" stroke-dashoffset="21.05" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">
+              9
+            </div>
+          </div>
+          <span class="score-ring-label">Differentiation</span>
+        </div>
+
+        <!-- Expertise -->
+        <div class="score-ring">
+          <div style="position: relative; width: 72px; height: 72px; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="33.5" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="210.5" stroke-dashoffset="42.1" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">
+              8
+            </div>
+          </div>
+          <span class="score-ring-label">Expertise</span>
+        </div>
+
+        <!-- Overall (larger) -->
+        <div class="score-ring overall">
+          <div style="position: relative; width: 80px; height: 80px; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));">
+            <svg width="80" height="80" style="transform: rotate(-90deg);">
+              <circle cx="40" cy="40" r="37.5" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="40" cy="40" r="37.5" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="235.6" stroke-dashoffset="47.1" stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.8s ease"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; color: var(--accent-emerald);">
+              8
+            </div>
+          </div>
+          <span class="score-ring-label">Overall</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Risks -->
+    <div class="card animate-slide-up stagger-3" style="margin-top: 0.75rem;">
+      <h2 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        Key Risks
+      </h2>
+      <ul style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <li style="display: flex; align-items: start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger); margin-top: 0.125rem;">•</span>
+          <span>Apple and Google Photos have built-in memory features that could limit differentiation</span>
+        </li>
+        <li style="display: flex; align-items: start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger); margin-top: 0.125rem;">•</span>
+          <span>User trust barrier for granting AI access to personal photo libraries</span>
+        </li>
+        <li style="display: flex; align-items: start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger); margin-top: 0.125rem;">•</span>
+          <span>Cloud storage costs scale linearly with user photo count</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- SEO Deep Dive -->
+    <div class="card animate-slide-up stagger-3" style="margin-top: 0.75rem;">
+      <h2 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        SEO Deep Dive
+      </h2>
+
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Sources: Claude Sonnet + OpenAI GPT-4o + SerpAPI
+      </p>
+
+      <!-- Cross-Reference Summary -->
+      <div style="margin-bottom: 1.25rem;">
+        <h3 style="font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">
+          LLM Cross-Reference
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; text-align: center;">
+          <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.2);">
+            <div style="font-size: 1.125rem; font-family: var(--font-display); color: var(--accent-emerald);">8</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Agreed</div>
+          </div>
+          <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(129, 140, 248, 0.1); border: 1px solid rgba(129, 140, 248, 0.2);">
+            <div style="font-size: 1.125rem; font-family: var(--font-display); color: var(--color-indigo);">3</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Claude Only</div>
+          </div>
+          <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);">
+            <div style="font-size: 1.125rem; font-family: var(--font-display); color: var(--accent-amber);">2</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">OpenAI Only</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.75rem;">
+          <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Highest confidence: </span>
+          <span style="font-size: 0.75rem; color: var(--text-secondary);">photo organization app, AI photo memories, smart photo album, digital photo curation, photo timeline app, memory photo app, personal photo AI, photo rediscovery</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full Analysis (collapsible) -->
+    <div class="card animate-slide-up stagger-4" style="margin-top: 0.75rem;">
+      <h2 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-primary);">Full Analysis</h2>
+      <div class="collapsible-wrapper">
+        <div class="collapsible-content" id="fullAnalysis">
+          <div style="font-size: 0.875rem; line-height: 1.7; color: var(--text-secondary);">
+            <p style="margin-bottom: 0.75rem;">
+              SecondLook addresses a significant user pain point in the photo management space: the overwhelming volume of digital photos that leads to forgotten memories. The product's core value proposition of AI-powered emotional and contextual curation differentiates it from basic photo organization tools like Google Photos or Apple Photos, which primarily focus on chronological sorting and basic face recognition.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              The competitive landscape shows strong incumbents, but the analysis reveals a meaningful opportunity in the "memory rediscovery" segment. While tech giants have photo storage covered, they underserve the emotional dimension of photo management. Users have thousands of photos but rarely revisit them beyond immediate sharing needs.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              The keyword analysis confirms strong search interest with manageable competition. Terms like "photo organization app," "AI photo memories," and "smart photo album" show consistent volume with content gaps exploitable through targeted SEO content. The cross-reference between Claude and GPT-4o identified 8 agreed-upon high-confidence keywords, providing a solid foundation for the content strategy.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              Willingness to pay scores moderately at 6/10. While users do pay for photo management tools (Apple iCloud, Google One), the premium tier pricing would need careful positioning against free alternatives. The differentiation score of 9/10 reflects the unique emotional curation angle that competitors haven't addressed.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              Expertise alignment scores well at 8/10, given the team's background in AI/ML and consumer photo applications. The primary risk remains platform dependency — Apple and Google could integrate similar memory features into their native apps at any time, compressing the market opportunity window.
+            </p>
+          </div>
+        </div>
+        <div class="collapsible-fade" id="fullAnalysisFade"></div>
+      </div>
+      <button class="collapsible-toggle" id="fullAnalysisToggle" onclick="toggleAnalysis()">
+        <span id="toggleText">Show full analysis</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <script>
+      function toggleAnalysis() {
+        const content = document.getElementById('fullAnalysis');
+        const fade = document.getElementById('fullAnalysisFade');
+        const toggle = document.getElementById('fullAnalysisToggle');
+        const text = document.getElementById('toggleText');
+        const isExpanded = content.classList.contains('expanded');
+        content.classList.toggle('expanded');
+        fade.classList.toggle('hidden');
+        toggle.classList.toggle('expanded');
+        text.textContent = isExpanded ? 'Show full analysis' : 'Collapse';
+      }
+    </script>
+
+    <!-- Annotations -->
+    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="annotation-pill">Route: /analyses/[id]/analysis — analysis detail (scores, risks, SEO, full analysis)</span>
+      <span class="annotation-pill">Content moved here from /analyses/[id] which becomes the project dashboard</span>
+      <span class="annotation-pill">Nav: 3 tabs replacing 7 · "Back to Project" → /analyses/[id] (dashboard)</span>
+      <span class="annotation-pill">Full Analysis: collapsible/expandable (collapsed by default, click to expand)</span>
+      <span class="annotation-pill">Reanalyze + Delete buttons here · View Site + Foundation Docs on dashboard</span>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-inner">
+      <a href="#" class="mobile-nav-tab active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+        <span>Projects</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18h6"></path>
+          <path d="M10 22h4"></path>
+          <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path>
+        </svg>
+        <span>Ideation</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20V10"></path>
+          <path d="M18 20V4"></path>
+          <path d="M6 20v-4"></path>
+        </svg>
+        <span>Analytics</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>

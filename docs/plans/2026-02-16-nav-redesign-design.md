@@ -102,57 +102,76 @@ When no projects exist: centered message "No projects yet. Start by testing a ne
 
 ## Project Dashboard
 
-**Route:** `/analyses/[id]` (modifies the existing analysis detail page)
+**Route:** `/analyses/[id]` (replaces the existing analysis detail page)
 
 **Mockup:** `docs/mockups/nav-redesign/project-dashboard.html`
 
-The current analysis detail page shows: score visualizations (6 rings), recommendation tier, risks, SEO deep dive, full analysis markdown, and action buttons. The project dashboard keeps all of this and adds a **pipeline summary section** at the top.
+The current analysis detail page is restructured into a project hub. Analysis content (scores, risks, SEO deep dive, full analysis markdown) moves to a new analysis detail page at `/analyses/[id]/analysis`. The dashboard shows the project header and full-width pipeline summary cards.
 
 ### Layout
 
-A compact card grid (3-4 columns on desktop, depending on whether analytics data exists) is inserted between the page header and the existing scores section. The header's back link changes from "Back" (linking to `/analysis`) to "Back to Projects" (linking to `/`).
+Full-width stacked cards (one per pipeline stage), each providing a summary with enough detail to assess status at a glance. The header's back link changes from "Back" (linking to `/analysis`) to "Back to Projects" (linking to `/`).
+
+Header action buttons: View Site (or Create Website if no site exists). Foundation Docs, Reanalyze, and Delete buttons are removed from the dashboard — Foundation Docs is covered by the Foundation card, and Reanalyze/Delete move to the analysis detail page.
 
 ### Pipeline Summary Cards
 
-Three to four summary cards in a responsive grid (3-4 columns on desktop, 2 columns on tablet, stacking on mobile):
+Five full-width cards stacked vertically. Each card is clickable and links to its detail page:
+
+**Analysis Card:**
+- Title: "Analysis"
+- Mini score ring (overall score) + tier badge + confidence
+- Inline breakdown of all 5 dimension scores (SEO, Competition, WTP, Differentiation, Expertise)
+- Summary line: top risk + top keyword (one line each)
+- Links to: `/analyses/[id]/analysis`
 
 **Foundation Card:**
 - Title: "Foundation Documents"
 - Progress: dot indicators showing completion + "X/6 complete" text
+- 2-column list of all 6 doc names with check marks for completed docs
 - Links to: `/analyses/[id]/foundation`
 - Shows "Not started" if no docs exist
 
 **Website Card:**
 - Title: "Painted Door Site"
 - Status badge: Live (green), Deploying (amber), Generating (amber), Pushing (amber), Failed (red), Not Started (muted)
-- Detail: signup count if live, domain name if deployed
+- Detail: domain name + signup count if live
 - Links to: `/analyses/[id]/painted-door`
 
 **Content Card:**
 - Title: "Content Pipeline"
-- Detail: "X complete, Y pending" piece counts (`complete` = generated content; pending = not yet generated)
-- Active/Paused indicator if calendar exists
+- Three stat columns: Complete / Pending / Total piece counts (`complete` = generated content; pending = not yet generated)
+- Content type hints derived from actual `ContentType` values on the pieces (blog-post, comparison, faq)
 - Links to: `/analyses/[id]/content`
 - Shows "Not started" if no calendar exists
 
-**Analytics Card (conditional):**
+**Performance Card (conditional):**
 Only rendered when GSC data is connected for this project:
 - Title: "Performance"
-- Detail: last 7 days impressions/clicks snapshot
+- Three stat columns: Impressions / Clicks / CTR (last 7 days)
 - Links to: `/analyses/[id]/analytics`
 
-### Existing Content Preserved
+---
 
-Everything currently on the analysis detail page stays below the summary cards:
+## Analysis Detail Page
 
-- Score ring visualizations (6 dimensions)
-- Recommendation tier and confidence
-- Risks section
-- SEO Deep Dive (keywords, SERP analysis)
-- Full analysis markdown (collapsible)
-- Action buttons (Create Website, Foundation Docs, Reanalyze, Delete)
+**Route:** `/analyses/[id]/analysis` (new page)
 
-The existing action buttons remain — they provide contextual actions that complement the summary cards.
+**Mockup:** `docs/mockups/nav-redesign/analysis-detail.html`
+
+Contains all the analysis content that previously lived on `/analyses/[id]`. Visually identical to the existing live analysis page with three changes: updated global navigation (3 links replacing 7), "Back to Project" breadcrumb linking to `/analyses/[id]`, and a collapsible Full Analysis section.
+
+### Layout
+
+- **Header:** Project name, analysis date, tier badge, confidence level, Reanalyze + Delete buttons
+- **Scores:** 6 ring visualizations (SEO, Competition, WTP, Differentiation, Expertise, Overall)
+- **Key Risks:** Bullet list of risks from the analysis
+- **SEO Deep Dive:** LLM cross-reference summary, SERP-validated keywords, top keywords table
+- **Full Analysis:** Collapsible/expandable markdown section. Collapsed by default with a gradient fade and "Show full analysis" toggle button. Click to expand to full height.
+
+### Data Source
+
+Uses the same `getAnalysisData()` function from the existing page. No new data fetching required — the function already loads `analysis`, `content` (including `seoData`), and related metadata.
 
 ---
 
@@ -163,7 +182,14 @@ The existing action buttons remain — they provide contextual actions that comp
 | Route | Current Purpose | New Purpose |
 |-------|----------------|-------------|
 | `/` | Pipeline stage view (6 stage cards) | Project list |
-| `/analyses/[id]` | Analysis detail (scores, risks, markdown) | Project dashboard (summary cards + analysis detail) |
+| `/analyses/[id]` | Analysis detail (scores, risks, markdown) | Project dashboard (pipeline summary cards) |
+
+### New Routes
+
+| Route | Purpose | Accessed From |
+|-------|---------|---------------|
+| `/analyses/[id]/analysis` | Analysis detail (scores, risks, SEO, full analysis) | Dashboard Analysis card |
+| `/analytics` | Cross-site analytics. Initially redirects to `/testing`. | Nav Analytics link |
 
 ### Unchanged Routes
 
@@ -174,7 +200,7 @@ The existing action buttons remain — they provide contextual actions that comp
 | `/analyses/[id]/content/[pieceId]` | Content piece detail | Content calendar |
 | `/analyses/[id]/content/generate` | Content generation wizard | Content calendar |
 | `/analyses/[id]/painted-door` | Website builder | Dashboard Website card |
-| `/analyses/[id]/analytics` | SEO performance | Dashboard Analytics card |
+| `/analyses/[id]/analytics` | SEO performance | Dashboard Performance card |
 | `/ideas/new` | Create new idea form | Nav Ideation link |
 | `/api/*` | All API routes | Unchanged |
 
@@ -190,21 +216,15 @@ The existing action buttons remain — they provide contextual actions that comp
 | `/ideation` | Ideation | Replaced by nav link to `/ideas/new`. |
 | `/optimization` | Optimization | Placeholder. Can be removed later. |
 
-### New Route
-
-| Route | Purpose |
-|-------|---------|
-| `/analytics` | Cross-site analytics. Initially redirects to `/testing`. |
-
 ---
 
 ## Interaction with Content Pipeline Work
 
-### Phase 1 Gaps Plan (In-Progress Worktree)
+### Phase 1 Gaps Plan
 
-**Tasks 1-5 (backend):** Completely unaffected. These modify `db.ts`, `foundation-agent.ts`, and API routes — none of which are touched by this redesign.
+Phase 1 gaps work may already be merged to main (no active worktree exists for it). If tasks 6-8 (foundation panel UI rewrite) are complete, the back link text change ("Back to Analysis" → "Back to Project") applies to the already-landed foundation panel. If still in progress, the change applies when the panel work lands.
 
-**Tasks 6-8 (foundation panel UI rewrite):** Unaffected. The foundation panel at `/analyses/[id]/foundation/page.tsx` stays at its current route. The only change: it's now accessed from the project dashboard summary card instead of a top-level nav tab. The panel's back link ("Back to Analysis") should update to say "Back to Project" — a one-line text change.
+The foundation panel at `/analyses/[id]/foundation/page.tsx` stays at its current route. The only change: it's now accessed from the project dashboard summary card instead of a top-level nav tab.
 
 ### Phase 2 (Critique Engine)
 
@@ -226,12 +246,20 @@ Entirely backend. No routing impact. The critique progress UI (View 3 in the con
 
 ## Files Changed
 
+### Must Create
+
+| File | Purpose |
+|------|--------|
+| `src/app/analyses/[id]/analysis/page.tsx` | Analysis detail page — scores, risks, SEO deep dive, full analysis (collapsible). Reuses `ReanalyzeForm`, `DeleteButton`, `MarkdownContent` components. Uses extracted `ScoreRing` and `SEODeepDive`. |
+| `src/components/ScoreRing.tsx` | Extracted from `src/app/analyses/[id]/page.tsx` (currently inline at line 89). Used by both the dashboard Analysis card and the analysis detail page. |
+| `src/components/SEODeepDive.tsx` | Extracted from `src/app/analyses/[id]/page.tsx` (currently inline at line 150). Used by the analysis detail page. |
+
 ### Must Modify
 
 | File | Change |
 |------|--------|
 | `src/app/page.tsx` | Complete rewrite — pipeline view to project list |
-| `src/app/analyses/[id]/page.tsx` | Add pipeline summary cards section above existing content |
+| `src/app/analyses/[id]/page.tsx` | Complete rewrite — analysis detail becomes project dashboard with pipeline summary cards |
 | `src/components/NavLinks.tsx` | Replace 7 tabs with 3 (Projects, Ideation, Analytics) |
 | `src/components/MobileNav.tsx` | Replace 7 tabs with 3 |
 
@@ -241,17 +269,13 @@ Entirely backend. No routing impact. The critique progress UI (View 3 in the con
 |------|--------|
 | `src/app/analytics/page.tsx` | Already exists with redirect to `/testing`. Update if analytics page evolves beyond redirect. |
 
-### Must Delete
+### Already Deleted
 
-| File | Reason |
-|------|--------|
-| `docs/mockups/foundation-tab-promotion/desktop-nav.html` | Superseded by project-centric nav |
-| `docs/mockups/foundation-tab-promotion/mobile-nav.html` | Superseded by project-centric nav |
-| `docs/mockups/foundation-tab-promotion/foundation-page.html` | Superseded by project-centric nav |
+The `docs/mockups/foundation-tab-promotion/` mockups (desktop-nav, mobile-nav, foundation-page) were already deleted in commit `8349a8b`.
 
 ### Unchanged
 
-All API routes, all `/analyses/[id]/foundation`, `/analyses/[id]/content`, `/analyses/[id]/painted-door`, `/analyses/[id]/analytics` pages, all backend code, all existing tests.
+All API routes, `/analyses/[id]/foundation`, `/analyses/[id]/content`, `/analyses/[id]/painted-door`, `/analyses/[id]/analytics` pages, all backend code, all existing tests.
 
 ---
 
@@ -259,7 +283,7 @@ All API routes, all `/analyses/[id]/foundation`, `/analyses/[id]/content`, `/ana
 
 ### Unit Tests
 
-**`src/app/__tests__/page.test.tsx` (new or rewrite):**
+**`src/app/__tests__/page.test.tsx` (new):**
 - Renders project cards for each analysis
 - Shows pipeline progress indicators (foundation doc count, website status, content counts)
 - Cards link to `/analyses/[id]`
@@ -268,11 +292,20 @@ All API routes, all `/analyses/[id]/foundation`, `/analyses/[id]/content`, `/ana
 
 **`src/app/analyses/[id]/__tests__/page.test.tsx` (new):**
 - Summary cards section renders with correct data
+- Analysis card shows overall score, tier, and links to analysis detail
 - Foundation card shows correct doc count and links to foundation page
 - Website card shows correct status and signup count
 - Content card shows correct piece counts
+- Performance card only rendered when GSC data exists
 - Cards not rendered when no data exists for that section
-- Existing analysis detail tests remain unchanged
+
+**`src/app/analyses/[id]/analysis/__tests__/page.test.tsx` (new):**
+- Score rings render with correct values for all 6 dimensions
+- Key Risks section renders risk list
+- SEO Deep Dive renders when seoData exists, hidden when absent
+- Full Analysis section is collapsible (collapsed by default)
+- Reanalyze and Delete buttons render
+- Back link points to `/analyses/[id]`
 
 **`src/components/__tests__/NavLinks.test.tsx` (new):**
 - Renders 3 nav items (Projects, Ideation, Analytics)
@@ -338,9 +371,19 @@ async function getProjectSummaries(): Promise<ProjectSummary[]> {
 
 Cross-project queries (`getAllPaintedDoorSites`, `getAllContentCalendars`) are called once and filtered per project to avoid N+1 Redis calls. Per-project `getAllFoundationDocs` is the only N-call — it makes 6 serial Redis calls per project (one per doc type). For < 20 projects (~120 Redis calls total), this is acceptable. If it becomes slow, add a `project_summary:{ideaId}` cache key.
 
+**Error handling:** Wrap the per-project `getAllFoundationDocs` call in a try/catch, defaulting `foundationCount` to 0 on failure. Follow the existing `.catch(() => null)` pattern used for `getPaintedDoorSite` elsewhere. One project's foundation doc failure should not tank the entire home page.
+
 ### Dashboard Summary Cards — Server Component
 
-The analysis detail page (`/analyses/[id]/page.tsx`) is already a server component that fetches `paintedDoorSite`, `contentCalendar`, `contentPieceCount`, and `hasGSCLink` in its `getAnalysisData()` function. Foundation doc count is the only new data source to add. The summary cards render from data already being fetched — minimal additional Redis calls.
+The existing analysis detail page (`/analyses/[id]/page.tsx`) is already a server component that fetches `paintedDoorSite`, `contentCalendar`, `contentPieceCount`, and `hasGSCLink` in its `getAnalysisData()` function. This data feeds the pipeline summary cards. Two new data sources to add: foundation doc count (via `getAllFoundationDocs`) and signup count (via `getEmailSignupCount` or by returning the full `PaintedDoorSite` object instead of `{ siteUrl, status }`). The `ScoreRing`, `SEODeepDive`, `ReanalyzeForm`, `DeleteButton`, and `MarkdownContent` components move to the new analysis detail page at `/analyses/[id]/analysis/page.tsx`.
+
+### Analysis Detail Page — Collapsible Full Analysis
+
+The Full Analysis section uses a client component for the expand/collapse toggle. The section renders collapsed by default (CSS `max-height` with overflow hidden + gradient fade). A toggle button switches between collapsed and expanded states. Implementation note: use `max-height: none` for the expanded state rather than a fixed pixel value, since analysis markdown length is variable. This is the only client interaction on the analysis detail page — the rest remains a server component.
+
+### Light Mode
+
+The app respects system color preference via `@media (prefers-color-scheme: light)` in `globals.css`. The mockups demonstrate dark mode only. Implementation must use the existing CSS custom properties (which automatically switch between light and dark) rather than hard-coded color values.
 
 ---
 
@@ -352,12 +395,14 @@ The analysis detail page (`/analyses/[id]/page.tsx`) is already a server compone
 |---|----------|------------|------------------------|
 | 1 | Primary navigation model | Project-centric (3 tabs) | Stage-centric (7 tabs, current), hybrid |
 | 2 | Home page content | Project list with pipeline progress | Pipeline stages (current), leaderboard |
-| 3 | Project dashboard layout | Summary cards + existing analysis detail | Full inline sections, tabbed sections |
+| 3 | Project dashboard layout | Full-width stacked summary cards (analysis detail on sub-page) | Compact grid, inline sections, tabbed sections |
 | 4 | URL structure | Keep `/analyses/[id]` | Rename to `/projects/[id]` |
 | 5 | Cross-project listing pages | Orphan from nav, keep accessible by URL | Delete, move under `/admin/` |
 | 6 | Foundation-tab-promotion mockups | Delete | Keep for reference |
 | 7 | Analytics route | New `/analytics`, initially redirect to `/testing` | Reuse `/testing` route |
 | 8 | Content pipeline interaction | No changes to in-progress work | Refactor routes to `/projects/*` |
+| 9 | Analysis detail page | Separate sub-page at `/analyses/[id]/analysis` | Keep inline on dashboard, tabbed sections |
+| 10 | Full Analysis section | Collapsible, collapsed by default | Always expanded, remove entirely |
 
 ### Decision Details
 
@@ -381,15 +426,16 @@ The analysis detail page (`/analyses/[id]/page.tsx`) is already a server compone
 - Score-forward (analysis score rings prominent): Too much detail for a list view. Scores are meaningful only in context, available on the dashboard.
 - Status-forward (prominent status label): Too reductive — a single status label can't capture a multi-stage pipeline.
 
-#### Decision 3: Summary Cards + Existing Detail
+#### Decision 3: Full-Width Stacked Summary Cards
 
-**Chose:** Compact summary cards at the top of the existing analysis detail page, linking to detail pages.
+**Chose:** Full-width stacked summary cards on the dashboard, with analysis content moved to a sub-page.
 
-**Why:** Keeps the dashboard scannable (summary cards add ~200px of height) while preserving all existing analysis detail below. Avoids a miles-long page (rejected full inline sections) and avoids hiding content behind tabs (rejected tabbed sections). The detail pages (foundation, content, website, analytics) already exist with their own interaction patterns.
+**Why:** Full-width cards give each pipeline stage room for meaningful detail (score breakdowns, doc checklists, stat columns) without forcing users to click through for basic status. A compact grid was too cramped — important details were hidden behind clicks. Moving analysis content to `/analyses/[id]/analysis` keeps the dashboard focused on pipeline status. The analysis detail page is essentially the existing live page with minimal changes (nav, breadcrumb, collapsible Full Analysis).
 
 **Alternatives rejected:**
-- Full inline sections: Every section expanded on one page. Miles-long page, unusable.
-- Tabbed sections: Hides content behind clicks, doesn't give at-a-glance overview, adds UI complexity.
+- Compact grid (3-4 columns): Too little space per card, critical details hidden.
+- Inline sections (analysis content on dashboard): Dashboard becomes miles long, mixing pipeline status with analysis detail.
+- Tabbed sections: Hides content behind clicks, adds UI complexity.
 
 #### Decision 4: Keep Existing URLs
 
@@ -408,3 +454,15 @@ The analysis detail page (`/analyses/[id]/page.tsx`) is already a server compone
 **Chose:** Create `/analytics` that initially redirects to `/testing`.
 
 **Why:** Establishes the route for the future cross-site analytics experience while reusing the existing testing dashboard in the interim. The user specifically called out Analytics as a cross-cutting concern that belongs in the top nav.
+
+#### Decision 9: Analysis Detail as Sub-Page
+
+**Chose:** Move analysis content (scores, risks, SEO, full analysis) to `/analyses/[id]/analysis`.
+
+**Why:** The dashboard's purpose is pipeline status at a glance. Mixing analysis detail (score rings, risk lists, SEO deep dive, full markdown) with pipeline summary cards creates a disjointed page. The analysis content is substantial enough to warrant its own page. The analysis detail page is visually identical to the existing live page — minimal implementation effort.
+
+#### Decision 10: Collapsible Full Analysis
+
+**Chose:** Full Analysis section collapsed by default with a "Show full analysis" toggle.
+
+**Why:** The full analysis markdown can be very long. Collapsing it by default keeps the analysis detail page scannable — users see scores, risks, and SEO data without scrolling past walls of text. One click to expand when they want the full narrative.

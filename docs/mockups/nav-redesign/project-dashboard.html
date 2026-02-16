@@ -164,20 +164,6 @@
       color: var(--text-primary);
     }
 
-    .btn-secondary {
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-      border: 1px solid var(--border-default);
-      padding: 0.5rem 1rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%);
-      color: white;
-      padding: 0.5rem 1rem;
-      box-shadow: 0 4px 14px rgba(255, 107, 91, 0.4);
-    }
-
     /* Badges */
     .badge {
       display: inline-flex;
@@ -215,43 +201,16 @@
     .stagger-5 { animation-delay: 0.25s; }
     .stagger-6 { animation-delay: 0.3s; }
 
-    /* Card base */
-    .card-static {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-    }
-
-    /* Summary Cards Grid */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
-    }
-
-    @media (max-width: 768px) {
-      .summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
+    /* Full-width summary card */
     .summary-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      padding: 1.25rem;
+      padding: 1.25rem 1.5rem;
       text-decoration: none;
       color: inherit;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
+      display: block;
     }
 
     .summary-card:hover {
@@ -285,35 +244,7 @@
       color: var(--accent-coral);
     }
 
-    .summary-card-value {
-      font-family: var(--font-display);
-      font-size: 1.125rem;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .summary-card-detail {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .summary-dots {
-      display: flex;
-      gap: 4px;
-      margin-top: 0.25rem;
-    }
-
-    .summary-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border-default);
-    }
-
-    .summary-dot.filled {
-      background: var(--accent-emerald);
-    }
-
+    /* Status badges */
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -336,18 +267,40 @@
       background: currentColor;
     }
 
-    /* Score Ring */
-    .score-ring-group {
+    /* Dot indicators */
+    .doc-dots {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
+      gap: 4px;
     }
 
-    .score-ring-label {
-      font-size: 0.6875rem;
-      color: var(--text-muted);
-      text-align: center;
+    .doc-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-default);
+    }
+
+    .doc-dot.filled {
+      background: var(--accent-emerald);
+    }
+
+    /* Score mini ring */
+    .score-mini-ring {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .score-mini-ring-value {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
     }
 
     /* Breadcrumb */
@@ -366,6 +319,48 @@
       color: var(--accent-coral);
     }
 
+    /* Foundation doc list */
+    .doc-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+
+    @media (max-width: 480px) {
+      .doc-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .doc-item-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-item-check.done {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-emerald);
+    }
+
+    .doc-item-check.pending {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+    }
+
     /* Annotation */
     .annotation-pill {
       display: inline-flex;
@@ -381,12 +376,6 @@
       background: rgba(139, 92, 246, 0.12);
       color: var(--accent-violet);
       border: 1px solid rgba(139, 92, 246, 0.2);
-    }
-
-    .annotation-divider {
-      border: none;
-      border-top: 2px dashed rgba(139, 92, 246, 0.2);
-      margin: 1.5rem 0;
     }
 
     /* Mobile nav */
@@ -465,7 +454,7 @@
   </nav>
 
   <main class="container-app">
-    <!-- Page Header with ambient gradient -->
+    <!-- Page Header -->
     <header class="animate-slide-up stagger-1" style="position: relative; padding: 1.5rem 0 1rem; background: radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.08) 0%, transparent 50%); margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; border-radius: var(--radius-lg);">
       <a href="#" class="breadcrumb" style="margin-bottom: 0.75rem; display: inline-flex;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -498,270 +487,177 @@
           </svg>
           View Site
         </a>
-        <a href="#" class="btn btn-ghost" style="font-size: 0.8125rem;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          Foundation Docs
-        </a>
-        <button class="btn btn-ghost" style="font-size: 0.8125rem;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="1 4 1 10 7 10"></polyline>
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-          </svg>
-          Reanalyze
-        </button>
       </div>
     </header>
 
-    <!-- ============================================= -->
-    <!-- NEW: Pipeline Summary Cards                   -->
-    <!-- ============================================= -->
-    <div style="margin-top: 1.5rem;">
-      <span class="annotation-pill" style="margin-bottom: 0.75rem; display: inline-block;">NEW: Pipeline summary cards inserted here</span>
+    <!-- Pipeline Summary Cards — Full Width Stacked -->
+    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem;">
 
-      <div class="summary-grid animate-slide-up stagger-2">
-        <!-- Foundation Card -->
-        <a href="#" class="summary-card">
-          <div class="summary-card-header">
-            <span class="summary-card-title">Foundation</span>
-            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18l6-6-6-6"></path>
+      <!-- Analysis Card -->
+      <a href="#" class="summary-card animate-slide-up stagger-2">
+        <div class="summary-card-header">
+          <span class="summary-card-title">Analysis</span>
+          <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.25rem; margin-top: 0.75rem;">
+          <div class="score-mini-ring">
+            <svg width="44" height="44" style="transform: rotate(-90deg);">
+              <circle cx="22" cy="22" r="19" fill="none" stroke="var(--border-default)" stroke-width="3"/>
+              <circle cx="22" cy="22" r="19" fill="none" stroke="var(--accent-emerald)" stroke-width="3"
+                stroke-dasharray="119.38" stroke-dashoffset="23.88" stroke-linecap="round"/>
             </svg>
+            <div class="score-mini-ring-value" style="color: var(--accent-emerald);">8</div>
           </div>
-          <div>
-            <span class="summary-card-value">6/6 complete</span>
-            <div class="summary-dots">
-              <div class="summary-dot filled"></div>
-              <div class="summary-dot filled"></div>
-              <div class="summary-dot filled"></div>
-              <div class="summary-dot filled"></div>
-              <div class="summary-dot filled"></div>
-              <div class="summary-dot filled"></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="font-family: var(--font-display); font-size: 1rem; font-weight: 500; color: var(--text-primary);">Tier 1 — Pursue</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">SEO 8 &middot; Competition 7 &middot; WTP 6 &middot; Differentiation 9 &middot; Expertise 8</span>
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.375rem;">3 key risks identified &middot; 8 agreed keywords across LLMs &middot; 3 SERP-validated content gaps</p>
+          </div>
+        </div>
+      </a>
+
+      <!-- Foundation Card -->
+      <a href="#" class="summary-card animate-slide-up stagger-3">
+        <div class="summary-card-header">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="summary-card-title">Foundation Documents</span>
+            <div style="display: flex; align-items: center; gap: 0.375rem;">
+              <div class="doc-dots">
+                <div class="doc-dot filled"></div>
+                <div class="doc-dot filled"></div>
+                <div class="doc-dot filled"></div>
+                <div class="doc-dot filled"></div>
+                <div class="doc-dot filled"></div>
+                <div class="doc-dot filled"></div>
+              </div>
+              <span style="font-size: 0.6875rem; color: var(--accent-emerald); font-weight: 500;">6/6</span>
             </div>
           </div>
-          <span class="summary-card-detail">Strategy, Positioning, Brand Voice, Design, SEO, Social</span>
-        </a>
-
-        <!-- Website Card -->
-        <a href="#" class="summary-card">
-          <div class="summary-card-header">
-            <span class="summary-card-title">Website</span>
-            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18l6-6-6-6"></path>
-            </svg>
-          </div>
-          <div>
-            <span class="status-badge live">
-              <span class="status-badge-dot"></span>
-              Live
-            </span>
-          </div>
-          <span class="summary-card-detail">secondlook.app &middot; 12 signups</span>
-        </a>
-
-        <!-- Content Card -->
-        <a href="#" class="summary-card">
-          <div class="summary-card-header">
-            <span class="summary-card-title">Content</span>
-            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18l6-6-6-6"></path>
-            </svg>
-          </div>
-          <div>
-            <span class="summary-card-value">8 published</span>
-          </div>
-          <span class="summary-card-detail">4 pending &middot; 12 total pieces</span>
-        </a>
-
-        <!-- Analytics Card (conditional — only when GSC data connected) -->
-        <a href="#" class="summary-card">
-          <div class="summary-card-header">
-            <span class="summary-card-title">Performance</span>
-            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18l6-6-6-6"></path>
-            </svg>
-          </div>
-          <div>
-            <span class="summary-card-value">1.2k impressions</span>
-          </div>
-          <span class="summary-card-detail">48 clicks &middot; last 7 days</span>
-        </a>
-      </div>
-    </div>
-
-    <hr class="annotation-divider">
-    <span class="annotation-pill" style="margin-bottom: 1rem; display: inline-block;">Below: Existing analysis detail (unchanged)</span>
-
-    <!-- ============================================= -->
-    <!-- EXISTING: Scores Grid (unchanged)             -->
-    <!-- ============================================= -->
-    <div class="card-static animate-slide-up stagger-3" style="padding: 1.5rem;">
-      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1.25rem;">Scores</h2>
-      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; justify-items: center;">
-        <!-- Score Ring: SEO -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 72px; height: 72px;">
-            <svg width="72" height="72" style="transform: rotate(-90deg);">
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
-                stroke-dasharray="194.78" stroke-dashoffset="38.96" stroke-linecap="round"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">8</div>
-          </div>
-          <span class="score-ring-label">SEO</span>
+          <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
         </div>
-
-        <!-- Score Ring: Competition -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 72px; height: 72px;">
-            <svg width="72" height="72" style="transform: rotate(-90deg);">
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
-                stroke-dasharray="194.78" stroke-dashoffset="58.43" stroke-linecap="round"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">7</div>
+        <div class="doc-list">
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            Strategy
           </div>
-          <span class="score-ring-label">Competition</span>
-        </div>
-
-        <!-- Score Ring: WTP -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 72px; height: 72px;">
-            <svg width="72" height="72" style="transform: rotate(-90deg);">
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-amber)" stroke-width="5"
-                stroke-dasharray="194.78" stroke-dashoffset="77.91" stroke-linecap="round"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-amber);">6</div>
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            Positioning
           </div>
-          <span class="score-ring-label">WTP</span>
-        </div>
-
-        <!-- Score Ring: Differentiation -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 72px; height: 72px;">
-            <svg width="72" height="72" style="transform: rotate(-90deg);">
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
-                stroke-dasharray="194.78" stroke-dashoffset="19.48" stroke-linecap="round"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">9</div>
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            Brand Voice
           </div>
-          <span class="score-ring-label">Differentiation</span>
-        </div>
-
-        <!-- Score Ring: Expertise -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 72px; height: 72px;">
-            <svg width="72" height="72" style="transform: rotate(-90deg);">
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
-                stroke-dasharray="194.78" stroke-dashoffset="38.96" stroke-linecap="round"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">8</div>
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            Design Principles
           </div>
-          <span class="score-ring-label">Expertise</span>
-        </div>
-
-        <!-- Score Ring: Overall (larger) -->
-        <div class="score-ring-group">
-          <div style="position: relative; width: 80px; height: 80px;">
-            <svg width="80" height="80" style="transform: rotate(-90deg);">
-              <circle cx="40" cy="40" r="35" fill="none" stroke="var(--border-default)" stroke-width="5"/>
-              <circle cx="40" cy="40" r="35" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
-                stroke-dasharray="219.91" stroke-dashoffset="43.98" stroke-linecap="round"
-                style="filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));"/>
-            </svg>
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; color: var(--accent-emerald);">8</div>
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            SEO Strategy
           </div>
-          <span class="score-ring-label">Overall</span>
+          <div class="doc-item">
+            <div class="doc-item-check done">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            Social Media
+          </div>
         </div>
-      </div>
-    </div>
+      </a>
 
-    <!-- ============================================= -->
-    <!-- EXISTING: Key Risks (unchanged)               -->
-    <!-- ============================================= -->
-    <div class="card-static animate-slide-up stagger-4" style="padding: 1.5rem; margin-top: 1.5rem;">
-      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        Key Risks
-      </h2>
-      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
-        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
-          <span style="color: var(--color-danger);">&#8226;</span>
-          <span>Apple and Google Photos have built-in memory features that could limit differentiation</span>
-        </li>
-        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
-          <span style="color: var(--color-danger);">&#8226;</span>
-          <span>User trust barrier for granting AI access to personal photo libraries</span>
-        </li>
-        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
-          <span style="color: var(--color-danger);">&#8226;</span>
-          <span>Cloud storage costs scale linearly with user photo count</span>
-        </li>
-      </ul>
-    </div>
-
-    <!-- ============================================= -->
-    <!-- EXISTING: SEO Deep Dive, Full Analysis, etc.  -->
-    <!-- (truncated in mockup — continues below)       -->
-    <!-- ============================================= -->
-    <div class="card-static animate-slide-up stagger-5" style="padding: 1.5rem; margin-top: 1.5rem;">
-      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        SEO Deep Dive
-      </h2>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Sources: Claude Sonnet + OpenAI GPT-4o + SerpAPI
-      </p>
-
-      <!-- LLM Cross-Reference -->
-      <h3 style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">LLM Cross-Reference</h3>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;">
-        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.2); text-align: center;">
-          <div style="font-family: var(--font-display); font-size: 1.125rem; color: var(--accent-emerald);">8</div>
-          <div style="font-size: 0.6875rem; color: var(--text-muted);">Agreed</div>
+      <!-- Website Card -->
+      <a href="#" class="summary-card animate-slide-up stagger-4">
+        <div class="summary-card-header">
+          <span class="summary-card-title">Painted Door Site</span>
+          <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
         </div>
-        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); text-align: center;">
-          <div style="font-family: var(--font-display); font-size: 1.125rem; color: #818cf8;">3</div>
-          <div style="font-size: 0.6875rem; color: var(--text-muted);">Claude Only</div>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+          <span class="status-badge live">
+            <span class="status-badge-dot"></span>
+            Live
+          </span>
+          <span style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">secondlook.app</span>
+          <span style="font-size: 0.8125rem; color: var(--text-secondary);">12 signups</span>
         </div>
-        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); text-align: center;">
-          <div style="font-family: var(--font-display); font-size: 1.125rem; color: var(--accent-amber);">2</div>
-          <div style="font-size: 0.6875rem; color: var(--text-muted);">OpenAI Only</div>
+      </a>
+
+      <!-- Content Card -->
+      <a href="#" class="summary-card animate-slide-up stagger-5">
+        <div class="summary-card-header">
+          <span class="summary-card-title">Content Pipeline</span>
+          <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
         </div>
-      </div>
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--accent-emerald);">8</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">Complete</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--accent-amber);">4</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">Pending</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--text-secondary);">12</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">Total</div>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">blog posts, comparisons, how-to guides</span>
+        </div>
+      </a>
 
-      <p style="font-size: 0.75rem; color: var(--text-muted);">
-        Highest confidence: photo organizer app, memory photo app, AI photo curation, best photo organizer, photo memories app, automatic photo sorting, smart photo album, photo rediscovery tool
-      </p>
-    </div>
-
-    <!-- Full Analysis (truncated) -->
-    <div class="card-static animate-slide-up stagger-6" style="padding: 1.5rem; margin-top: 1.5rem;">
-      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">Full Analysis</h2>
-      <div style="font-size: 0.875rem; line-height: 1.7; color: var(--text-secondary);">
-        <p style="margin-bottom: 1rem;">SecondLook targets a growing market of consumers overwhelmed by their photo libraries. The average smartphone user has 2,000+ photos, and research shows 85% of those photos are never viewed again after the initial capture...</p>
-        <p style="color: var(--text-muted); font-style: italic;">[Analysis continues below — truncated in mockup]</p>
-      </div>
+      <!-- Performance Card (conditional) -->
+      <a href="#" class="summary-card animate-slide-up stagger-6">
+        <div class="summary-card-header">
+          <span class="summary-card-title">Performance</span>
+          <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--text-primary);">1.2k</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">Impressions</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--text-primary);">48</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">Clicks</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: var(--text-primary);">4.0%</div>
+            <div style="font-size: 0.6875rem; color: var(--text-muted);">CTR</div>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">Last 7 days &middot; GSC</span>
+        </div>
+      </a>
     </div>
 
     <!-- Annotations -->
     <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
-      <span class="annotation-pill">Back link changed: "Back" → "Back to Projects" linking to /</span>
-      <span class="annotation-pill">NEW: 3-4 summary cards inserted between header and scores</span>
-      <span class="annotation-pill">Summary cards link to detail pages: /foundation, /painted-door, /content, /analytics</span>
-      <span class="annotation-pill">Everything below summary cards is the existing analysis detail page (unchanged)</span>
+      <span class="annotation-pill">Full-width stacked cards — more detail per section</span>
+      <span class="annotation-pill">Analysis card → /analyses/[id]/analysis (scores, risks, SEO, full analysis)</span>
+      <span class="annotation-pill">Foundation card → /analyses/[id]/foundation (existing page)</span>
+      <span class="annotation-pill">Website card → /analyses/[id]/painted-door (existing page)</span>
+      <span class="annotation-pill">Content card → /analyses/[id]/content (existing page)</span>
+      <span class="annotation-pill">Performance card → /analyses/[id]/analytics (conditional, existing page)</span>
     </div>
   </main>
 
