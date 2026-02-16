@@ -4,6 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
+    exclude: ['**/node_modules/**', '**/.worktrees/**'],
+    environmentMatchGlobs: [
+      ['src/components/__tests__/**', 'jsdom'],
+    ],
   },
   resolve: {
     alias: {
