@@ -16,7 +16,7 @@
 
 ---
 
-## Task 1: Fix `getFoundationProgress` deserialization
+## ✅ Task 1: Fix `getFoundationProgress` deserialization
 
 **Files:**
 - Modify: `src/lib/db.ts:349-353`
@@ -72,7 +72,7 @@ git commit -m "fix: use parseValue for getFoundationProgress deserialization"
 
 ---
 
-## Task 2: Wire per-doc progress updates in `generate_foundation_doc` tool
+## ✅ Task 2: Wire per-doc progress updates in `generate_foundation_doc` tool
 
 **Files:**
 - Modify: `src/lib/agent-tools/foundation.ts:120`
