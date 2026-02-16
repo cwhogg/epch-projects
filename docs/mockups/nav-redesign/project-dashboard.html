@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Dashboard — SecondLook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255, 107, 91, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+
+      --color-danger: #f87171;
+      --color-info: #60a5fa;
+
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.1);
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* Navigation */
+    .nav-blur {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(13, 13, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 1.5rem;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 2.5rem;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .nav-links a {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-links a.active {
+      color: var(--accent-coral);
+    }
+
+    /* Container */
+    .container-app {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      padding-bottom: 4rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      padding: 0.5rem 1rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%);
+      color: white;
+      padding: 0.5rem 1rem;
+      box-shadow: 0 4px 14px rgba(255, 107, 91, 0.4);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Animations */
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+    .stagger-6 { animation-delay: 0.3s; }
+
+    /* Card base */
+    .card-static {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    /* Summary Cards Grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .summary-card:hover {
+      border-color: var(--border-default);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .summary-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-card-title {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .summary-card-arrow {
+      color: var(--text-muted);
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .summary-card:hover .summary-card-arrow {
+      transform: translateX(3px);
+      color: var(--accent-coral);
+    }
+
+    .summary-card-value {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .summary-card-detail {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .summary-dots {
+      display: flex;
+      gap: 4px;
+      margin-top: 0.25rem;
+    }
+
+    .summary-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-default);
+    }
+
+    .summary-dot.filled {
+      background: var(--accent-emerald);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .status-badge.live {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+    }
+
+    .status-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Score Ring */
+    .score-ring-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .score-ring-label {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: color 0.2s;
+    }
+
+    .breadcrumb:hover {
+      color: var(--accent-coral);
+    }
+
+    /* Annotation */
+    .annotation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-body);
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.1875rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--accent-violet);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .annotation-divider {
+      border: none;
+      border-top: 2px dashed rgba(139, 92, 246, 0.2);
+      margin: 1.5rem 0;
+    }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(13, 13, 15, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .mobile-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 56px;
+    }
+
+    .mobile-nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .mobile-nav-tab.active {
+      color: var(--accent-coral);
+    }
+
+    .mobile-nav-tab span {
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 640px) {
+      .mobile-nav { display: block; }
+      .desktop-nav-links { display: none; }
+      body { padding-bottom: 80px; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+  </style>
+</head>
+<body>
+  <!-- Sticky Nav -->
+  <nav class="nav-blur">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+          <circle cx="10" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none"/>
+          <circle cx="18" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none" opacity="0.5"/>
+        </svg>
+        EPCH
+      </a>
+      <div class="nav-links desktop-nav-links">
+        <a href="#" class="active">Projects</a>
+        <a href="#">Ideation</a>
+        <a href="#">Analytics</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-app">
+    <!-- Page Header with ambient gradient -->
+    <header class="animate-slide-up stagger-1" style="position: relative; padding: 1.5rem 0 1rem; background: radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.08) 0%, transparent 50%); margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; border-radius: var(--radius-lg);">
+      <a href="#" class="breadcrumb" style="margin-bottom: 0.75rem; display: inline-flex;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5"></path>
+          <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+        Back to Projects
+      </a>
+
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-top: 0.5rem;">
+        <div>
+          <h1 style="font-size: 1.75rem; color: var(--text-primary);">SecondLook</h1>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Analyzed on Feb 10, 2026
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <span class="badge badge-success">Tier 1</span>
+          <span style="font-size: 0.875rem; font-weight: 500; color: var(--accent-emerald);">High Confidence</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+        <a href="#" class="btn btn-ghost" style="font-size: 0.8125rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          View Site
+        </a>
+        <a href="#" class="btn btn-ghost" style="font-size: 0.8125rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          Foundation Docs
+        </a>
+        <button class="btn btn-ghost" style="font-size: 0.8125rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Reanalyze
+        </button>
+      </div>
+    </header>
+
+    <!-- ============================================= -->
+    <!-- NEW: Pipeline Summary Cards                   -->
+    <!-- ============================================= -->
+    <div style="margin-top: 1.5rem;">
+      <span class="annotation-pill" style="margin-bottom: 0.75rem; display: inline-block;">NEW: Pipeline summary cards inserted here</span>
+
+      <div class="summary-grid animate-slide-up stagger-2">
+        <!-- Foundation Card -->
+        <a href="#" class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Foundation</span>
+            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="summary-card-value">6/6 complete</span>
+            <div class="summary-dots">
+              <div class="summary-dot filled"></div>
+              <div class="summary-dot filled"></div>
+              <div class="summary-dot filled"></div>
+              <div class="summary-dot filled"></div>
+              <div class="summary-dot filled"></div>
+              <div class="summary-dot filled"></div>
+            </div>
+          </div>
+          <span class="summary-card-detail">Strategy, Positioning, Brand Voice, Design, SEO, Social</span>
+        </a>
+
+        <!-- Website Card -->
+        <a href="#" class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Website</span>
+            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="status-badge live">
+              <span class="status-badge-dot"></span>
+              Live
+            </span>
+          </div>
+          <span class="summary-card-detail">secondlook.app &middot; 12 signups</span>
+        </a>
+
+        <!-- Content Card -->
+        <a href="#" class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Content</span>
+            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="summary-card-value">8 published</span>
+          </div>
+          <span class="summary-card-detail">4 pending &middot; 12 total pieces</span>
+        </a>
+
+        <!-- Analytics Card (conditional — only when GSC data connected) -->
+        <a href="#" class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Performance</span>
+            <svg class="summary-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="summary-card-value">1.2k impressions</span>
+          </div>
+          <span class="summary-card-detail">48 clicks &middot; last 7 days</span>
+        </a>
+      </div>
+    </div>
+
+    <hr class="annotation-divider">
+    <span class="annotation-pill" style="margin-bottom: 1rem; display: inline-block;">Below: Existing analysis detail (unchanged)</span>
+
+    <!-- ============================================= -->
+    <!-- EXISTING: Scores Grid (unchanged)             -->
+    <!-- ============================================= -->
+    <div class="card-static animate-slide-up stagger-3" style="padding: 1.5rem;">
+      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1.25rem;">Scores</h2>
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; justify-items: center;">
+        <!-- Score Ring: SEO -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="194.78" stroke-dashoffset="38.96" stroke-linecap="round"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">8</div>
+          </div>
+          <span class="score-ring-label">SEO</span>
+        </div>
+
+        <!-- Score Ring: Competition -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="194.78" stroke-dashoffset="58.43" stroke-linecap="round"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">7</div>
+          </div>
+          <span class="score-ring-label">Competition</span>
+        </div>
+
+        <!-- Score Ring: WTP -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-amber)" stroke-width="5"
+                stroke-dasharray="194.78" stroke-dashoffset="77.91" stroke-linecap="round"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-amber);">6</div>
+          </div>
+          <span class="score-ring-label">WTP</span>
+        </div>
+
+        <!-- Score Ring: Differentiation -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="194.78" stroke-dashoffset="19.48" stroke-linecap="round"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">9</div>
+          </div>
+          <span class="score-ring-label">Differentiation</span>
+        </div>
+
+        <!-- Score Ring: Expertise -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 72px; height: 72px;">
+            <svg width="72" height="72" style="transform: rotate(-90deg);">
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="31" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="194.78" stroke-dashoffset="38.96" stroke-linecap="round"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; color: var(--accent-emerald);">8</div>
+          </div>
+          <span class="score-ring-label">Expertise</span>
+        </div>
+
+        <!-- Score Ring: Overall (larger) -->
+        <div class="score-ring-group">
+          <div style="position: relative; width: 80px; height: 80px;">
+            <svg width="80" height="80" style="transform: rotate(-90deg);">
+              <circle cx="40" cy="40" r="35" fill="none" stroke="var(--border-default)" stroke-width="5"/>
+              <circle cx="40" cy="40" r="35" fill="none" stroke="var(--accent-emerald)" stroke-width="5"
+                stroke-dasharray="219.91" stroke-dashoffset="43.98" stroke-linecap="round"
+                style="filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; color: var(--accent-emerald);">8</div>
+          </div>
+          <span class="score-ring-label">Overall</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- EXISTING: Key Risks (unchanged)               -->
+    <!-- ============================================= -->
+    <div class="card-static animate-slide-up stagger-4" style="padding: 1.5rem; margin-top: 1.5rem;">
+      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Key Risks
+      </h2>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger);">&#8226;</span>
+          <span>Apple and Google Photos have built-in memory features that could limit differentiation</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger);">&#8226;</span>
+          <span>User trust barrier for granting AI access to personal photo libraries</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+          <span style="color: var(--color-danger);">&#8226;</span>
+          <span>Cloud storage costs scale linearly with user photo count</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- EXISTING: SEO Deep Dive, Full Analysis, etc.  -->
+    <!-- (truncated in mockup — continues below)       -->
+    <!-- ============================================= -->
+    <div class="card-static animate-slide-up stagger-5" style="padding: 1.5rem; margin-top: 1.5rem;">
+      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        SEO Deep Dive
+      </h2>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Sources: Claude Sonnet + OpenAI GPT-4o + SerpAPI
+      </p>
+
+      <!-- LLM Cross-Reference -->
+      <h3 style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">LLM Cross-Reference</h3>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.2); text-align: center;">
+          <div style="font-family: var(--font-display); font-size: 1.125rem; color: var(--accent-emerald);">8</div>
+          <div style="font-size: 0.6875rem; color: var(--text-muted);">Agreed</div>
+        </div>
+        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); text-align: center;">
+          <div style="font-family: var(--font-display); font-size: 1.125rem; color: #818cf8;">3</div>
+          <div style="font-size: 0.6875rem; color: var(--text-muted);">Claude Only</div>
+        </div>
+        <div style="padding: 0.75rem; border-radius: var(--radius-md); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); text-align: center;">
+          <div style="font-family: var(--font-display); font-size: 1.125rem; color: var(--accent-amber);">2</div>
+          <div style="font-size: 0.6875rem; color: var(--text-muted);">OpenAI Only</div>
+        </div>
+      </div>
+
+      <p style="font-size: 0.75rem; color: var(--text-muted);">
+        Highest confidence: photo organizer app, memory photo app, AI photo curation, best photo organizer, photo memories app, automatic photo sorting, smart photo album, photo rediscovery tool
+      </p>
+    </div>
+
+    <!-- Full Analysis (truncated) -->
+    <div class="card-static animate-slide-up stagger-6" style="padding: 1.5rem; margin-top: 1.5rem;">
+      <h2 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">Full Analysis</h2>
+      <div style="font-size: 0.875rem; line-height: 1.7; color: var(--text-secondary);">
+        <p style="margin-bottom: 1rem;">SecondLook targets a growing market of consumers overwhelmed by their photo libraries. The average smartphone user has 2,000+ photos, and research shows 85% of those photos are never viewed again after the initial capture...</p>
+        <p style="color: var(--text-muted); font-style: italic;">[Analysis continues below — truncated in mockup]</p>
+      </div>
+    </div>
+
+    <!-- Annotations -->
+    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="annotation-pill">Back link changed: "Back" → "Back to Projects" linking to /</span>
+      <span class="annotation-pill">NEW: 3-4 summary cards inserted between header and scores</span>
+      <span class="annotation-pill">Summary cards link to detail pages: /foundation, /painted-door, /content, /analytics</span>
+      <span class="annotation-pill">Everything below summary cards is the existing analysis detail page (unchanged)</span>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-inner">
+      <a href="#" class="mobile-nav-tab active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+        <span>Projects</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18h6"></path>
+          <path d="M10 22h4"></path>
+          <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path>
+        </svg>
+        <span>Ideation</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20V10"></path>
+          <path d="M18 20V4"></path>
+          <path d="M6 20v-4"></path>
+        </svg>
+        <span>Analytics</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>

@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — Project List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255, 107, 91, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+
+      --color-danger: #f87171;
+      --color-info: #60a5fa;
+
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.1);
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* Navigation */
+    .nav-blur {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(13, 13, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 1.5rem;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 2.5rem;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .nav-links a {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-links a.active {
+      color: var(--accent-coral);
+    }
+
+    /* Container */
+    .container-app {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(255, 107, 91, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 107, 91, 0.5);
+    }
+
+    /* Animations */
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+
+    /* Project Card */
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+
+    .project-card:hover {
+      border-color: var(--border-default);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .project-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .project-name {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.125rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .project-description {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Tier Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-danger {
+      background: linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(252, 165, 165, 0.1) 100%);
+      color: var(--color-danger);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .badge-neutral {
+      background: rgba(113, 113, 122, 0.15);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+    }
+
+    /* Pipeline Progress */
+    .pipeline-row {
+      display: flex;
+      gap: 1.25rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pipeline-stage {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .pipeline-label {
+      font-weight: 500;
+    }
+
+    .pipeline-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .pipeline-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-default);
+    }
+
+    .pipeline-dot.filled {
+      background: var(--accent-emerald);
+    }
+
+    .pipeline-status {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      padding: 0.125rem 0.375rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .pipeline-status.live {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+    }
+
+    .pipeline-status.deploying {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+    }
+
+    .pipeline-status.not-started {
+      background: rgba(113, 113, 122, 0.1);
+      color: var(--text-muted);
+    }
+
+    .pipeline-status.active {
+      background: rgba(96, 165, 250, 0.15);
+      color: var(--color-info);
+    }
+
+    /* Arrow icon */
+    .card-arrow {
+      color: var(--text-muted);
+      transition: transform 0.2s, color 0.2s;
+      flex-shrink: 0;
+      margin-top: 0.25rem;
+    }
+
+    .project-card:hover .card-arrow {
+      transform: translateX(4px);
+      color: var(--accent-coral);
+    }
+
+    /* Page header */
+    .page-header {
+      position: relative;
+      padding: 2rem 0 1.5rem;
+    }
+
+    .page-header-gradient {
+      position: absolute;
+      top: -40px;
+      right: -80px;
+      width: 400px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(255, 107, 91, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Annotation */
+    .annotation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-body);
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.1875rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--accent-violet);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(13, 13, 15, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .mobile-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 56px;
+    }
+
+    .mobile-nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .mobile-nav-tab.active {
+      color: var(--accent-coral);
+    }
+
+    .mobile-nav-tab span {
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+
+    /* Show mobile nav annotation at bottom */
+    @media (max-width: 640px) {
+      .mobile-nav { display: block; }
+      .desktop-nav-links { display: none; }
+      body { padding-bottom: 80px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky Nav — Desktop -->
+  <nav class="nav-blur">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <!-- EPCH logo circles -->
+        <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+          <circle cx="10" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none"/>
+          <circle cx="18" cy="10" r="9" stroke="var(--accent-coral)" stroke-width="2" fill="none" opacity="0.5"/>
+        </svg>
+        EPCH
+      </a>
+      <div class="nav-links desktop-nav-links">
+        <a href="#" class="active">Projects</a>
+        <a href="#">Ideation</a>
+        <a href="#">Analytics</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-app" style="padding-bottom: 4rem;">
+    <!-- Page Header -->
+    <div class="page-header animate-slide-up stagger-1">
+      <div class="page-header-gradient"></div>
+      <div class="page-header-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1 style="font-size: 1.75rem; color: var(--text-primary);">Projects</h1>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">
+              Track every product from idea to optimized SEO test
+            </p>
+          </div>
+          <a href="#" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Test New Product
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Cards -->
+    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+
+      <!-- Project 1: SecondLook — Well progressed -->
+      <a href="#" class="project-card animate-slide-up stagger-2">
+        <div class="project-card-header">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="project-name">SecondLook</span>
+              <span class="badge badge-success">Tier 1</span>
+            </div>
+            <p class="project-description">AI-powered photo curation that resurfaces forgotten memories using emotional and contextual signals</p>
+          </div>
+          <svg class="card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div class="pipeline-row">
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analysis</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Foundation</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+            </div>
+            <span style="font-size: 0.6875rem;">6/6</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Website</span>
+            <span class="pipeline-status live">Live</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Content</span>
+            <span style="font-size: 0.6875rem;">8 published / 12 total</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analytics</span>
+            <span class="pipeline-status active">Active</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Project 2: N of One — Mid progress -->
+      <a href="#" class="project-card animate-slide-up stagger-3">
+        <div class="project-card-header">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="project-name">N of One</span>
+              <span class="badge badge-success">Tier 1</span>
+            </div>
+            <p class="project-description">Personalized supplement stacks built from your own biomarker data and genetic profile</p>
+          </div>
+          <svg class="card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div class="pipeline-row">
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analysis</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Foundation</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot filled"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+            </div>
+            <span style="font-size: 0.6875rem;">2/6</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Website</span>
+            <span class="pipeline-status deploying">Deploying</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Content</span>
+            <span style="font-size: 0.6875rem;">0 published / 6 total</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analytics</span>
+            <span class="pipeline-status not-started">--</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Project 3: FocusFlow — Early stage -->
+      <a href="#" class="project-card animate-slide-up stagger-4">
+        <div class="project-card-header">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="project-name">FocusFlow</span>
+              <span class="badge badge-warning">Tier 2</span>
+            </div>
+            <p class="project-description">Ambient productivity tool that uses environmental sound analysis to optimize deep work sessions</p>
+          </div>
+          <svg class="card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div class="pipeline-row">
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analysis</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Foundation</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+            </div>
+            <span style="font-size: 0.6875rem;">0/6</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Website</span>
+            <span class="pipeline-status not-started">Not Started</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Content</span>
+            <span style="font-size: 0.6875rem;">Not started</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analytics</span>
+            <span class="pipeline-status not-started">--</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Project 4: GroundTruth — Low tier -->
+      <a href="#" class="project-card animate-slide-up stagger-5">
+        <div class="project-card-header">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="project-name">GroundTruth</span>
+              <span class="badge badge-danger">Tier 3</span>
+            </div>
+            <p class="project-description">Real-time fact-checking browser extension that validates claims against primary sources as you read</p>
+          </div>
+          <svg class="card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+        </div>
+        <div class="pipeline-row">
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analysis</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot filled"></div>
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Foundation</span>
+            <div class="pipeline-dots">
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+              <div class="pipeline-dot"></div>
+            </div>
+            <span style="font-size: 0.6875rem;">0/6</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Website</span>
+            <span class="pipeline-status not-started">Not Started</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Content</span>
+            <span style="font-size: 0.6875rem;">Not started</span>
+          </div>
+          <div class="pipeline-stage">
+            <span class="pipeline-label">Analytics</span>
+            <span class="pipeline-status not-started">--</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Annotations -->
+    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="annotation-pill">Nav: 3 tabs (Projects, Ideation, Analytics) — down from 7</span>
+      <span class="annotation-pill">Cards: name, tier badge, description, pipeline progress</span>
+      <span class="annotation-pill">Each card links to /analyses/[id] project dashboard</span>
+      <span class="annotation-pill">Sort: by overall analysis score (descending)</span>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-inner">
+      <a href="#" class="mobile-nav-tab active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+        <span>Projects</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18h6"></path>
+          <path d="M10 22h4"></path>
+          <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path>
+        </svg>
+        <span>Ideation</span>
+      </a>
+      <a href="#" class="mobile-nav-tab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20V10"></path>
+          <path d="M18 20V4"></path>
+          <path d="M6 20v-4"></path>
+        </svg>
+        <span>Analytics</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>
