@@ -41,6 +41,7 @@ vi.mock('@/lib/config', () => ({
 
 import { runFoundationGeneration } from '@/lib/foundation-agent';
 import { saveFoundationProgress } from '@/lib/db';
+import { createFoundationTools } from '@/lib/agent-tools/foundation';
 
 describe('Foundation generation orchestrator', () => {
   beforeEach(() => {
@@ -97,6 +98,28 @@ describe('Foundation generation orchestrator', () => {
     await runFoundationGeneration('idea-123');
 
     expect(saveFoundationProgress).toHaveBeenCalled();
+  });
+
+  it('updates per-doc progress when tools report status', async () => {
+    mockGetActiveRunId.mockResolvedValue(null);
+    mockRunAgent.mockResolvedValue({ status: 'complete', runId: 'test', messages: [], resumeCount: 0, turnCount: 1 });
+
+    await runFoundationGeneration('idea-123');
+
+    // Verify createFoundationTools was called with a progress callback
+    const createToolsCall = vi.mocked(createFoundationTools).mock.calls[0];
+    expect(createToolsCall[0]).toBe('idea-123');
+    expect(typeof createToolsCall[1]).toBe('function');
+
+    // Simulate the callback being called
+    const onDocProgress = createToolsCall[1]!;
+    await onDocProgress('strategy', 'running');
+
+    // Verify progress was saved with the updated doc status AND currentStep
+    const savedProgress = vi.mocked(saveFoundationProgress).mock.calls;
+    const lastCall = savedProgress[savedProgress.length - 1];
+    expect(lastCall[1].docs.strategy).toBe('running');
+    expect(lastCall[1].currentStep).toBe('Generating strategy...');
   });
 
   it('throws on agent error', async () => {

@@ -1,4 +1,4 @@
-import type { AgentConfig, FoundationProgress } from '@/types';
+import type { AgentConfig, FoundationProgress, FoundationDocType } from '@/types';
 import {
   runAgent,
   resumeAgent,
@@ -69,10 +69,18 @@ export async function runFoundationGeneration(
   progress.currentStep = isResume ? 'Resuming foundation generation...' : 'Starting foundation generation...';
   await saveFoundationProgress(ideaId, progress);
 
+  const onDocProgress = async (docType: FoundationDocType, status: 'running' | 'complete' | 'error') => {
+    progress.docs[docType] = status;
+    if (status === 'running') {
+      progress.currentStep = `Generating ${docType.replace(/-/g, ' ')}...`;
+    }
+    await saveFoundationProgress(ideaId, progress);
+  };
+
   const tools = [
     ...createPlanTools(runId),
     ...createScratchpadTools(),
-    ...createFoundationTools(ideaId),
+    ...createFoundationTools(ideaId, onDocProgress),
   ];
 
   const config: AgentConfig = {
