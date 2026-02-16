@@ -4,7 +4,7 @@ import { buildContentContext, generateContentCalendar } from '@/lib/content-agen
 import { detectVertical } from '@/lib/seo-knowledge';
 import { getIdeaFromDb } from '@/lib/db';
 import { buildBrandIdentityPrompt } from '@/lib/painted-door-prompts';
-import { assembleAllFiles } from '@/lib/painted-door-templates';
+import { assembleAllFiles, ApprovedCopy } from '@/lib/painted-door-templates';
 import {
   savePaintedDoorSite,
   saveDynamicPublishTarget,
@@ -351,13 +351,23 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
         'Assemble all site files from templates using the brand identity. Instant — no LLM call needed. Requires design_brand to have been called first.',
       input_schema: {
         type: 'object',
-        properties: {},
+        properties: {
+          approvedCopy: {
+            type: 'object',
+            description: 'Optional approved copy from critique pipeline. When provided, overrides brand copy.',
+            properties: {
+              landingPage: { type: 'object' },
+              seoDescription: { type: 'string' },
+            },
+          },
+        },
         required: [],
       },
-      execute: async () => {
+      execute: async (input) => {
         if (!brand || !ctx) return { error: 'Call design_brand first' };
 
-        allFiles = assembleAllFiles(brand, ctx);
+        const approvedCopy = input.approvedCopy as ApprovedCopy | undefined;
+        allFiles = assembleAllFiles(brand, ctx, approvedCopy);
 
         return {
           success: true,

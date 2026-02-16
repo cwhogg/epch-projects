@@ -883,10 +883,21 @@ ${footerFragment(brand)}
 // Master function — assembles all ~21 files
 // ---------------------------------------------------------------------------
 
+export interface ApprovedCopy {
+  landingPage: NonNullable<BrandIdentity['landingPage']>;
+  seoDescription: string;
+}
+
 export function assembleAllFiles(
   brand: BrandIdentity,
   ctx: ContentContext,
+  approvedCopy?: ApprovedCopy,
 ): Record<string, string> {
+  // Merge approved copy into brand for template rendering
+  const resolvedBrand: BrandIdentity = approvedCopy
+    ? { ...brand, landingPage: approvedCopy.landingPage, seoDescription: approvedCopy.seoDescription }
+    : brand;
+
   return {
     // Static config files
     'package.json': PACKAGE_JSON,
@@ -903,24 +914,24 @@ export function assembleAllFiles(
     'components/content/JsonLd.tsx': JSONLD_TSX,
 
     // App — core
-    'app/globals.css': renderGlobalsCss(brand),
-    'app/layout.tsx': renderLayout(brand),
-    'app/page.tsx': renderLandingPage(brand, ctx),
+    'app/globals.css': renderGlobalsCss(resolvedBrand),
+    'app/layout.tsx': renderLayout(resolvedBrand),
+    'app/page.tsx': renderLandingPage(resolvedBrand, ctx),
     'app/robots.ts': ROBOTS_TS,
-    'app/sitemap.ts': renderSitemap(brand, ctx),
+    'app/sitemap.ts': renderSitemap(resolvedBrand, ctx),
     'app/api/signup/route.ts': SIGNUP_ROUTE_TS,
 
     // App — blog
-    'app/blog/page.tsx': renderBlogListing(brand),
-    'app/blog/[slug]/page.tsx': renderBlogDetail(brand),
+    'app/blog/page.tsx': renderBlogListing(resolvedBrand),
+    'app/blog/[slug]/page.tsx': renderBlogDetail(resolvedBrand),
 
     // App — compare
-    'app/compare/page.tsx': renderCompareListing(brand),
-    'app/compare/[slug]/page.tsx': renderCompareDetail(brand),
+    'app/compare/page.tsx': renderCompareListing(resolvedBrand),
+    'app/compare/[slug]/page.tsx': renderCompareDetail(resolvedBrand),
 
     // App — faq
-    'app/faq/page.tsx': renderFaqListing(brand),
-    'app/faq/[slug]/page.tsx': renderFaqDetail(brand),
+    'app/faq/page.tsx': renderFaqListing(resolvedBrand),
+    'app/faq/[slug]/page.tsx': renderFaqDetail(resolvedBrand),
 
     // Content directories
     'content/blog/.gitkeep': '',
