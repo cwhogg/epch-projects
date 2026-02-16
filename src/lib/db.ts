@@ -349,7 +349,7 @@ export async function saveFoundationProgress(ideaId: string, progress: Foundatio
 export async function getFoundationProgress(ideaId: string): Promise<FoundationProgress | null> {
   const data = await getRedis().get(`foundation_progress:${ideaId}`);
   if (!data) return null;
-  return data as FoundationProgress;
+  return parseValue<FoundationProgress>(data);
 }
 
 export async function getAllContentCalendars(): Promise<ContentCalendar[]> {
