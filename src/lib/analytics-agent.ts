@@ -11,6 +11,7 @@ import {
 import {
   PieceSnapshot,
   PerformanceAlert,
+  AlertSeverity,
   WeeklyReport,
   GSCQueryRow,
   ContentType,
@@ -234,6 +235,25 @@ export function createPieceSnapshots(
   return { snapshots, unmatchedPages };
 }
 
+function createAlert(
+  current: PieceSnapshot,
+  severity: AlertSeverity,
+  message: string,
+  metric: string,
+  previousValue: number,
+  currentValue: number,
+): PerformanceAlert {
+  return {
+    pieceSlug: current.slug,
+    pieceTitle: current.title,
+    severity,
+    message,
+    metric,
+    previousValue,
+    currentValue,
+  };
+}
+
 // Detect significant changes between current and previous week
 export function detectChanges(
   currentSnapshots: PieceSnapshot[],
@@ -251,15 +271,14 @@ export function detectChanges(
 
     // First appearance check
     if (!prev && current.impressions >= minImpressions) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'info',
-        message: `First appearance in GSC with ${current.impressions} impressions and ${current.clicks} clicks`,
-        metric: 'impressions',
-        previousValue: 0,
-        currentValue: current.impressions,
-      });
+      alerts.push(createAlert(
+        current,
+        'info',
+        `First appearance in GSC with ${current.impressions} impressions and ${current.clicks} clicks`,
+        'impressions',
+        0,
+        current.impressions,
+      ));
       continue;
     }
 
@@ -270,67 +289,62 @@ export function detectChanges(
 
     // Clicks up >= 50%
     if (prev.clicks > 0 && current.clicks >= prev.clicks * 1.5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'positive',
-        message: `Clicks up ${Math.round(((current.clicks - prev.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: current.clicks,
-      });
+      alerts.push(createAlert(
+        current,
+        'positive',
+        `Clicks up ${Math.round(((current.clicks - prev.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
+        'clicks',
+        prev.clicks,
+        current.clicks,
+      ));
     }
 
     // Clicks down >= 30%
     if (prev.clicks > 0 && current.clicks <= prev.clicks * 0.7) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Clicks down ${Math.round(((prev.clicks - current.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: current.clicks,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Clicks down ${Math.round(((prev.clicks - current.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
+        'clicks',
+        prev.clicks,
+        current.clicks,
+      ));
     }
 
     // Position improved by >= 5 (lower is better)
     if (prev.position - current.position >= 5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'positive',
-        message: `Position improved by ${Math.round((prev.position - current.position) * 10) / 10} (${prev.position} → ${current.position})`,
-        metric: 'position',
-        previousValue: prev.position,
-        currentValue: current.position,
-      });
+      alerts.push(createAlert(
+        current,
+        'positive',
+        `Position improved by ${Math.round((prev.position - current.position) * 10) / 10} (${prev.position} → ${current.position})`,
+        'position',
+        prev.position,
+        current.position,
+      ));
     }
 
     // Position dropped by >= 5
     if (current.position - prev.position >= 5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Position dropped by ${Math.round((current.position - prev.position) * 10) / 10} (${prev.position} → ${current.position})`,
-        metric: 'position',
-        previousValue: prev.position,
-        currentValue: current.position,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Position dropped by ${Math.round((current.position - prev.position) * 10) / 10} (${prev.position} → ${current.position})`,
+        'position',
+        prev.position,
+        current.position,
+      ));
     }
 
     // Had >5 clicks, now 0
     if (prev.clicks > 5 && current.clicks === 0) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Traffic lost — had ${prev.clicks} clicks, now 0`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: 0,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Traffic lost — had ${prev.clicks} clicks, now 0`,
+        'clicks',
+        prev.clicks,
+        0,
+      ));
     }
   }
 
