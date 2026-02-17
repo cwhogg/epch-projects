@@ -20,12 +20,15 @@ export interface ContentRecipe {
 export const recipes: Record<string, ContentRecipe> = {
   website: {
     contentType: 'website',
-    authorAdvisor: 'copywriter',
+    authorAdvisor: 'julian-shapiro',
+    authorFramework: 'landing-page-assembly',
     authorContextDocs: ['positioning', 'brand-voice', 'seo-strategy'],
+    namedCritics: ['oli-gardner', 'joanna-wiebe', 'shirin-oreizy', 'copywriter'],
     evaluationNeeds:
-      'This is website landing page copy. Needs review for: positioning accuracy ' +
-      'and differentiation clarity, SEO optimization (keywords, headings, meta), ' +
-      'and behavioral science (CTA friction, cognitive load, conversion psychology).',
+      'This is website landing page copy. Needs review for: conversion-centered design ' +
+      '(attention ratio, page focus, directional cues), conversion copywriting quality ' +
+      '(headline effectiveness, CTA clarity, voice-of-customer alignment), behavioral science ' +
+      '(CTA friction, cognitive load, conversion psychology), and brand voice consistency.',
     evaluationEmphasis:
       'Focus especially on the hero section — does it communicate the "why now" ' +
       'and competitive differentiation within the first viewport? Are CTAs ' +
