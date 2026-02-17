@@ -145,6 +145,7 @@ graph TB
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
         S_EXPERTISE["expertise-profile"]
         S_UTILS["utils, llm-utils, data"]
+        S_CANVAS_MOD["validation-canvas"]
     end
 
     subgraph Tools["Agent Tools (src/lib/agent-tools/)"]
@@ -236,7 +237,7 @@ graph TB
     end
 
     subgraph Advisors["Virtual Board"]
-        advisors_registry["advisors/registry.ts<br/>4 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert"]
+        advisors_registry["advisors/registry.ts<br/>14 advisors including Seth Godin, Richard Rumelt,<br/>April Dunford, SEO Expert, and others"]
         advisors_loader["advisors/prompt-loader.ts<br/>getAdvisorSystemPrompt(advisorId)"]
         advisors_prompts["advisors/prompts/<br/>Per-advisor system prompts"]
     end
@@ -547,6 +548,10 @@ graph LR
         S_CRIT_ROUND["critique_round:{runId}:{round}<br/>Full round data (2hr TTL)"]
         S_PIPE_PROG["pipeline_progress:{runId}<br/>Structured progress (2hr TTL)"]
         S_APPROVED["approved_content:{runId}<br/>Approved content (2hr TTL)"]
+        S_CANVAS["canvas:{ideaId}<br/>CanvasState JSON"]
+        S_ASSUMPTION["assumption:{ideaId}:{type}<br/>Assumption JSON"]
+        S_PIVOT_SUG["pivot-suggestions:{ideaId}:{type}<br/>PivotSuggestion[] JSON"]
+        S_PIVOT_HIST["pivots:{ideaId}:{type}<br/>PivotRecord[] JSON"]
     end
 
     subgraph Sets["Sets (SADD/SMEMBERS)"]
@@ -599,7 +604,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-    STRATEGY["strategy<br/>(Richard Rumelt)"] --> POSITIONING["positioning<br/>(April Dunford)"]
+    STRATEGY["strategy<br/>(Seth Godin)"] --> POSITIONING["positioning<br/>(April Dunford)"]
     POSITIONING --> VOICE["brand-voice<br/>(Copywriter)"]
     POSITIONING --> DESIGN["design-principles<br/>(Richard Rumelt)"]
     STRATEGY --> DESIGN
@@ -679,6 +684,9 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Cron: Publish | `/api/cron/publish` | GET, POST | Cron + manual publish trigger |
 | Cron: Analytics | `/api/cron/analytics` | GET, POST | Cron + manual analytics trigger |
 | Content Pipeline | `/api/content-pipeline/[ideaId]` | POST, GET | POST triggers critique pipeline; GET polls progress |
+| Validation Canvas | `/api/validation/[ideaId]` | GET | Full canvas state with assumptions and pivot suggestions |
+| Validation Pivot | `/api/validation/[ideaId]/pivot` | POST | Approve a pivot suggestion |
+| Validation Kill | `/api/validation/[ideaId]/kill` | POST | Archive the project |
 
 ### Agents
 
@@ -717,7 +725,7 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
 | `src/lib/expertise-profile.ts` | Owner expertise profile for scoring calibration |
-| `src/lib/advisors/registry.ts` | 4-advisor virtual board registry |
+| `src/lib/advisors/registry.ts` | 14-advisor virtual board registry |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
 | `src/lib/utils.ts` | slugify, fuzzyMatchPair, buildLeaderboard |
 | `src/lib/llm-utils.ts` | parseLLMJson, cleanJSONString |
@@ -744,3 +752,5 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `ReanalyzeForm.tsx` | Re-trigger analysis with context |
 | `ProgramToggleButton.tsx` | Toggle content program active/inactive |
 | `website/SiteCardActions.tsx` | Painted door site action buttons |
+| `ValidationCanvas.tsx` | Validation canvas displaying 5 assumption cards with status |
+| `PivotActions.tsx` | Client component for pivot approval and project kill actions |
