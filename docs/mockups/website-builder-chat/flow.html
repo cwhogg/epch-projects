@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Builder — User Flow Diagram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#FAF9F7',
+            'bg-secondary': '#F3F2EF',
+            'bg-card': '#FFFFFF',
+            'text-primary': '#1C1917',
+            'text-secondary': '#57534E',
+            'text-muted': '#94918C',
+            'accent-coral': '#ff6b5b',
+            'accent-emerald': '#10b981',
+            'accent-violet': '#8b5cf6',
+            'color-sky': '#38bdf8',
+          },
+          fontFamily: {
+            'display': ['Fraunces', 'Georgia', 'serif'],
+            'body': ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #FAF9F7;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: #1C1917;
+    }
+
+    .font-display {
+      font-family: 'Fraunces', Georgia, serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* Mermaid theme overrides */
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Override mermaid node colors */
+    .mermaid .node rect,
+    .mermaid .node polygon {
+      rx: 8;
+      ry: 8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="max-w-[1200px] mx-auto px-6 py-8">
+
+    <!-- Page header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2);">
+          Website Builder
+        </span>
+        <span class="text-xs text-text-muted">/website/[id]/build</span>
+      </div>
+      <h1 class="font-display text-2xl font-medium text-text-primary">User Flow — Interactive Website Builder</h1>
+      <p class="text-sm text-text-secondary mt-1.5 max-w-[600px] leading-relaxed">
+        Complete flow from build page entry through mode selection, 8-step pipeline, advisor consultations, and deployment. Shows both interactive and autonomous paths.
+      </p>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex items-center gap-6 mb-8 p-4 bg-bg-card rounded-xl border" style="border-color: rgba(28, 25, 23, 0.06);">
+      <span class="text-xs font-semibold uppercase tracking-wider text-text-muted">Legend</span>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-3 rounded-sm" style="background: #e8f5e9;"></div>
+        <span class="text-xs text-text-secondary">User action</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-3 rounded-sm" style="background: #fff3e0;"></div>
+        <span class="text-xs text-text-secondary">Pipeline step</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-3 rounded-sm" style="background: #f3e5f5;"></div>
+        <span class="text-xs text-text-secondary">Advisor consultation</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-3 rounded-sm" style="background: #e3f2fd;"></div>
+        <span class="text-xs text-text-secondary">Checkpoint (interactive only)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-3 rounded-sm" style="background: #fce4ec;"></div>
+        <span class="text-xs text-text-secondary">Decision / branch</span>
+      </div>
+    </div>
+
+    <!-- Mermaid Flow Diagram -->
+    <div class="bg-bg-card rounded-xl border p-8 shadow-sm" style="border-color: rgba(28, 25, 23, 0.06);">
+      <pre class="mermaid">
+flowchart TD
+    %% Entry
+    ENTRY["User navigates to<br/>/website/[id]/build"]
+    LOAD["Load foundation docs<br/>(value props, audience, competitors)"]
+    JULIAN_INTRO["Julian Shapiro reads docs<br/>& presents intro message"]
+
+    %% Mode Selection
+    MODE{{"Mode Selection"}}
+    INTERACTIVE["'Build with me'<br/>Interactive Mode"]
+    AUTONOMOUS["'You've got this'<br/>Autonomous Mode"]
+
+    %% Steps
+    S1["Step 1: Extract Ingredients<br/>Pull value props, pain points, angles"]
+    S1_ADV["Advisor: Analyze foundation<br/>docs for missing angles"]
+    S1_CHECK{{"Checkpoint:<br/>Review ingredients?"}}
+
+    S2["Step 2: Design Brand ID<br/>Colors, typography, visual tone"]
+    S2_ADV["Advisor: Oli Gardner<br/>on conversion-first design"]
+    S2_CHECK{{"Checkpoint:<br/>Approve brand?"}}
+
+    S3["Step 3: Write Hero<br/>Headline, subhead, CTA copy"]
+    S3_ADV["Advisor: Joanna Wiebe<br/>on copy clarity"]
+    S3_CHECK{{"Checkpoint:<br/>Pick hero variant?"}}
+
+    S4["Step 4: Assemble Page<br/>Structure sections, layout grid"]
+    S4_CHECK{{"Checkpoint:<br/>Review layout?"}}
+
+    S5["Step 5: Pressure Test<br/>Stress-test claims & flow"]
+    S5_ADV["Advisor: Shirin Oreizy<br/>on behavioral science"]
+
+    S6["Step 6: Advisor Review Panel<br/>Full expert critique"]
+    S6_PANEL["Parallel advisor reviews:<br/>Oli (conversion) | Joanna (copy)<br/>Shirin (behavioral) | Copywriter (voice)"]
+    S6_VERDICT{{"Verdict:<br/>Deploy or Revise?"}}
+    S6_REVISE["Apply revisions<br/>& re-review"]
+
+    S7["Step 7: Build & Deploy<br/>Generate code, push to Vercel"]
+    S7_DEPLOY["Deploy to Vercel<br/>Get preview URL"]
+    S7_CHECK{{"Checkpoint:<br/>Approve deploy?"}}
+
+    S8["Step 8: Verify<br/>Check live site, final polish"]
+    S8_LIVE["Review live site<br/>in browser"]
+    DONE["Done — Landing page live"]
+
+    %% Flow connections
+    ENTRY --> LOAD
+    LOAD --> JULIAN_INTRO
+    JULIAN_INTRO --> MODE
+
+    MODE -->|"User clicks"| INTERACTIVE
+    MODE -->|"User clicks"| AUTONOMOUS
+
+    %% Interactive path
+    INTERACTIVE --> S1
+    S1 -.-> S1_ADV
+    S1 --> S1_CHECK
+    S1_CHECK -->|"Approve"| S2
+    S1_CHECK -->|"Edit"| S1
+
+    S2 -.-> S2_ADV
+    S2 --> S2_CHECK
+    S2_CHECK -->|"Approve"| S3
+    S2_CHECK -->|"Edit"| S2
+
+    S3 -.-> S3_ADV
+    S3 --> S3_CHECK
+    S3_CHECK -->|"Pick variant"| S4
+    S3_CHECK -->|"Revise"| S3
+
+    S4 --> S4_CHECK
+    S4_CHECK -->|"Approve"| S5
+    S4_CHECK -->|"Edit"| S4
+
+    S5 -.-> S5_ADV
+    S5 --> S6
+
+    S6 --> S6_PANEL
+    S6_PANEL --> S6_VERDICT
+    S6_VERDICT -->|"All approved"| S7
+    S6_VERDICT -->|"Revisions needed"| S6_REVISE
+    S6_REVISE --> S6_PANEL
+
+    S7 --> S7_CHECK
+    S7_CHECK -->|"Deploy"| S7_DEPLOY
+    S7_CHECK -->|"Hold"| S7
+    S7_DEPLOY --> S8
+
+    S8 --> S8_LIVE
+    S8_LIVE --> DONE
+
+    %% Autonomous path (skips checkpoints)
+    AUTONOMOUS --> S1
+    %% Note: autonomous path follows same steps
+    %% but skips all checkpoints automatically
+
+    %% Styling
+    classDef userAction fill:#e8f5e8,stroke:#4caf50,stroke-width:1px,color:#1b5e20
+    classDef pipelineStep fill:#fff3e0,stroke:#ff9800,stroke-width:1px,color:#e65100
+    classDef advisorCall fill:#f3e5f5,stroke:#9c27b0,stroke-width:1px,color:#4a148c
+    classDef checkpoint fill:#e3f2fd,stroke:#2196f3,stroke-width:1px,color:#0d47a1
+    classDef decision fill:#fce4ec,stroke:#e91e63,stroke-width:1px,color:#880e4f
+    classDef entryExit fill:#fff,stroke:#1C1917,stroke-width:2px,color:#1C1917
+    classDef modeChoice fill:#fff8e1,stroke:#ffc107,stroke-width:2px,color:#f57f17
+
+    class ENTRY,DONE entryExit
+    class LOAD,JULIAN_INTRO,S7_DEPLOY,S8_LIVE userAction
+    class S1,S2,S3,S4,S5,S6,S7,S8 pipelineStep
+    class S1_ADV,S2_ADV,S3_ADV,S5_ADV,S6_PANEL advisorCall
+    class S1_CHECK,S2_CHECK,S3_CHECK,S4_CHECK,S7_CHECK checkpoint
+    class MODE,S6_VERDICT modeChoice
+    class INTERACTIVE,AUTONOMOUS,S6_REVISE decision
+      </pre>
+    </div>
+
+    <!-- Flow notes -->
+    <div class="mt-8 grid grid-cols-2 gap-4">
+
+      <div class="bg-bg-card rounded-xl border p-5" style="border-color: rgba(28, 25, 23, 0.06);">
+        <h3 class="font-display text-sm font-medium text-text-primary mb-3">Interactive Mode ("Build with me")</h3>
+        <ul class="space-y-2 text-xs text-text-secondary leading-relaxed">
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-coral mt-1.5 flex-shrink-0"></div>
+            Julian pauses at each checkpoint (blue nodes) for user approval
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-coral mt-1.5 flex-shrink-0"></div>
+            User can edit, revise, or approve at each gate before proceeding
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-coral mt-1.5 flex-shrink-0"></div>
+            Advisor consultations shown inline as quote cards in the chat
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-coral mt-1.5 flex-shrink-0"></div>
+            Step 6 (Review Panel) always pauses regardless of mode for final verdict
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-coral mt-1.5 flex-shrink-0"></div>
+            Estimated ~30 min with active user feedback
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-bg-card rounded-xl border p-5" style="border-color: rgba(28, 25, 23, 0.06);">
+        <h3 class="font-display text-sm font-medium text-text-primary mb-3">Autonomous Mode ("You've got this")</h3>
+        <ul class="space-y-2 text-xs text-text-secondary leading-relaxed">
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-violet mt-1.5 flex-shrink-0"></div>
+            Julian runs through all 8 steps without pausing at checkpoints
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-violet mt-1.5 flex-shrink-0"></div>
+            Same advisor consultations happen internally, results shown in chat log
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-violet mt-1.5 flex-shrink-0"></div>
+            Step 6 (Review Panel) still generates full advisor cards for transparency
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-violet mt-1.5 flex-shrink-0"></div>
+            User can interrupt at any time to switch to interactive mode
+          </li>
+          <li class="flex items-start gap-2">
+            <div class="w-1 h-1 rounded-full bg-accent-violet mt-1.5 flex-shrink-0"></div>
+            Estimated ~5 min hands-free, presents finished page for review
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Advisor consultation details -->
+    <div class="mt-6 bg-bg-card rounded-xl border p-5" style="border-color: rgba(28, 25, 23, 0.06);">
+      <h3 class="font-display text-sm font-medium text-text-primary mb-3">Advisor Consultation Points</h3>
+      <div class="grid grid-cols-4 gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full" style="background: #ff6b5b;"></div>
+            <span class="text-xs font-semibold text-text-primary">Oli Gardner</span>
+          </div>
+          <span class="text-[10px] text-text-muted">Steps 2, 6</span>
+          <p class="text-[11px] text-text-secondary leading-relaxed">Conversion architecture, CTA placement, page flow optimization</p>
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full" style="background: #8b5cf6;"></div>
+            <span class="text-xs font-semibold text-text-primary">Joanna Wiebe</span>
+          </div>
+          <span class="text-[10px] text-text-muted">Steps 3, 6</span>
+          <p class="text-[11px] text-text-secondary leading-relaxed">Copy clarity, headline strength, value prop hierarchy</p>
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full" style="background: #f59e0b;"></div>
+            <span class="text-xs font-semibold text-text-primary">Shirin Oreizy</span>
+          </div>
+          <span class="text-[10px] text-text-muted">Steps 5, 6</span>
+          <p class="text-[11px] text-text-secondary leading-relaxed">Behavioral science, loss aversion, social proof psychology</p>
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full" style="background: #f472b6;"></div>
+            <span class="text-xs font-semibold text-text-primary">Brand Copywriter</span>
+          </div>
+          <span class="text-[10px] text-text-muted">Step 6</span>
+          <p class="text-[11px] text-text-secondary leading-relaxed">Voice consistency, tone alignment, brand personality</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#fff3e0',
+        primaryTextColor: '#1C1917',
+        primaryBorderColor: '#ff9800',
+        lineColor: '#94918C',
+        secondaryColor: '#f3e5f5',
+        tertiaryColor: '#e3f2fd',
+        fontSize: '13px',
+        fontFamily: 'DM Sans, system-ui, sans-serif',
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'basis',
+        nodeSpacing: 30,
+        rankSpacing: 40,
+        padding: 12,
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Builder — Advisor Review Panel (Step 6)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#FAF9F7',
+            'bg-secondary': '#F3F2EF',
+            'bg-card': '#FFFFFF',
+            'bg-elevated': '#FFFFFF',
+            'text-primary': '#1C1917',
+            'text-secondary': '#57534E',
+            'text-muted': '#94918C',
+            'accent-coral': '#ff6b5b',
+            'accent-coral-soft': 'rgba(255, 107, 91, 0.12)',
+            'accent-emerald': '#10b981',
+            'accent-amber': '#f59e0b',
+            'color-danger': '#ef4444',
+            'color-info': '#3b82f6',
+            'accent-violet': '#8b5cf6',
+            'color-sky': '#38bdf8',
+            'color-purple-light': '#a78bfa',
+            'color-pink': '#f472b6',
+          },
+          fontFamily: {
+            'display': ['Fraunces', 'Georgia', 'serif'],
+            'body': ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            'sm-token': '0.5rem',
+            'md-token': '0.75rem',
+            'lg-token': '1rem',
+            'xl-token': '1.5rem',
+          },
+          boxShadow: {
+            'card': '0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04)',
+            'elevated': '0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #FAF9F7;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: #1C1917;
+    }
+
+    .font-display {
+      font-family: 'Fraunces', Georgia, serif;
+      letter-spacing: -0.02em;
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-spin-slow {
+      animation: spin-slow 1.5s linear infinite;
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 91, 0.3); }
+      50% { box-shadow: 0 0 16px rgba(255, 107, 91, 0.5); }
+    }
+
+    .glow-active {
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(28, 25, 23, 0.12);
+      border-radius: 3px;
+    }
+
+    /* Advisor domain colors */
+    .advisor-conversion { border-left-color: #ff6b5b; }
+    .advisor-conversion .advisor-dot { background: #ff6b5b; }
+    .advisor-conversion .advisor-badge { background: rgba(255, 107, 91, 0.1); color: #ff6b5b; }
+
+    .advisor-copy { border-left-color: #8b5cf6; }
+    .advisor-copy .advisor-dot { background: #8b5cf6; }
+    .advisor-copy .advisor-badge { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+    .advisor-behavioral { border-left-color: #f59e0b; }
+    .advisor-behavioral .advisor-dot { background: #f59e0b; }
+    .advisor-behavioral .advisor-badge { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+    .advisor-brand { border-left-color: #f472b6; }
+    .advisor-brand .advisor-dot { background: #f472b6; }
+    .advisor-brand .advisor-badge { background: rgba(244, 114, 182, 0.1); color: #f472b6; }
+
+    /* Verdict card */
+    .verdict-ready {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(16, 185, 129, 0.01) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+
+    .step-connector {
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: rgba(28, 25, 23, 0.06);
+    }
+
+    .input-chat:focus {
+      outline: none;
+      border-color: #ff6b5b;
+      box-shadow: 0 0 0 3px rgba(255, 107, 91, 0.12);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="flex-shrink-0 border-b" style="background: rgba(250, 249, 247, 0.92); backdrop-filter: blur(16px); border-color: rgba(28, 25, 23, 0.06);">
+      <div class="max-w-[1400px] mx-auto px-5 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button class="flex items-center gap-1.5 text-text-secondary hover:text-text-primary transition-colors text-sm font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+          <div class="w-px h-5 bg-black/6"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-accent-coral"></div>
+            <span class="font-display text-base font-medium text-text-primary">AI Resume Builder</span>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2);">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+          </svg>
+          Website
+        </span>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="flex-1 flex overflow-hidden">
+
+      <!-- Chat Panel -->
+      <div class="flex-1 flex flex-col min-w-0" style="max-width: 75%;">
+        <div class="flex-1 overflow-y-auto chat-scroll px-6 py-5">
+          <div class="max-w-[720px] mx-auto space-y-5">
+
+            <!-- Julian introduces the review panel -->
+            <div class="animate-slide-up flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b);">
+                JS
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm font-semibold text-text-primary">Julian Shapiro</span>
+                  <span class="text-xs text-text-muted">3:12 PM</span>
+                </div>
+                <div class="bg-bg-card border rounded-lg-token rounded-tl-sm p-4 shadow-card text-sm text-text-secondary leading-relaxed" style="border-color: rgba(28, 25, 23, 0.06);">
+                  <p>Your page is assembled and pressure-tested. Before we build, I called in the advisory panel for a final critique. Here's what they had to say:</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advisor Review Panel - 4 advisor cards -->
+            <div class="animate-slide-up ml-11 space-y-3" style="animation-delay: 0.1s;">
+
+              <!-- Panel header -->
+              <div class="flex items-center gap-2 mb-1">
+                <div class="w-5 h-5 rounded-full bg-accent-violet/10 flex items-center justify-center">
+                  <svg class="w-3 h-3 text-accent-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-accent-violet">Advisor Review Panel</span>
+                <span class="text-[10px] text-text-muted">&mdash; 4 experts consulted</span>
+              </div>
+
+              <!-- Oli Gardner - Conversion -->
+              <div class="advisor-conversion bg-bg-card border-l-[3px] rounded-lg-token p-4 shadow-card" style="border-color: rgba(28, 25, 23, 0.06); border-left-color: #ff6b5b;">
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b);">
+                    OG
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-semibold text-text-primary">Oli Gardner</span>
+                      <span class="advisor-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider">Conversion</span>
+                    </div>
+                    <p class="text-[13px] text-text-secondary leading-relaxed">
+                      "The hero's strong &mdash; 'Get interviews 3x faster' is clear and outcome-driven. But the CTA below the fold is buried. Move the secondary CTA ('See how it works') above the testimonials. You're losing people in that dead zone between the hero and social proof."
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        Revision needed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Joanna Wiebe - Copy -->
+              <div class="advisor-copy bg-bg-card border-l-[3px] rounded-lg-token p-4 shadow-card" style="border-color: rgba(28, 25, 23, 0.06); border-left-color: #8b5cf6;">
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+                    JW
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-semibold text-text-primary">Joanna Wiebe</span>
+                      <span class="advisor-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider">Copy</span>
+                    </div>
+                    <p class="text-[13px] text-text-secondary leading-relaxed">
+                      "The subhead is doing too much work. 'AI-powered resumes tailored to every job description, optimized for ATS, and designed to land interviews' &mdash; that's three value props crammed into one sentence. Pick the one that hurts most (ATS rejection) and let the others live in the feature grid below."
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        Revision needed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shirin Oreizy - Behavioral Science -->
+              <div class="advisor-behavioral bg-bg-card border-l-[3px] rounded-lg-token p-4 shadow-card" style="border-color: rgba(28, 25, 23, 0.06); border-left-color: #f59e0b;">
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+                    SO
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-semibold text-text-primary">Shirin Oreizy</span>
+                      <span class="advisor-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider">Behavioral Science</span>
+                    </div>
+                    <p class="text-[13px] text-text-secondary leading-relaxed">
+                      "Good use of loss aversion in the hero &mdash; framing generic resumes as the enemy works. The social proof section could be stronger with specificity bias: '847 interviews landed this month' is more compelling than 'thousands of happy users.' Concrete numbers trigger the precision heuristic."
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Looks good
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Copywriter - Brand Voice -->
+              <div class="advisor-brand bg-bg-card border-l-[3px] rounded-lg-token p-4 shadow-card" style="border-color: rgba(28, 25, 23, 0.06); border-left-color: #f472b6;">
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #f472b6, #f9a8d4);">
+                    CW
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-semibold text-text-primary">Brand Copywriter</span>
+                      <span class="advisor-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider">Brand Voice</span>
+                    </div>
+                    <p class="text-[13px] text-text-secondary leading-relaxed">
+                      "Voice is consistent &mdash; confident and direct throughout, no hedging language. The FAQ section slips into a more casual tone ('No worries, we've got you covered') that doesn't match the rest. Keep it crisp. Otherwise, the brand voice holds well across all sections."
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Looks good
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Julian's synthesis / verdict -->
+            <div class="animate-slide-up flex gap-3" style="animation-delay: 0.2s;">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b);">
+                JS
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm font-semibold text-text-primary">Julian Shapiro</span>
+                  <span class="text-xs text-text-muted">3:14 PM</span>
+                </div>
+                <div class="bg-bg-card border rounded-lg-token rounded-tl-sm p-4 shadow-card text-sm text-text-secondary leading-relaxed" style="border-color: rgba(28, 25, 23, 0.06);">
+                  <p class="font-medium text-text-primary">Here's my synthesis:</p>
+                  <p class="mt-2">Two revisions needed before we deploy:</p>
+                  <ol class="mt-2 space-y-2 ml-4 list-decimal marker:text-text-muted marker:font-medium">
+                    <li><strong class="text-text-primary">Move secondary CTA</strong> above testimonials (Oli's call &mdash; conversion architecture)</li>
+                    <li><strong class="text-text-primary">Simplify the subhead</strong> to one sharp value prop, push the rest below (Joanna's call &mdash; copy clarity)</li>
+                  </ol>
+                  <p class="mt-3">Shirin and the Copywriter approved the psychological framing and voice. I'll incorporate the specific number suggestion for social proof.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Verdict card -->
+            <div class="animate-slide-up ml-11" style="animation-delay: 0.25s;">
+              <div class="verdict-ready rounded-lg-token p-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-accent-amber/10 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-accent-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm font-semibold text-text-primary">2 revisions before deploy</div>
+                      <div class="text-xs text-text-muted">Panel consensus: strong foundation, minor refinements needed</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">2 approved</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">2 revisions</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Julian asking for user input -->
+            <div class="animate-slide-up flex gap-3" style="animation-delay: 0.3s;">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b);">
+                JS
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm font-semibold text-text-primary">Julian Shapiro</span>
+                  <span class="text-xs text-text-muted">3:14 PM</span>
+                </div>
+                <div class="bg-bg-card border rounded-lg-token rounded-tl-sm p-4 shadow-card text-sm text-text-secondary leading-relaxed" style="border-color: rgba(28, 25, 23, 0.06);">
+                  <p>Want me to apply both revisions and move to Build & Deploy? Or do you want to discuss any of the feedback first?</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md-token text-xs font-semibold text-white transition-all hover:opacity-90" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b); box-shadow: 0 2px 8px rgba(255, 107, 91, 0.3);">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      Apply & continue
+                    </button>
+                    <button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md-token text-xs font-semibold text-text-secondary border transition-all hover:bg-bg-secondary" style="border-color: rgba(28, 25, 23, 0.10);">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                      Let's discuss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Message Input Bar -->
+        <div class="flex-shrink-0 border-t px-6 py-4" style="border-color: rgba(28, 25, 23, 0.06); background: rgba(250, 249, 247, 0.6); backdrop-filter: blur(8px);">
+          <div class="max-w-[720px] mx-auto">
+            <div class="flex items-end gap-3">
+              <div class="flex-1 relative">
+                <textarea
+                  class="input-chat w-full resize-none rounded-xl px-4 py-3 pr-12 text-sm bg-bg-card border text-text-primary placeholder-text-muted transition-all"
+                  style="border-color: rgba(28, 25, 23, 0.10); min-height: 44px; max-height: 120px;"
+                  placeholder="Reply to Julian..."
+                  rows="1"
+                ></textarea>
+                <button class="absolute right-2 bottom-2 w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all hover:opacity-90" style="background: linear-gradient(135deg, #ff6b5b, #ff8f6b);">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-2 text-xs text-text-muted">
+              <span>Step 6 of 8</span>
+              <span class="w-1 h-1 rounded-full bg-text-muted"></span>
+              <span>Advisor Review</span>
+              <span class="w-1 h-1 rounded-full bg-text-muted"></span>
+              <span class="text-accent-coral font-medium">Interactive mode</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Sidebar -->
+      <aside class="w-[320px] flex-shrink-0 border-l overflow-y-auto bg-bg-card" style="border-color: rgba(28, 25, 23, 0.06);">
+        <div class="p-5">
+
+          <div class="mb-6">
+            <h2 class="font-display text-base font-medium text-text-primary mb-1">Build Progress</h2>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 rounded-full bg-bg-secondary overflow-hidden">
+                <div class="h-full rounded-full" style="width: 68.75%; background: linear-gradient(90deg, #ff6b5b, #ff8f6b);"></div>
+              </div>
+              <span class="text-xs font-medium text-text-muted tabular-nums">5/8</span>
+            </div>
+          </div>
+
+          <div class="space-y-0">
+
+            <!-- Steps 1-5: Complete -->
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: #10b981;"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-emerald flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-secondary">Extract Ingredients</div>
+                  <div class="text-xs text-text-muted mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: #10b981;"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-emerald flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-secondary">Design Brand ID</div>
+                  <div class="text-xs text-text-muted mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: #10b981;"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-emerald flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-secondary">Write Hero</div>
+                  <div class="text-xs text-text-muted mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: #10b981;"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-emerald flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-secondary">Assemble Page</div>
+                  <div class="text-xs text-text-muted mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: #ff6b5b;"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-emerald flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-secondary">Pressure Test</div>
+                  <div class="text-xs text-text-muted mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6: Active -->
+            <div class="relative pb-6">
+              <div class="step-connector" style="background: rgba(28, 25, 23, 0.06);"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-accent-coral flex items-center justify-center flex-shrink-0 glow-active">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-semibold text-accent-coral">Advisor Review</div>
+                  <div class="text-xs text-text-secondary mt-0.5">Expert panel critique</div>
+                  <div class="mt-2 flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-accent-coral animate-pulse"></div>
+                    <span class="text-[11px] font-medium text-accent-coral">Awaiting input...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 7: Pending -->
+            <div class="relative pb-6">
+              <div class="step-connector"></div>
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center flex-shrink-0 border" style="border-color: rgba(28, 25, 23, 0.06);">
+                  <span class="text-xs font-semibold text-text-muted">7</span>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-muted">Build & Deploy</div>
+                  <div class="text-xs text-text-muted mt-0.5">Generate code, deploy to Vercel</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 8: Pending -->
+            <div class="relative">
+              <div class="flex items-start gap-3">
+                <div class="relative z-10 w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center flex-shrink-0 border" style="border-color: rgba(28, 25, 23, 0.06);">
+                  <span class="text-xs font-semibold text-text-muted">8</span>
+                </div>
+                <div class="pt-1">
+                  <div class="text-sm font-medium text-text-muted">Verify</div>
+                  <div class="text-xs text-text-muted mt-0.5">Check live site, final polish</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sidebar footer -->
+          <div class="mt-8 p-3 rounded-lg-token bg-bg-secondary">
+            <div class="flex items-center gap-2 text-xs">
+              <div class="w-2 h-2 rounded-full bg-accent-coral"></div>
+              <span class="font-medium text-text-primary">Interactive Mode</span>
+            </div>
+            <p class="text-[11px] text-text-muted mt-1 leading-relaxed">Julian pauses at each checkpoint for your input before proceeding.</p>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+</body>
+</html>
