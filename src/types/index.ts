@@ -409,14 +409,7 @@ export interface PipelineProgress {
   maxRounds: number;
   quality: 'approved' | 'max-rounds-reached' | null;
   selectedCritics: { advisorId: string; name: string }[];
-  steps: PipelineStep[];
   critiqueHistory: CritiqueRound[];
-}
-
-export interface PipelineStep {
-  name: string;
-  status: 'pending' | 'running' | 'complete' | 'error';
-  detail?: string;
 }
 
 export interface CritiqueRound {

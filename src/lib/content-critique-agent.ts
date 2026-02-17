@@ -67,12 +67,6 @@ function makeInitialProgress(
     maxRounds,
     quality: null,
     selectedCritics: [],
-    steps: [
-      { name: 'Generate Draft', status: 'pending' },
-      { name: 'Run Critiques', status: 'pending' },
-      { name: 'Editor Review', status: 'pending' },
-      { name: 'Save Content', status: 'pending' },
-    ],
     critiqueHistory: [],
   };
 }
