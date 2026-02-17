@@ -47,7 +47,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 3: Early-return guard in onProgress (KB-025)
+### ✅ Task 3: Early-return guard in onProgress (KB-025)
 
 **KBs:** KB-025
 

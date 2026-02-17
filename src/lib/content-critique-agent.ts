@@ -116,6 +116,9 @@ export async function runContentCritiquePipeline(
     onProgress: async (step, detail) => {
       console.log(`[content-critique] ${step}: ${detail ?? ''}`);
 
+      if (step !== 'tool_call' && step !== 'complete' && step !== 'error')
+        return;
+
       const existing = await getRedis().get<string>(
         `pipeline_progress:${runId}`,
       );
