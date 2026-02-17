@@ -25,6 +25,14 @@ export const FRAMEWORK_REGISTRY: FrameworkEntry[] = [
       'Define the ongoing value commitment that turns a subscription into a real membership relationship. Test whether your promise justifies ongoing payment, sharpen it for specificity, and design the first 30 days.',
     contextDocs: ['strategy', 'positioning'],
   },
+  {
+    id: 'smallest-viable-audience',
+    displayName: 'Smallest Viable Audience',
+    advisors: ['seth-godin'],
+    description:
+      'Find the smallest group of people you could serve so well they would recruit others. Define your tribe by worldview, articulate the change you make, and test for remarkability.',
+    contextDocs: ['positioning', 'strategy'],
+  },
 ];
 
 export function getFrameworkEntry(id: string): FrameworkEntry | undefined {

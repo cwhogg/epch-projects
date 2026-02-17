@@ -117,6 +117,23 @@ export const advisorRegistry: AdvisorEntry[] = [
     contextDocs: ['strategy', 'positioning'],
   },
   {
+    id: 'oli-gardner',
+    name: 'Oli Gardner',
+    role: 'critic',
+    evaluationExpertise:
+      'Evaluates through Conversion-Centered Design lens. Attention ratio — ' +
+      'ratio of interactive elements to campaign goals (ideal 1:1). Page focus — ' +
+      'does every element serve a single conversion goal? Structural hierarchy — ' +
+      'do directional cues, encapsulation, and visual flow guide the eye to the CTA? ' +
+      'Trust signals — testimonials, logos, social proof, security badges. Friction ' +
+      'reduction — form fields, steps, cognitive load. Benefit clarity — benefits vs. ' +
+      'features, value proposition prominence. Visual consistency with conversion goals — ' +
+      'message match between ad/email and landing page, maintaining the scent.',
+    doesNotEvaluate:
+      'Does not evaluate brand positioning accuracy, SEO keyword strategy, or copywriting voice.',
+    contextDocs: ['positioning'],
+  },
+  {
     id: 'rob-walling',
     name: 'Rob Walling',
     role: 'strategist',
@@ -130,5 +147,44 @@ export const advisorRegistry: AdvisorEntry[] = [
     doesNotEvaluate:
       'Does not evaluate copy quality, behavioral design, SEO tactics, or visual design.',
     contextDocs: ['strategy'],
+  },
+  {
+    id: 'julian-shapiro',
+    name: 'Julian Shapiro',
+    role: 'author',
+    contextDocs: ['positioning', 'brand-voice', 'seo-strategy'],
+  },
+  {
+    id: 'seth-godin',
+    name: 'Seth Godin',
+    role: 'strategist',
+    evaluationExpertise:
+      'Evaluates marketing strategy through a remarkability and audience lens. ' +
+      'Is this worth talking about — literally remarkable? Is the smallest viable ' +
+      'audience defined with enough specificity? Does the story match the worldview ' +
+      "of the target tribe? Is the marketing earning permission or interrupting? " +
+      'Does the content create positive tension that enables change? Catches ' +
+      'safe-but-forgettable positioning, marketing-without-product, and ' +
+      'building-for-everyone-reaching-no-one.',
+    doesNotEvaluate:
+      'Does not evaluate technical SEO, conversion copy mechanics, pricing strategy, or behavioral psychology.',
+    contextDocs: ['positioning', 'strategy'],
+  },
+  {
+    id: 'joanna-wiebe',
+    name: 'Joanna Wiebe',
+    role: 'critic',
+    evaluationExpertise:
+      'Evaluates conversion copy quality through her Seven Sweeps lens. Headline ' +
+      'effectiveness — does each element have one clear job? CTA clarity and friction ' +
+      'word avoidance. Voice-of-customer alignment — does the copy use language customers ' +
+      'actually use, or does it sound like internal marketing? PAS structure — is the ' +
+      'problem stated, agitated, then solved? Specificity of claims — vague promises vs ' +
+      'concrete proof. Emotional vs rational balance — does the copy make the reader feel ' +
+      'something before asking them to think? Message-match between traffic source and ' +
+      'landing page. "So what?" and "Prove it." applied to every claim.',
+    doesNotEvaluate:
+      'Does not evaluate visual design, technical SEO, page structure/layout, or behavioral science.',
+    contextDocs: ['positioning', 'brand-voice'],
   },
 ];
