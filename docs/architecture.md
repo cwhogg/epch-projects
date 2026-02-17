@@ -13,9 +13,11 @@ graph TB
         IDEATION["/ideation<br/>Ideation stage"]
         IDEAS["/ideas/new<br/>Idea submission"]
         ANALYSIS["/analysis<br/>Leaderboard"]
-        DETAIL["/analyses/[id]<br/>Analysis detail tabs"]
-        CONTENT["/content<br/>Content overview"]
-        WEBSITE["/website<br/>Painted door sites"]
+        DETAIL["/analyses/[id]<br/>Project dashboard"]
+        CONTENT_OV["/content<br/>Content overview"]
+        CONTENT_DETAIL["/content/[id]<br/>Content calendar"]
+        WEBSITE_OV["/website<br/>Painted door sites"]
+        WEBSITE_DETAIL["/website/[id]<br/>Site generation"]
         TESTING["/testing<br/>SEO performance"]
         OPTIMIZATION["/optimization<br/>Optimization stage"]
         ANALYTICS["/analytics<br/>Weekly reports"]
@@ -90,12 +92,12 @@ graph TB
         P_IDEAS["ideas/new/page.tsx"]
         P_ANALYSIS["analysis/page.tsx"]
         P_DETAIL["analyses/[id]/page.tsx"]
-        P_CONTENT_TAB["analyses/[id]/content/page.tsx"]
-        P_FOUNDATION["analyses/[id]/foundation/page.tsx"]
-        P_PAINTED_DOOR["analyses/[id]/painted-door/page.tsx"]
+        P_CONTENT_TAB["content/[id]/page.tsx"]
+        P_FOUNDATION["foundation/[id]/page.tsx"]
+        P_PAINTED_DOOR["website/[id]/page.tsx"]
         P_ANALYTICS_TAB["analyses/[id]/analytics/page.tsx"]
-        P_CONTENT_VIEW["analyses/[id]/content/[pieceId]/page.tsx"]
-        P_GENERATE["analyses/[id]/content/generate/page.tsx"]
+        P_CONTENT_VIEW["content/[id]/[pieceId]/page.tsx"]
+        P_GENERATE["content/[id]/generate/page.tsx"]
         P_CONTENT_OV["content/page.tsx"]
         P_WEBSITE["website/page.tsx"]
         P_TESTING["testing/page.tsx"]
@@ -381,7 +383,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    START["User visits /analyses/[id]/content"] --> CALENDAR{"Calendar exists?"}
+    START["User visits /content/[id]"] --> CALENDAR{"Calendar exists?"}
 
     CALENDAR -->|no| GEN_CAL["Generate Calendar<br/>POST /api/content/[ideaId]"]
     GEN_CAL --> BUILD_CTX["buildContentContext(ideaId)<br/>Load analysis, SEO data,<br/>competitors, expertise profile"]
@@ -668,11 +670,11 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Ideas (Analyze) | `src/app/ideas/[id]/analyze/page.tsx` | Triggers analysis, shows progress |
 | Analysis List | `src/app/analysis/page.tsx` | Leaderboard of analyzed ideas |
 | Analysis Detail | `src/app/analyses/[id]/page.tsx` | Analysis overview (scores, recommendation) |
-| Content Tab | `src/app/analyses/[id]/content/page.tsx` | Content calendar and piece management |
-| Generate Content | `src/app/analyses/[id]/content/generate/page.tsx` | Content generation progress view |
-| View Piece | `src/app/analyses/[id]/content/[pieceId]/page.tsx` | Individual content piece view |
-| Foundation Tab | `src/app/analyses/[id]/foundation/page.tsx` | Foundation document viewer/generator |
-| Painted Door Tab | `src/app/analyses/[id]/painted-door/page.tsx` | Website generation status |
+| Content Tab | `src/app/content/[id]/page.tsx` | Content calendar and piece management |
+| Generate Content | `src/app/content/[id]/generate/page.tsx` | Content generation progress view |
+| View Piece | `src/app/content/[id]/[pieceId]/page.tsx` | Individual content piece view |
+| Foundation Tab | `src/app/foundation/[id]/page.tsx` | Foundation document viewer/generator |
+| Website Tab | `src/app/website/[id]/page.tsx` | Website generation status + regenerate |
 | Analytics Tab | `src/app/analyses/[id]/analytics/page.tsx` | Per-idea GSC analytics |
 | Content Overview | `src/app/content/page.tsx` | Cross-idea content dashboard |
 | Website | `src/app/website/page.tsx` | All painted door sites + publish targets |
