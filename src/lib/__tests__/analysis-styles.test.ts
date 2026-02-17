@@ -1,4 +1,4 @@
-import { getBadgeClass, getConfidenceStyle, getWebsiteStatusStyle, getWebsiteStatusLabel } from '../analysis-styles';
+import { getBadgeClass, getConfidenceStyle, getWebsiteStatusStyle, getWebsiteStatusLabel, getAssumptionStatusBackground, ASSUMPTION_LABELS } from '../analysis-styles';
 
 describe('getBadgeClass', () => {
   it('returns badge-success for Tier 1', () => {
@@ -65,5 +65,35 @@ describe('getWebsiteStatusLabel', () => {
     expect(getWebsiteStatusLabel('live')).toBe('Live');
     expect(getWebsiteStatusLabel('deploying')).toBe('Deploying');
     expect(getWebsiteStatusLabel('failed')).toBe('Failed');
+  });
+});
+
+describe('getAssumptionStatusBackground', () => {
+  it('returns border-default for untested', () => {
+    expect(getAssumptionStatusBackground('untested')).toBe('var(--border-default)');
+  });
+  it('returns accent-amber for testing', () => {
+    expect(getAssumptionStatusBackground('testing')).toBe('var(--accent-amber)');
+  });
+  it('returns accent-emerald for validated', () => {
+    expect(getAssumptionStatusBackground('validated')).toBe('var(--accent-emerald)');
+  });
+  it('returns color-danger for invalidated', () => {
+    expect(getAssumptionStatusBackground('invalidated')).toBe('var(--color-danger)');
+  });
+  it('returns accent-coral for pivoted', () => {
+    expect(getAssumptionStatusBackground('pivoted')).toBe('var(--accent-coral)');
+  });
+});
+
+describe('ASSUMPTION_LABELS', () => {
+  it('maps all 5 assumption types to shortened labels', () => {
+    expect(ASSUMPTION_LABELS).toEqual({
+      demand: 'Demand',
+      reachability: 'Reach',
+      engagement: 'Engage',
+      wtp: 'WTP',
+      differentiation: 'Differ',
+    });
   });
 });
