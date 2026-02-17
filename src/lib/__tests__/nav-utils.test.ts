@@ -13,12 +13,12 @@ describe('isActive (project-centric nav)', () => {
       expect(isActive('/', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc (project dashboard)', () => {
-      expect(isActive('/analyses/abc', '/')).toBe(true);
+    it('activates on /project/abc (project dashboard)', () => {
+      expect(isActive('/project/abc', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc/analysis', () => {
-      expect(isActive('/analyses/abc/analysis', '/')).toBe(true);
+    it('activates on /project/abc/analysis', () => {
+      expect(isActive('/project/abc/analysis', '/')).toBe(true);
     });
 
     it('activates on /foundation/abc (foundation detail)', () => {
@@ -33,8 +33,8 @@ describe('isActive (project-centric nav)', () => {
       expect(isActive('/website/abc', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc/analytics', () => {
-      expect(isActive('/analyses/abc/analytics', '/')).toBe(true);
+    it('activates on /project/abc/analytics', () => {
+      expect(isActive('/project/abc/analytics', '/')).toBe(true);
     });
 
     it('does not activate on /ideas/new', () => {
@@ -73,19 +73,19 @@ describe('isActive (project-centric nav)', () => {
       expect(isActive('/', '/analytics')).toBe(false);
     });
 
-    it('does not activate on /analyses/abc/analytics (per-project analytics is Projects)', () => {
-      expect(isActive('/analyses/abc/analytics', '/analytics')).toBe(false);
+    it('does not activate on /project/abc/analytics (per-project analytics is Projects)', () => {
+      expect(isActive('/project/abc/analytics', '/analytics')).toBe(false);
     });
   });
 
   describe('no path triggers multiple tabs', () => {
     const testPaths = [
       '/',
-      '/analyses/abc',
-      '/analyses/abc/analysis',
+      '/project/abc',
+      '/project/abc/analysis',
       '/foundation/abc',
       '/content/abc',
-      '/analyses/abc/analytics',
+      '/project/abc/analytics',
       '/website/abc',
       '/ideas/new',
       '/ideas/abc/analyze',

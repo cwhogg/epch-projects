@@ -32,6 +32,22 @@ const nextConfig: NextConfig = {
         destination: '/content/:id',
         permanent: true,
       },
+      // Route rename: /analyses/[id] → /project/[id]
+      {
+        source: '/analyses/:id/analysis',
+        destination: '/project/:id/analysis',
+        permanent: true,
+      },
+      {
+        source: '/analyses/:id/analytics',
+        destination: '/project/:id/analytics',
+        permanent: true,
+      },
+      {
+        source: '/analyses/:id',
+        destination: '/project/:id',
+        permanent: true,
+      },
     ];
   },
 };

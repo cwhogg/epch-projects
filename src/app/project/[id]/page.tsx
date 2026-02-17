@@ -274,7 +274,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
       <div className="flex flex-col gap-3">
 
         {/* Analysis Card */}
-        <Link href={`/analyses/${id}/analysis`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-2">
+        <Link href={`/project/${id}/analysis`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-2">
           <div className="flex justify-between items-center">
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Analysis</span>
             <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -411,7 +411,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
 
         {/* Performance Card (conditional) */}
         {data.hasGSCLink && data.gscImpressions !== null && (
-          <Link href={`/analyses/${id}/analytics`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-6">
+          <Link href={`/project/${id}/analytics`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-6">
             <div className="flex justify-between items-center">
               <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Performance</span>
               <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>

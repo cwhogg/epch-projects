@@ -133,7 +133,7 @@ export default function AnalyticsPage() {
       setLoading(true);
       try {
         // Fetch analysis info
-        const analysisRes = await fetch(`/api/analyses/${ideaId}`);
+        const analysisRes = await fetch(`/api/project/${ideaId}`);
         if (analysisRes.ok) {
           const data = await analysisRes.json();
           const analysis = data.analysis || data;
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <Link
-          href={`/analyses/${ideaId}`}
+          href={`/project/${ideaId}`}
           className="inline-flex items-center gap-1 text-sm mb-6 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -338,7 +338,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <header className="animate-slide-up stagger-1">
         <Link
-          href={`/analyses/${ideaId}`}
+          href={`/project/${ideaId}`}
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >

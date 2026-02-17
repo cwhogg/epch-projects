@@ -56,7 +56,7 @@ export default function ContentCalendarPage() {
     return (
       <div className="max-w-3xl mx-auto">
         <Link
-          href={`/analyses/${analysisId}`}
+          href={`/project/${analysisId}`}
           className="inline-flex items-center gap-1 text-sm mb-6 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -122,7 +122,7 @@ export default function ContentCalendarPage() {
       {/* Header */}
       <div className="animate-slide-up stagger-1">
         <Link
-          href={`/analyses/${analysisId}`}
+          href={`/project/${analysisId}`}
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >

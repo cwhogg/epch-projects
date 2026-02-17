@@ -164,7 +164,7 @@ export default function PaintedDoorProgressPage() {
       {/* Header */}
       <div className="animate-slide-up stagger-1">
         <Link
-          href={`/analyses/${analysisId}`}
+          href={`/project/${analysisId}`}
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >

@@ -186,7 +186,7 @@ export default async function AnalysisPage() {
               {leaderboard.map((entry, index) => (
                 <Link
                   key={entry.ideaId}
-                  href={`/analyses/${entry.ideaId}`}
+                  href={`/project/${entry.ideaId}`}
                   className="card block p-4"
                   style={{ animationDelay: `${0.1 + index * 0.05}s` }}
                 >
@@ -259,7 +259,7 @@ export default async function AnalysisPage() {
                       </td>
                       <td className="px-4 py-4">
                         <Link
-                          href={`/analyses/${entry.ideaId}`}
+                          href={`/project/${entry.ideaId}`}
                           className="font-medium group-hover:underline"
                           style={{ color: 'var(--text-primary)' }}
                         >
@@ -305,7 +305,7 @@ export default async function AnalysisPage() {
               {analyses.map((analysis, index) => (
                 <Link
                   key={analysis.id}
-                  href={`/analyses/${analysis.id}`}
+                  href={`/project/${analysis.id}`}
                   className="card block p-5"
                   style={{ animationDelay: `${0.15 + index * 0.05}s` }}
                 >

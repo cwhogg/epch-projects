@@ -87,7 +87,7 @@ export default async function Home() {
           {projects.map((project, i) => (
             <Link
               key={project.analysis.id}
-              href={`/analyses/${project.analysis.id}`}
+              href={`/project/${project.analysis.id}`}
               className="card p-5 sm:p-6 block animate-slide-up"
               style={{ animationDelay: `${0.1 + i * 0.05}s` }}
             >

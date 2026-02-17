@@ -57,7 +57,7 @@ export default async function AnalysisDetailPage({ params }: PageProps) {
         style={{ background: headerGradient }}
       >
         <Link
-          href={`/analyses/${id}`}
+          href={`/project/${id}`}
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >

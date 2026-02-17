@@ -67,7 +67,7 @@ export default function AnalyzePage() {
 
       if (data.status === 'complete' && data.result) {
         setTimeout(() => {
-          router.push(`/analyses/${data.result.id}`);
+          router.push(`/project/${data.result.id}`);
         }, 1500);
       }
     } catch (err) {

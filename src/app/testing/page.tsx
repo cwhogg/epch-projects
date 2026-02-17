@@ -104,7 +104,7 @@ export default async function TestingPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Link
-                      href={`/analyses/${program.ideaId}/analytics`}
+                      href={`/project/${program.ideaId}/analytics`}
                       className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                       style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-purple-light)', border: '1px solid rgba(139, 92, 246, 0.25)' }}
                     >
