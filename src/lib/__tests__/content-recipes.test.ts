@@ -14,7 +14,16 @@ import type { AdvisorEntry } from '@/lib/advisors/registry';
 
 const testRegistry: AdvisorEntry[] = [
   { id: 'richard-rumelt', name: 'Richard Rumelt', role: 'strategist' },
-  { id: 'copywriter', name: 'Brand Copywriter', role: 'author' },
+  {
+    id: 'copywriter',
+    name: 'Brand Copywriter',
+    role: 'author',
+    evaluationExpertise:
+      'Evaluates brand voice consistency.',
+    doesNotEvaluate:
+      'Does not evaluate SEO strategy, conversion design, behavioral science, or page structure.',
+    contextDocs: ['brand-voice'],
+  },
   {
     id: 'april-dunford',
     name: 'April Dunford',
@@ -166,6 +175,16 @@ describe('recipes', () => {
     expect(r.evaluationEmphasis).toBeTruthy();
     expect(r.minAggregateScore).toBe(4);
     expect(r.maxRevisionRounds).toBe(3);
+  });
+
+  it('copywriter has evaluationExpertise for critic role', async () => {
+    const { advisorRegistry } = await import('@/lib/advisors/registry');
+    const copywriter = advisorRegistry.find(
+      (a: { id: string }) => a.id === 'copywriter',
+    );
+    expect(copywriter).toBeDefined();
+    expect(copywriter!.evaluationExpertise).toBeTruthy();
+    expect(copywriter!.evaluationExpertise).toContain('brand voice');
   });
 
   it('all three recipes are defined', () => {
