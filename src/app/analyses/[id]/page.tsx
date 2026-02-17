@@ -6,6 +6,8 @@ import { getPaintedDoorSite, getEmailSignupCount } from '@/lib/painted-door-db';
 import { getAnalysis } from '@/lib/data';
 import ScoreRing from '@/components/ScoreRing';
 import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
+import { getBadgeClass, getConfidenceStyle, getWebsiteStatusStyle, getWebsiteStatusLabel } from '@/lib/analysis-styles';
+import { getHeaderGradient } from './utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,39 +44,6 @@ const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
   'seo-strategy': 'SEO Strategy',
   'social-media-strategy': 'Social Media',
 };
-
-function getBadgeClass(rec: string) {
-  switch (rec) {
-    case 'Tier 1': return 'badge-success';
-    case 'Tier 2': return 'badge-warning';
-    case 'Tier 3': return 'badge-danger';
-    default: return 'badge-neutral';
-  }
-}
-
-function getConfidenceStyle(conf: string) {
-  switch (conf) {
-    case 'High': return { color: 'var(--accent-emerald)' };
-    case 'Medium': return { color: 'var(--accent-amber)' };
-    case 'Low': return { color: 'var(--color-danger)' };
-    default: return { color: 'var(--text-muted)' };
-  }
-}
-
-function getWebsiteStatusStyle(status: string) {
-  switch (status) {
-    case 'live': return { bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' };
-    case 'deploying':
-    case 'pushing':
-    case 'generating': return { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' };
-    case 'failed': return { bg: 'rgba(248, 113, 113, 0.15)', color: 'var(--color-danger)' };
-    default: return { bg: 'rgba(113, 113, 122, 0.1)', color: 'var(--text-muted)' };
-  }
-}
-
-function getWebsiteStatusLabel(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
 
 async function getDashboardData(id: string): Promise<DashboardData | null> {
   if (isRedisConfigured()) {
@@ -189,21 +158,14 @@ export default async function ProjectDashboard({ params }: PageProps) {
 
   const { analysis } = data;
 
-  const getHeaderGradient = () => {
-    switch (analysis.recommendation) {
-      case 'Tier 1': return 'radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.1) 0%, transparent 50%)';
-      case 'Tier 2': return 'radial-gradient(ellipse at top left, rgba(251, 191, 36, 0.08) 0%, transparent 50%)';
-      case 'Tier 3': return 'radial-gradient(ellipse at top left, rgba(248, 113, 113, 0.08) 0%, transparent 50%)';
-      default: return 'none';
-    }
-  };
+  const headerGradient = getHeaderGradient(analysis.recommendation);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <header
         className="animate-slide-up stagger-1 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 rounded-xl"
-        style={{ background: getHeaderGradient() }}
+        style={{ background: headerGradient }}
       >
         <Link
           href="/"
@@ -351,7 +313,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
             <div className="flex items-center gap-4 mt-2 flex-wrap">
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1.5"
-                style={{ background: getWebsiteStatusStyle(data.websiteStatus).bg, color: getWebsiteStatusStyle(data.websiteStatus).color }}
+                style={getWebsiteStatusStyle(data.websiteStatus)}
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />
                 {getWebsiteStatusLabel(data.websiteStatus)}

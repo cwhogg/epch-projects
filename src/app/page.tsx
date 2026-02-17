@@ -3,6 +3,7 @@ import { getAnalysesFromDb, getAllContentCalendars, isRedisConfigured, getAllFou
 import { getAllPaintedDoorSites } from '@/lib/painted-door-db';
 import { getAnalyses } from '@/lib/data';
 import { Analysis, PaintedDoorSite, ContentCalendar, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
+import { getBadgeClass, getWebsiteStatusStyle, getWebsiteStatusLabel } from '@/lib/analysis-styles';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,15 +14,6 @@ interface ProjectSummary {
   contentTotal: number;
   contentComplete: number;
   hasGSCLink: boolean;
-}
-
-function getBadgeClass(rec: string) {
-  switch (rec) {
-    case 'Tier 1': return 'badge-success';
-    case 'Tier 2': return 'badge-warning';
-    case 'Tier 3': return 'badge-danger';
-    default: return 'badge-neutral';
-  }
 }
 
 async function getProjectSummaries(): Promise<ProjectSummary[]> {
@@ -163,18 +155,9 @@ export default async function Home() {
                   {project.websiteStatus ? (
                     <span
                       className="text-xs font-medium px-1.5 py-0.5 rounded"
-                      style={{
-                        background: project.websiteStatus === 'live' ? 'rgba(16, 185, 129, 0.15)'
-                          : project.websiteStatus === 'failed' ? 'rgba(248, 113, 113, 0.15)'
-                          : ['deploying', 'pushing', 'generating'].includes(project.websiteStatus) ? 'rgba(245, 158, 11, 0.15)'
-                          : 'rgba(113, 113, 122, 0.1)',
-                        color: project.websiteStatus === 'live' ? 'var(--accent-emerald)'
-                          : project.websiteStatus === 'failed' ? 'var(--color-danger)'
-                          : ['deploying', 'pushing', 'generating'].includes(project.websiteStatus) ? 'var(--accent-amber)'
-                          : 'var(--text-muted)',
-                      }}
+                      style={getWebsiteStatusStyle(project.websiteStatus)}
                     >
-                      {project.websiteStatus.charAt(0).toUpperCase() + project.websiteStatus.slice(1)}
+                      {getWebsiteStatusLabel(project.websiteStatus)}
                     </span>
                   ) : (
                     <span style={{ fontSize: '0.6875rem' }}>Not Started</span>
