@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Add Validation Canvas Types
+### ✅ Task 1: Add Validation Canvas Types
 
 **Files:**
 - Modify: `src/types/index.ts` (append after line ~444, after the `CritiqueIssue` interface)
@@ -102,7 +102,7 @@ git commit -m "feat(validation-canvas): add type definitions for canvas, assumpt
 
 ---
 
-### Task 2: Add Validation Canvas DB Functions
+### ✅ Task 2: Add Validation Canvas DB Functions
 
 **Files:**
 - Modify: `src/lib/db.ts` (add functions after the foundation doc section, ~line 82)
@@ -468,7 +468,7 @@ git commit -m "feat(validation-canvas): add Redis persistence functions for canv
 
 ---
 
-### Task 3: Verify Seth Godin Advisor Exists
+### ✅ Task 3: Verify Seth Godin Advisor Exists
 
 **Files:**
 - Verify: `src/lib/advisors/prompts/seth-godin.md` (already exists)
