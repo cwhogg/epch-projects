@@ -8,7 +8,9 @@ import { parseLLMJson } from './llm-utils';
 export interface ContentRecipe {
   contentType: string;
   authorAdvisor: string;
+  authorFramework?: string;
   authorContextDocs: FoundationDocType[];
+  namedCritics?: string[];
   evaluationNeeds: string;
   evaluationEmphasis?: string;
   minAggregateScore: number;
