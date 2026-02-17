@@ -1,0 +1,6 @@
+{
+  "productionUrl": "https://epch-projects.vercel.app",
+  "vercelMcpAccess": false,
+  "deployWaitSeconds": 120,
+  "smokeTestProfiles": []
+}
