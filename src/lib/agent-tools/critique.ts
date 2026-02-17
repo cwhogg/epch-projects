@@ -257,20 +257,61 @@ export function createCritiqueTools(
     {
       name: 'run_critiques',
       description:
-        'Run critique cycle with dynamically selected advisors. Reads current draft from Redis.',
+        'Run critique cycle with selected advisors. Optionally specify advisorIds to run a subset.',
       input_schema: {
         type: 'object',
-        properties: {},
+        properties: {
+          advisorIds: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Optional subset of critic IDs to run. Omit to run all assigned critics.',
+          },
+        },
         required: [],
       },
-      execute: async () => {
+      execute: async (input) => {
+        const advisorIds = input.advisorIds as string[] | undefined;
+
         // Read draft
         const draft = await getRedis().get<string>(`draft:${runId}`);
         if (!draft) return { error: 'No draft found — call generate_draft first' };
 
         // Select critics (first time only)
         if (selectedCritics.length === 0) {
-          selectedCritics = await selectCritics(recipe, advisorRegistry);
+          // Step 1: Resolve named critics from registry
+          const namedCriticEntries: AdvisorEntry[] = [];
+          for (const id of recipe.namedCritics ?? []) {
+            const entry = advisorRegistry.find((a) => a.id === id);
+            if (entry) {
+              namedCriticEntries.push(entry);
+            } else {
+              console.warn(
+                `[run_critiques] Named critic '${id}' not found in registry — skipping`,
+              );
+            }
+          }
+
+          // Step 2: Run selectCritics for dynamic additions, with fallback
+          let dynamicCritics: AdvisorEntry[] = [];
+          try {
+            dynamicCritics = await selectCritics(recipe, advisorRegistry);
+          } catch (error) {
+            console.warn(
+              '[run_critiques] selectCritics failed, falling back to named critics only:',
+              error instanceof Error ? error.message : error,
+            );
+          }
+
+          // Step 3: Deduplicate by advisor ID
+          const seen = new Set<string>();
+          selectedCritics = [];
+          for (const critic of [...namedCriticEntries, ...dynamicCritics]) {
+            if (!seen.has(critic.id)) {
+              seen.add(critic.id);
+              selectedCritics.push(critic);
+            }
+          }
 
           // Update progress with selected critics
           const progressKey = `pipeline_progress:${runId}`;
@@ -286,14 +327,22 @@ export function createCritiqueTools(
           }
         }
 
-        if (selectedCritics.length === 0) {
+        // Determine which critics to run this call
+        let criticsToRun = selectedCritics;
+        if (advisorIds && advisorIds.length > 0) {
+          criticsToRun = selectedCritics.filter((c) =>
+            advisorIds.includes(c.id),
+          );
+        }
+
+        if (criticsToRun.length === 0) {
           return { critiques: [], message: 'No matching critics found' };
         }
 
         // Run critic calls with p-limit(2) concurrency
         const limit = pLimit(2);
         const results = await Promise.allSettled(
-          selectedCritics.map((advisor) =>
+          criticsToRun.map((advisor) =>
             limit(() => runSingleCritic(advisor, draft, recipe, ideaId)),
           ),
         );
@@ -301,8 +350,8 @@ export function createCritiqueTools(
         const critiques: AdvisorCritique[] = results.map((result, idx) => {
           if (result.status === 'fulfilled') return result.value;
           return {
-            advisorId: selectedCritics[idx].id,
-            name: selectedCritics[idx].name,
+            advisorId: criticsToRun[idx].id,
+            name: criticsToRun[idx].name,
             score: 0,
             pass: false,
             issues: [],

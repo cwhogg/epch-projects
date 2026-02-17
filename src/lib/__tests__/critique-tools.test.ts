@@ -192,6 +192,10 @@ describe('Critique tools', () => {
 
   describe('run_critiques', () => {
     it('reads draft from Redis and runs critic calls', async () => {
+      // Use a recipe without namedCritics to test dynamic-only selection
+      const noNamedCriticsRecipe = { ...recipes.website, namedCritics: undefined };
+      const dynamicTools = createCritiqueTools('dynamic-run', ideaId, noNamedCriticsRecipe);
+
       // First get() returns draft, second get() returns null for progress key
       mockRedis.get
         .mockResolvedValueOnce('Test draft content')
@@ -219,7 +223,7 @@ describe('Critique tools', () => {
         ],
       });
 
-      const tool = tools.find((t) => t.name === 'run_critiques')!;
+      const tool = dynamicTools.find((t) => t.name === 'run_critiques')!;
       const result = (await tool.execute({})) as {
         critiques: Array<{
           advisorId: string;
@@ -261,11 +265,12 @@ describe('Critique tools', () => {
         },
       ]);
 
-      // Need fresh tools since critics are cached
+      // Use a recipe without namedCritics to test dynamic-only selection
+      const noNamedCriticsRecipe = { ...recipes.website, namedCritics: undefined };
       const freshTools = createCritiqueTools(
         'fresh-run',
         ideaId,
-        recipes.website,
+        noNamedCriticsRecipe,
       );
 
       // First get() returns draft, second get() returns null for progress key
@@ -297,6 +302,205 @@ describe('Critique tools', () => {
       const tool = tools.find((t) => t.name === 'run_critiques')!;
 
       await expect(tool.execute({})).rejects.toThrow('Redis connection lost');
+    });
+
+    it('runs only specified advisorIds when provided', async () => {
+      const { selectCritics } = await import('@/lib/content-recipes');
+      vi.mocked(selectCritics).mockResolvedValueOnce([
+        {
+          id: 'april-dunford',
+          name: 'April Dunford',
+          role: 'strategist',
+          evaluationExpertise: 'test',
+        },
+        {
+          id: 'seo-expert',
+          name: 'SEO Expert',
+          role: 'critic',
+          evaluationExpertise: 'test',
+        },
+      ]);
+
+      const freshTools = createCritiqueTools('subset-run', ideaId, recipes.website);
+
+      mockRedis.get
+        .mockResolvedValueOnce('Test draft')
+        .mockResolvedValueOnce(null);
+
+      // Mock two critic responses
+      mockCreate
+        .mockResolvedValueOnce({
+          content: [
+            {
+              type: 'tool_use',
+              id: 'c1',
+              name: 'submit_critique',
+              input: { score: 8, pass: true, issues: [] },
+            },
+          ],
+        });
+
+      const tool = freshTools.find((t) => t.name === 'run_critiques')!;
+
+      // First call populates all critics
+      await tool.execute({});
+
+      // Reset mocks for second call
+      mockRedis.get.mockResolvedValueOnce('Test draft');
+      mockCreate.mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            id: 'c2',
+            name: 'submit_critique',
+            input: { score: 7, pass: true, issues: [] },
+          },
+        ],
+      });
+
+      // Second call with advisorIds — should only run april-dunford
+      const result = (await tool.execute({
+        advisorIds: ['april-dunford'],
+      })) as { critiques: Array<{ advisorId: string }> };
+
+      expect(result.critiques).toHaveLength(1);
+      expect(result.critiques[0].advisorId).toBe('april-dunford');
+    });
+
+    it('merges named critics with dynamically selected critics', async () => {
+      const { selectCritics } = await import('@/lib/content-recipes');
+      // Dynamic selection returns seo-expert only
+      vi.mocked(selectCritics).mockResolvedValueOnce([
+        {
+          id: 'seo-expert',
+          name: 'SEO Expert',
+          role: 'critic',
+          evaluationExpertise: 'test',
+        },
+      ]);
+
+      // Use a recipe with namedCritics
+      const recipeCopy = {
+        ...recipes.website,
+        namedCritics: ['shirin-oreizy'],
+      };
+      const freshTools = createCritiqueTools('merge-run', ideaId, recipeCopy);
+
+      mockRedis.get
+        .mockResolvedValueOnce('Test draft')
+        .mockResolvedValueOnce(null);
+
+      // Two critic calls (shirin-oreizy + seo-expert)
+      mockCreate
+        .mockResolvedValueOnce({
+          content: [
+            {
+              type: 'tool_use',
+              id: 'c1',
+              name: 'submit_critique',
+              input: { score: 7, pass: true, issues: [] },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          content: [
+            {
+              type: 'tool_use',
+              id: 'c2',
+              name: 'submit_critique',
+              input: { score: 8, pass: true, issues: [] },
+            },
+          ],
+        });
+
+      const tool = freshTools.find((t) => t.name === 'run_critiques')!;
+      const result = (await tool.execute({})) as {
+        critiques: Array<{ advisorId: string }>;
+      };
+
+      // Should have both named (shirin-oreizy) and dynamic (seo-expert)
+      expect(result.critiques.length).toBeGreaterThanOrEqual(2);
+      const ids = result.critiques.map((c) => c.advisorId);
+      expect(ids).toContain('shirin-oreizy');
+      expect(ids).toContain('seo-expert');
+    });
+
+    it('warns and skips named critic IDs not found in registry', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { selectCritics } = await import('@/lib/content-recipes');
+      vi.mocked(selectCritics).mockResolvedValueOnce([]);
+
+      const recipeCopy = {
+        ...recipes.website,
+        namedCritics: ['nonexistent-advisor', 'shirin-oreizy'],
+      };
+      const freshTools = createCritiqueTools('warn-run', ideaId, recipeCopy);
+
+      mockRedis.get
+        .mockResolvedValueOnce('Test draft')
+        .mockResolvedValueOnce(null);
+
+      mockCreate.mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            id: 'c1',
+            name: 'submit_critique',
+            input: { score: 7, pass: true, issues: [] },
+          },
+        ],
+      });
+
+      const tool = freshTools.find((t) => t.name === 'run_critiques')!;
+      const result = (await tool.execute({})) as {
+        critiques: Array<{ advisorId: string }>;
+      };
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('nonexistent-advisor'),
+      );
+      // Only shirin-oreizy should run (nonexistent was skipped)
+      expect(result.critiques).toHaveLength(1);
+      expect(result.critiques[0].advisorId).toBe('shirin-oreizy');
+
+      warnSpy.mockRestore();
+    });
+
+    it('falls back to named critics when selectCritics throws', async () => {
+      const { selectCritics } = await import('@/lib/content-recipes');
+      vi.mocked(selectCritics).mockRejectedValueOnce(
+        new Error('LLM parse failed'),
+      );
+
+      const recipeCopy = {
+        ...recipes.website,
+        namedCritics: ['shirin-oreizy'],
+      };
+      const freshTools = createCritiqueTools('fallback-run', ideaId, recipeCopy);
+
+      mockRedis.get
+        .mockResolvedValueOnce('Test draft')
+        .mockResolvedValueOnce(null);
+
+      mockCreate.mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            id: 'c1',
+            name: 'submit_critique',
+            input: { score: 6, pass: true, issues: [] },
+          },
+        ],
+      });
+
+      const tool = freshTools.find((t) => t.name === 'run_critiques')!;
+      const result = (await tool.execute({})) as {
+        critiques: Array<{ advisorId: string }>;
+      };
+
+      // Should fall back to named critics only
+      expect(result.critiques).toHaveLength(1);
+      expect(result.critiques[0].advisorId).toBe('shirin-oreizy');
     });
   });
 
