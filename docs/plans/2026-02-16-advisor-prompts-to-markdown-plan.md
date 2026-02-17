@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Convert first 4 advisor prompts from .ts to .md
+### ✅ Task 1: Convert first 4 advisor prompts from .ts to .md
 
 **Files:**
 - Convert: `src/lib/advisors/prompts/richard-rumelt.ts` → `src/lib/advisors/prompts/richard-rumelt.md`
@@ -56,7 +56,7 @@ Do NOT commit yet — the loader and barrel still reference these as TS imports,
 
 ---
 
-### Task 2: Convert remaining 9 advisor prompts from .ts to .md
+### ✅ Task 2: Convert remaining 9 advisor prompts from .ts to .md
 
 **Files:**
 - Convert: `src/lib/advisors/prompts/shirin-oreizy.ts` → `src/lib/advisors/prompts/shirin-oreizy.md`
@@ -87,7 +87,7 @@ Do NOT commit yet.
 
 ---
 
-### Task 3: Rewrite prompt-loader.ts and delete prompts/index.ts
+### ✅ Task 3: Rewrite prompt-loader.ts and delete prompts/index.ts
 
 **Files:**
 - Modify: `src/lib/advisors/prompt-loader.ts`
