@@ -40,9 +40,7 @@ In `src/lib/__tests__/nav-utils.test.ts`, make the following changes:
 
 3. In the `testPaths` array (lines 82-94), replace `/analyses/abc/content` with `/content/abc` and `/analyses/abc/painted-door` with `/website/abc`.
 
-4. In the `orphanedPaths` array (lines 108-115), remove `/website` and `/content` (they're no longer orphaned — subpaths like `/website/abc` now activate the Projects tab). Keep the bare paths as orphaned ONLY if the nav-utils doesn't match them — but since `/website/abc` matches `startsWith('/website/')`, the bare `/website` (no trailing slash) won't match. Verify this works correctly.
-
-Actually, looking more carefully: `/website` (the index page) should NOT activate the Projects tab — it has its own content. The `startsWith('/website/')` pattern (with trailing slash) won't match `/website` (no trailing slash). So `/website` and `/content` should stay in the orphaned list. Good.
+4. Leave `/website` and `/content` in the `orphanedPaths` array unchanged — `startsWith('/website/')` requires a trailing slash and will not match the bare `/website` or `/content` index paths. Those index pages remain correctly orphaned (they are cross-idea dashboards, not project sub-pages).
 
 **Step 2: Run tests to verify they fail**
 
@@ -104,11 +102,20 @@ With:
                 href={`/content/${analysisId}`}
 ```
 
-2. **Add a "Regenerate Site" button** between the "See Site" link and the "Create Content" link in the complete state action buttons (after line 198, before the Create Content Link). Insert this button:
+2. **Add a `handleRegenerate` callback** alongside the existing `resetProgress` and `triggerGeneration` callbacks (e.g., after line 70, before the `useEffect`). This follows the file's pattern of named `useCallback` functions for button handlers:
+
+```tsx
+  const handleRegenerate = useCallback(async () => {
+    await resetProgress();
+    triggerGeneration();
+  }, [resetProgress, triggerGeneration]);
+```
+
+3. **Add a "Regenerate Site" button** between the "See Site" link and the "Create Content" link in the complete state action buttons (after line 198, before the Create Content Link). Insert this button:
 
 ```tsx
               <button
-                onClick={async () => { await resetProgress(); triggerGeneration(); }}
+                onClick={handleRegenerate}
                 className="btn btn-ghost text-sm"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -121,11 +128,9 @@ With:
 
 The "Back to Analysis" link (line 162, href `/analyses/${analysisId}`) stays unchanged — it correctly points to the project dashboard.
 
+No new test file required — this is a verbatim copy of the source page with two modifications (link href change and regenerate button addition). The nav-utils tests (Task 1) cover route matching. The regenerate button reuses existing `resetProgress` and `triggerGeneration` functions that are already exercised by the error-state UI.
+
 **Step 2: Verify the file compiles**
-
-Run: `npx tsc --noEmit src/app/website/\\[id\\]/page.tsx 2>&1 | head -20` (or just run a quick build check)
-
-Actually, since this is a Next.js app, a simpler check is:
 
 Run: `npm run lint`
 Expected: No errors related to the new file
@@ -224,6 +229,8 @@ With:
             href={`/content/${analysisId}`}
 ```
 
+No new test files required — all three pages are verbatim copies of their source files with only link href changes. No new logic is introduced. The nav-utils tests (Task 1) cover route matching for the new paths.
+
 **Step 4: Verify all files compile**
 
 Run: `npm run lint`
@@ -237,6 +244,8 @@ git commit -m "feat: add /content/[id] routes"
 ```
 
 ---
+
+> **Task ordering note:** Tasks 4, 5, and 6 are safe in any commit order. The redirects added in Task 4 ensure old URLs remain functional regardless of whether Task 5 (link updates) or Task 6 (old file deletion) has been committed. Execute them in the listed order for cleanliness, but a partial commit set won't break the app.
 
 ### Task 4: Add redirects for old URLs
 
@@ -546,7 +555,7 @@ With:
     START["User visits /content/[id]"] --> CALENDAR{"Calendar exists?"}
 ```
 
-In the High-Level Architecture mermaid diagram (around lines 16-17), update:
+In the High-Level Architecture mermaid diagram (around lines 16-18), update:
 
 Replace:
 ```
@@ -575,15 +584,17 @@ git commit -m "docs: update architecture.md with new route paths"
 
 ### Task 8: Build and test verification
 
+This is a regression check — verifying nothing is broken. New route pages are copy-and-modify operations with no new logic, so the nav-utils tests (Task 1) are the only new test coverage. The build check is the primary validation that all routes resolve and all imports are intact.
+
 **Step 1: Run the full test suite**
 
 Run: `npm test`
-Expected: All tests pass
+Expected: All tests pass (including the updated nav-utils tests from Task 1)
 
 **Step 2: Run the production build**
 
 Run: `npm run build`
-Expected: Build succeeds with exit code 0, no type errors, no broken imports
+Expected: Build succeeds with exit code 0, no type errors, no broken imports. This validates that all new route pages are correctly wired and the old route files are fully removed.
 
 **Step 3: Run lint**
 
