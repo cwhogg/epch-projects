@@ -31,7 +31,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 2: Deduplicate redirect in checkProgress (KB-024)
+### ✅ Task 2: Deduplicate redirect in checkProgress (KB-024)
 
 **KBs:** KB-024
 
