@@ -75,6 +75,8 @@ function ContentGeneratePageInner() {
 
   const checkProgress = useCallback(async () => {
     try {
+      let isDone = false;
+
       if (pipelineMode) {
         const res = await fetch(`/api/content-pipeline/${analysisId}`);
         if (!res.ok) return;
@@ -82,9 +84,7 @@ function ContentGeneratePageInner() {
         setCritiqueProgress(data);
 
         if (data.status === 'complete' || data.status === 'max-rounds-reached') {
-          setTimeout(() => {
-            router.push(`/analyses/${analysisId}/content`);
-          }, 2000);
+          isDone = true;
         }
       } else {
         const res = await fetch(`/api/content/${analysisId}/generate`);
@@ -93,10 +93,14 @@ function ContentGeneratePageInner() {
         setProgress(data);
 
         if (data.status === 'complete') {
-          setTimeout(() => {
-            router.push(`/analyses/${analysisId}/content`);
-          }, 2000);
+          isDone = true;
         }
+      }
+
+      if (isDone) {
+        setTimeout(() => {
+          router.push(`/analyses/${analysisId}/content`);
+        }, 2000);
       }
     } catch (err) {
       console.error('Error checking progress:', err);
