@@ -204,10 +204,10 @@ Pipeline-specific: Mobile = vertical stack with down-arrows. Tablet = 3-col grid
 ## Navigation
 
 ### Desktop (sm+)
-Sticky top nav with translucent glass: warm off-white at 92% opacity, `backdrop-blur(16px)`, subtle bottom border. Logo left, nav links right. Active link: coral text color.
+Sticky top nav with translucent glass: warm off-white at 92% opacity, `backdrop-blur(16px)`, subtle bottom border. Logo left, 3 text nav links right (Projects, Ideation, Analytics). Active link: coral text color.
 
 ### Mobile (< sm)
-Fixed bottom tab bar with the same glassmorphism treatment, top border instead of bottom. Icon + label for each pipeline stage. Active tab: coral color. Desktop nav links hidden.
+Fixed bottom tab bar with the same glassmorphism treatment, top border instead of bottom. 3 tabs with icon + label: Projects, Ideation, Analytics. Pipeline stages accessed through project detail views. Active tab: coral color. Desktop nav links hidden.
 
 ### Section Headers
 Each page uses a header pattern with: Fraunces title, secondary text description, and a subtle colored radial gradient blur behind (Tier 3 stage identity color, decorative only).

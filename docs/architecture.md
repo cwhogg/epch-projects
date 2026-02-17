@@ -143,6 +143,7 @@ graph TB
         S_CONTENT["content-prompts"]
         S_ANALYTICS_DB["analytics-db"]
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
+        S_FRAMEWORKS["frameworks/registry,<br/>frameworks/framework-loader"]
         S_EXPERTISE["expertise-profile"]
         S_UTILS["utils, llm-utils, data"]
     end
@@ -236,9 +237,16 @@ graph TB
     end
 
     subgraph Advisors["Virtual Board"]
-        advisors_registry["advisors/registry.ts<br/>4 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert"]
+        advisors_registry["advisors/registry.ts<br/>13 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert, Shirin Oreizy,<br/>Joe Pulizzi, Robb Wolf, Patrick Campbell,<br/>Robbie Kellman Baxter, Rob Walling"]
         advisors_loader["advisors/prompt-loader.ts<br/>getAdvisorSystemPrompt(advisorId)"]
-        advisors_prompts["advisors/prompts/<br/>Per-advisor system prompts"]
+        advisors_prompts["advisors/prompts/<br/>Per-advisor .md system prompts"]
+    end
+
+    subgraph Frameworks["Framework Library"]
+        frameworks_registry["frameworks/registry.ts<br/>Framework definitions and metadata"]
+        frameworks_loader["frameworks/framework-loader.ts<br/>Load prompt.md, examples.md, anti-examples.md"]
+        frameworks_types["frameworks/types.ts<br/>Framework type definitions"]
+        frameworks_prompts["frameworks/prompts/<br/>3 frameworks: content-inc-model,<br/>forever-promise, value-metric"]
     end
 
     subgraph Utilities["Utilities"]
@@ -717,8 +725,9 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
 | `src/lib/expertise-profile.ts` | Owner expertise profile for scoring calibration |
-| `src/lib/advisors/registry.ts` | 4-advisor virtual board registry |
+| `src/lib/advisors/registry.ts` | 13-advisor virtual board registry |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
+| `src/lib/frameworks/` | Framework library: registry, loader, 3 prompt sets (content-inc-model, forever-promise, value-metric) |
 | `src/lib/utils.ts` | slugify, fuzzyMatchPair, buildLeaderboard |
 | `src/lib/llm-utils.ts` | parseLLMJson, cleanJSONString |
 | `src/lib/data.ts` | Filesystem fallback: ideas.json, experiments/ markdown parser |
