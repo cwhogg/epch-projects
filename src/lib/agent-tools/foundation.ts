@@ -12,7 +12,7 @@ import { designPrinciplesSeed } from '@/lib/advisors/design-seed';
 
 // Advisor assignments per doc type
 const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
-  'strategy': 'richard-rumelt',
+  'strategy': 'seth-godin',
   'positioning': 'april-dunford',
   'brand-voice': 'copywriter',
   'design-principles': 'richard-rumelt',
@@ -53,10 +53,16 @@ function buildGenerationPrompt(
 
   switch (docType) {
     case 'strategy':
-      prompt += `Write a strategy document with three sections:
-1. THE CHALLENGE — What's the core problem or opportunity? Be specific.
-2. THE GUIDING POLICY — What's the fundamental approach? What tradeoffs are we making?
-3. COHERENT ACTIONS — What specific steps follow from the policy?
+      prompt += `Write a concise strategy document (aim for ~1 page) answering three questions:
+
+1. WHO IS OUR SMALLEST VIABLE AUDIENCE?
+The specific group of people we seek to serve. Not a demographic — a psychographic. People who believe what we believe, defined narrowly enough that we can be remarkable to them. If the answer is "everyone" or a broad category, it's not narrow enough.
+
+2. WHAT MAKES US REMARKABLE TO THEM?
+The specific thing we do that they'd miss if we disappeared. Not a feature list — the core promise. The Purple Cow. This should feel risky and specific. If it could apply to any competitor, it's not remarkable.
+
+3. WHAT'S OUR PERMISSION TO REACH THEM?
+How we earn the right to show up in their world. For this system, primarily SEO content that answers questions they're already asking — showing up with value before asking for anything.
 
 If the user has not provided differentiation, tradeoffs, or anti-target information, mark those sections with: [ASSUMPTION: The LLM inferred this strategic choice — review and confirm]`;
       break;
