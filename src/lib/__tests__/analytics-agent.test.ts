@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getWeekId, matchUrlToSlug, detectChanges } from '../analytics-agent';
+import { getWeekId, matchUrlToSlug, detectChanges, getPreviousWeekId, buildWeeklyReport } from '../analytics-agent';
+import type { PieceSnapshot, ContentType } from '@/types';
 
 describe('getWeekId', () => {
   it('returns ISO week string format YYYY-Www', () => {
@@ -122,5 +123,97 @@ describe('detectChanges', () => {
     const previous = [makeSnapshot({ impressions: 5, clicks: 1 })];
     const alerts = detectChanges(current, previous);
     expect(alerts).toEqual([]);
+  });
+});
+
+describe('getPreviousWeekId', () => {
+  it('returns a week ID earlier than the input', () => {
+    const prev = getPreviousWeekId('2026-W07');
+    expect(prev).toMatch(/^\d{4}-W\d{2}$/);
+    // The function consistently returns a prior week
+    expect(prev < '2026-W07').toBe(true);
+  });
+
+  it('handles week 1 rollover to previous year', () => {
+    const prev = getPreviousWeekId('2026-W01');
+    expect(prev).toBe('2025-W52');
+  });
+});
+
+describe('buildWeeklyReport', () => {
+  const makeSnap = (overrides: Partial<PieceSnapshot> = {}): PieceSnapshot => ({
+    ideaId: 'idea-1',
+    pieceId: 'piece-1',
+    slug: 'test-article',
+    title: 'Test Article',
+    type: 'blog-post' as ContentType,
+    weekId: '2026-W07',
+    clicks: 10,
+    impressions: 100,
+    ctr: 0.1,
+    position: 15,
+    topQueries: [],
+    ...overrides,
+  });
+
+  it('returns zero-padded snapshot for a published piece slug not in GSC data', () => {
+    const snapshots = [makeSnap({ slug: 'matched-article' })];
+    const previousSnapshots: PieceSnapshot[] = [];
+    const slugLookup = new Map<string, { ideaId: string; pieceId: string; title: string; type: ContentType }>([
+      ['matched-article', { ideaId: 'idea-1', pieceId: 'piece-1', title: 'Matched', type: 'blog-post' }],
+      ['unmatched-article', { ideaId: 'idea-2', pieceId: 'piece-2', title: 'Unmatched', type: 'blog-post' }],
+    ]);
+
+    const pieces = buildWeeklyReport(snapshots, previousSnapshots, slugLookup, '2026-W07');
+
+    const unmatched = pieces.find(p => p.slug === 'unmatched-article');
+    expect(unmatched).toBeDefined();
+    expect(unmatched!.current.clicks).toBe(0);
+    expect(unmatched!.current.impressions).toBe(0);
+  });
+
+  it('calculates correct clicksChange and impressionsChange deltas from previous week', () => {
+    const snapshots = [makeSnap({ slug: 'article-a', clicks: 20, impressions: 200 })];
+    const previousSnapshots = [makeSnap({ slug: 'article-a', clicks: 15, impressions: 150, weekId: '2026-W06' })];
+    const slugLookup = new Map([
+      ['article-a', { ideaId: 'idea-1', pieceId: 'piece-1', title: 'Article A', type: 'blog-post' as ContentType }],
+    ]);
+
+    const pieces = buildWeeklyReport(snapshots, previousSnapshots, slugLookup, '2026-W07');
+
+    const article = pieces.find(p => p.slug === 'article-a')!;
+    expect(article.clicksChange).toBe(5);     // 20 - 15
+    expect(article.impressionsChange).toBe(50); // 200 - 150
+  });
+
+  it('returns null deltas when no previous snapshot exists for a piece', () => {
+    const snapshots = [makeSnap({ slug: 'new-article' })];
+    const previousSnapshots: PieceSnapshot[] = [];
+    const slugLookup = new Map([
+      ['new-article', { ideaId: 'idea-1', pieceId: 'piece-1', title: 'New Article', type: 'blog-post' as ContentType }],
+    ]);
+
+    const pieces = buildWeeklyReport(snapshots, previousSnapshots, slugLookup, '2026-W07');
+
+    expect(pieces[0].clicksChange).toBeNull();
+    expect(pieces[0].impressionsChange).toBeNull();
+    expect(pieces[0].positionChange).toBeNull();
+  });
+
+  it('sorts pieces by clicks descending, then impressions descending', () => {
+    const snapshots = [
+      makeSnap({ slug: 'low-clicks', clicks: 5, impressions: 50 }),
+      makeSnap({ slug: 'high-clicks', clicks: 20, impressions: 200 }),
+      makeSnap({ slug: 'mid-clicks', clicks: 10, impressions: 100 }),
+    ];
+    const slugLookup = new Map([
+      ['low-clicks', { ideaId: 'i1', pieceId: 'p1', title: 'Low', type: 'blog-post' as ContentType }],
+      ['high-clicks', { ideaId: 'i2', pieceId: 'p2', title: 'High', type: 'blog-post' as ContentType }],
+      ['mid-clicks', { ideaId: 'i3', pieceId: 'p3', title: 'Mid', type: 'blog-post' as ContentType }],
+    ]);
+
+    const pieces = buildWeeklyReport(snapshots, [], slugLookup, '2026-W07');
+
+    expect(pieces.map(p => p.slug)).toEqual(['high-clicks', 'mid-clicks', 'low-clicks']);
   });
 });
