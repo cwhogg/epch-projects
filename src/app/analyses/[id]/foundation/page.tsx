@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, use, type CSSProperties } from 'react';
 import Link from 'next/link';
 import type {
   FoundationDocument,
@@ -231,6 +231,18 @@ export default function FoundationPage({ params }: PageProps) {
   const docCount = Object.keys(docs).length;
   const progress = data?.progress.status !== 'not_started' ? (data?.progress as FoundationProgress) : null;
 
+  const versionBadgeStyle: CSSProperties = {
+    fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 500,
+    color: 'var(--text-muted)', background: 'var(--bg-elevated)',
+    padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
+  };
+  const editedBadgeStyle: CSSProperties = {
+    fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 600,
+    letterSpacing: '0.05em', textTransform: 'uppercase',
+    color: 'var(--accent-coral)', background: 'var(--accent-coral-soft)',
+    padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 1.5rem', paddingBottom: '4rem' }}>
       {/* Page Header */}
@@ -359,20 +371,11 @@ export default function FoundationPage({ params }: PageProps) {
                     }}>
                       <CheckCircleIcon />
                       {label}
-                      <span style={{
-                        fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 500,
-                        color: 'var(--text-muted)', background: 'var(--bg-elevated)',
-                        padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
-                      }}>
+                      <span style={versionBadgeStyle}>
                         v{doc.version}
                       </span>
                       {doc.editedAt && (
-                        <span style={{
-                          fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 600,
-                          letterSpacing: '0.05em', textTransform: 'uppercase' as const,
-                          color: 'var(--accent-coral)', background: 'var(--accent-coral-soft)',
-                          padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
-                        }}>
+                        <span style={editedBadgeStyle}>
                           Edited
                         </span>
                       )}
@@ -488,21 +491,12 @@ export default function FoundationPage({ params }: PageProps) {
                     )}
                     {label}
                     {doc && (
-                      <span style={{
-                        fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 500,
-                        color: 'var(--text-muted)', background: 'var(--bg-elevated)',
-                        padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
-                      }}>
+                      <span style={versionBadgeStyle}>
                         v{doc.version}
                       </span>
                     )}
                     {state === 'edited' && (
-                      <span style={{
-                        fontFamily: 'var(--font-body)', fontSize: '0.6875rem', fontWeight: 600,
-                        letterSpacing: '0.05em', textTransform: 'uppercase' as const,
-                        color: 'var(--accent-coral)', background: 'var(--accent-coral-soft)',
-                        padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)',
-                      }}>
+                      <span style={editedBadgeStyle}>
                         Edited
                       </span>
                     )}
