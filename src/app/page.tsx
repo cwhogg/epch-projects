@@ -1,19 +1,15 @@
 import Link from 'next/link';
-import { getAnalysesFromDb, getAllContentCalendars, isRedisConfigured, getAllFoundationDocs } from '@/lib/db';
-import { getAllPaintedDoorSites } from '@/lib/painted-door-db';
+import { getAnalysesFromDb, isRedisConfigured, getAllAssumptions } from '@/lib/db';
 import { getAnalyses } from '@/lib/data';
-import { Analysis, PaintedDoorSite, ContentCalendar, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
-import { getBadgeClass, getWebsiteStatusStyle, getWebsiteStatusLabel } from '@/lib/analysis-styles';
+import { Analysis, AssumptionType, AssumptionStatus, ASSUMPTION_TYPES } from '@/types';
+import { getBadgeClass, getAssumptionStatusBackground, ASSUMPTION_LABELS } from '@/lib/analysis-styles';
+import { buildAssumptionStatuses } from '@/lib/project-summaries';
 
 export const dynamic = 'force-dynamic';
 
 interface ProjectSummary {
   analysis: Analysis;
-  foundationCount: number;
-  websiteStatus: string | null;
-  contentTotal: number;
-  contentComplete: number;
-  hasGSCLink: boolean;
+  assumptions: Record<AssumptionType, AssumptionStatus> | null;
 }
 
 async function getProjectSummaries(): Promise<ProjectSummary[]> {
@@ -21,36 +17,24 @@ async function getProjectSummaries(): Promise<ProjectSummary[]> {
     const analyses = getAnalyses();
     return analyses.map((a) => ({
       analysis: a,
-      foundationCount: 0,
-      websiteStatus: null,
-      contentTotal: 0,
-      contentComplete: 0,
-      hasGSCLink: false,
+      assumptions: null,
     }));
   }
 
-  const [analyses, allSites, allCalendars] = await Promise.all([
-    getAnalysesFromDb(),
-    getAllPaintedDoorSites(),
-    getAllContentCalendars(),
-  ]);
+  const analyses = await getAnalysesFromDb();
 
   const summaries = await Promise.all(analyses.map(async (analysis) => {
-    const docs = await getAllFoundationDocs(analysis.ideaId).catch(() => ({}));
-    const site = allSites.find((s: PaintedDoorSite) => s.ideaId === analysis.ideaId);
-    const calendar = allCalendars.find((c: ContentCalendar) => c.ideaId === analysis.ideaId);
+    let assumptions: Record<AssumptionType, AssumptionStatus> | null = null;
+    try {
+      const raw = await getAllAssumptions(analysis.ideaId);
+      assumptions = buildAssumptionStatuses(raw);
+    } catch {
+      // Canvas data unavailable — show "Awaiting validation" fallback
+    }
 
-    return {
-      analysis,
-      foundationCount: Object.keys(docs).length,
-      websiteStatus: site?.status ?? null,
-      contentTotal: calendar?.pieces.length ?? 0,
-      contentComplete: calendar?.pieces.filter(p => p.status === 'complete').length ?? 0,
-      hasGSCLink: false, // Avoid N+1 Redis calls for GSC links on home page
-    };
+    return { analysis, assumptions };
   }));
 
-  // Sort by overall score descending
   return summaries.sort((a, b) =>
     (b.analysis.scores.overall ?? 0) - (a.analysis.scores.overall ?? 0)
   );
@@ -99,86 +83,59 @@ export default async function Home() {
 
       {/* Project List */}
       {projects.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {projects.map((project, i) => (
             <Link
               key={project.analysis.id}
               href={`/analyses/${project.analysis.id}`}
-              className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up"
+              className="card p-5 sm:p-6 block animate-slide-up"
               style={{ animationDelay: `${0.1 + i * 0.05}s` }}
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <span className="font-display text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {project.analysis.ideaName}
-                    </span>
-                    <span className={`badge ${getBadgeClass(project.analysis.recommendation)}`}>
-                      {project.analysis.recommendation}
-                    </span>
-                  </div>
-                  <p className="text-sm mt-1 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>
-                    {project.analysis.summary}
-                  </p>
+              {/* Row 1: Project Identity */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-display text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {project.analysis.ideaName}
+                  </span>
+                  <span className={`badge ${getBadgeClass(project.analysis.recommendation)}`}>
+                    {project.analysis.recommendation}
+                  </span>
                 </div>
-                <svg className="shrink-0 mt-1 transition-transform" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="shrink-0 ml-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </div>
 
-              {/* Pipeline Progress Row */}
-              <div className="flex gap-5 mt-4 flex-wrap text-xs" style={{ color: 'var(--text-muted)' }}>
-                {/* Analysis — always complete */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Analysis</span>
-                  <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent-emerald)' }} />
-                </div>
-
-                {/* Foundation */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Foundation</span>
-                  <div className="flex gap-0.5">
-                    {FOUNDATION_DOC_TYPES.map((_, idx) => (
-                      <div
-                        key={idx}
-                        className="w-[7px] h-[7px] rounded-full"
-                        style={{ background: idx < project.foundationCount ? 'var(--accent-emerald)' : 'var(--border-default)' }}
-                      />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: '0.6875rem' }}>{project.foundationCount}/6</span>
-                </div>
-
-                {/* Website */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Website</span>
-                  {project.websiteStatus ? (
-                    <span
-                      className="text-xs font-medium px-1.5 py-0.5 rounded"
-                      style={getWebsiteStatusStyle(project.websiteStatus)}
-                    >
-                      {getWebsiteStatusLabel(project.websiteStatus)}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: '0.6875rem' }}>Not Started</span>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Content</span>
-                  {project.contentTotal > 0 ? (
-                    <span style={{ fontSize: '0.6875rem' }}>{project.contentComplete} complete / {project.contentTotal} total</span>
-                  ) : (
-                    <span style={{ fontSize: '0.6875rem' }}>Not started</span>
-                  )}
-                </div>
-
-                {/* Analytics */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Analytics</span>
-                  <span style={{ fontSize: '0.6875rem' }}>--</span>
-                </div>
+              {/* Row 2: Validation Status Segments (or fallback) */}
+              <div className="mt-4">
+                {project.assumptions ? (
+                  <>
+                    <div className="flex gap-0.5">
+                      {ASSUMPTION_TYPES.map((type) => (
+                        <div
+                          key={type}
+                          className="flex-1 h-2 rounded-full"
+                          style={{ background: getAssumptionStatusBackground(project.assumptions![type]) }}
+                        />
+                      ))}
+                    </div>
+                    <div className="hidden sm:flex mt-2 gap-0.5">
+                      {ASSUMPTION_TYPES.map((type) => (
+                        <span
+                          key={type}
+                          className="flex-1 text-center font-medium uppercase tracking-wide"
+                          style={{ fontSize: '11px', color: 'var(--text-muted)' }}
+                        >
+                          {ASSUMPTION_LABELS[type]}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Awaiting validation
+                  </p>
+                )}
               </div>
             </Link>
           ))}
