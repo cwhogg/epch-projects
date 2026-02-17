@@ -295,7 +295,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Painted door agent failed:', error);
+    console.error('[painted-door] Painted door agent failed:', error);
 
     // Find the currently running step and mark it as error
     const runningStep = progress.steps.findIndex((s) => s.status === 'running');
@@ -519,7 +519,7 @@ async function runPaintedDoorAgentV2(ideaId: string): Promise<void> {
     }
 
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Website agent v2 failed:', error);
+    console.error('[website-v2] Website agent v2 failed:', error);
 
     await clearActiveRun('website', ideaId);
 

@@ -63,7 +63,7 @@ export async function buildContentContext(ideaId: string): Promise<ContentContex
         }
       }
     } catch {
-      console.error('Failed to parse SEO data for content context');
+      console.error('[content-context] Failed to parse SEO data for content context');
     }
   }
 

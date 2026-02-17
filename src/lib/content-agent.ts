@@ -218,7 +218,7 @@ export async function generateContentPieces(
       progress.steps[i].detail = `${wordCount} words`;
       progress.completedPieceIds.push(piece.id);
     } catch (error) {
-      console.error(`Failed to generate ${piece.title}:`, error);
+      console.error(`[content-agent] Failed to generate ${piece.title}:`, error);
       progress.steps[i].status = 'error';
       progress.steps[i].detail = error instanceof Error ? error.message : 'Generation failed';
 
