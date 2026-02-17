@@ -1,5 +1,44 @@
-import { ProductIdea } from '@/types';
+import { ProductIdea, FoundationDocument } from '@/types';
 import { buildExpertiseContext } from './expertise-profile';
+
+const RELEVANT_TYPES = ['strategy', 'positioning'] as const;
+const MAX_CONTENT_LENGTH = 4000;
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export function buildFoundationContext(docs: FoundationDocument[]): string {
+  const relevant = docs
+    .filter((d) => (RELEVANT_TYPES as readonly string[]).includes(d.type))
+    .sort((a, b) => {
+      const order = { strategy: 0, positioning: 1 };
+      return (order[a.type as keyof typeof order] ?? 99) - (order[b.type as keyof typeof order] ?? 99);
+    });
+
+  if (relevant.length === 0) return '';
+
+  const sections = relevant.map((doc) => {
+    const dateLabel = doc.editedAt
+      ? `updated ${formatDate(doc.editedAt)}`
+      : `generated ${formatDate(doc.generatedAt)}`;
+    const content = doc.content.substring(0, MAX_CONTENT_LENGTH);
+    return `## ${capitalize(doc.type)} (v${doc.version}, ${dateLabel})\n${content}`;
+  });
+
+  return `STRATEGIC CONTEXT (from foundation documents):
+
+${sections.join('\n\n')}
+
+Use this strategic context to focus your research. When selecting keywords,
+analyzing competitors, and evaluating market demand, prioritize areas aligned
+with this strategic direction rather than the broad market.`;
+}
 
 export function createPrompt(idea: ProductIdea, step: string, additionalContext?: string): string {
   const baseContext = `You are a SENIOR market research analyst with deep domain expertise. You research like a VC doing due diligence - finding real insights, not surface-level observations.

@@ -2,19 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FoundationDocument } from '@/types';
 
 interface ReanalyzeFormProps {
   ideaId: string;
+  foundationDocs?: FoundationDocument[];
 }
 
-export default function ReanalyzeForm({ ideaId }: ReanalyzeFormProps) {
+function formatDocDate(doc: FoundationDocument): string {
+  const iso = doc.editedAt || doc.generatedAt;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export default function ReanalyzeForm({ ideaId, foundationDocs = [] }: ReanalyzeFormProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
+  const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+
+  const hasFoundation = foundationDocs.length > 0;
 
   const handleReanalyze = async () => {
-    if (!context.trim()) return;
+    if (!context.trim() && !hasFoundation) return;
 
     setLoading(true);
     try {
@@ -55,6 +69,48 @@ export default function ReanalyzeForm({ ideaId }: ReanalyzeFormProps) {
       <h3 className="font-display text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
         Add Context for Re-analysis
       </h3>
+      {hasFoundation && (
+        <div className="mb-3">
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+            Strategic context will be included:
+          </p>
+          <div className="space-y-1">
+            {foundationDocs.map((doc) => (
+              <div key={doc.type} className="rounded-md" style={{ background: 'var(--bg-elevated)' }}>
+                <button
+                  type="button"
+                  onClick={() => setExpandedDoc(expandedDoc === doc.type ? null : doc.type)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-xs"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <span>{capitalize(doc.type)} v{doc.version}</span>
+                  <span className="flex items-center gap-2">
+                    <span style={{ color: 'var(--text-muted)' }}>{formatDocDate(doc)}</span>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ transform: expandedDoc === doc.type ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </span>
+                </button>
+                {expandedDoc === doc.type && (
+                  <div className="px-3 pb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {doc.content.length > 500 ? `${doc.content.substring(0, 500)}...` : doc.content}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <textarea
         value={context}
         onChange={(e) => setContext(e.target.value)}
@@ -66,7 +122,7 @@ export default function ReanalyzeForm({ ideaId }: ReanalyzeFormProps) {
       <div className="flex gap-2">
         <button
           onClick={handleReanalyze}
-          disabled={loading || !context.trim()}
+          disabled={loading || (!context.trim() && !hasFoundation)}
           className="btn btn-primary text-sm flex-1"
         >
           {loading ? (

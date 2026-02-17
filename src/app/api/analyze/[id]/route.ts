@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { getIdeaFromDb, getProgress, isRedisConfigured } from '@/lib/db';
+import { getIdeaFromDb, getFoundationDoc, getProgress, isRedisConfigured } from '@/lib/db';
 import { runResearchAgentAuto } from '@/lib/research-agent';
+import { buildFoundationContext } from '@/lib/research-agent-prompts';
+import { FoundationDocument } from '@/types';
+
+export async function buildEnrichedContext(
+  ideaId: string,
+  additionalContext?: string
+): Promise<string | undefined> {
+  try {
+    const [strategyDoc, positioningDoc] = await Promise.all([
+      getFoundationDoc(ideaId, 'strategy').catch(() => null),
+      getFoundationDoc(ideaId, 'positioning').catch(() => null),
+    ]);
+
+    const docs = [strategyDoc, positioningDoc].filter(Boolean) as FoundationDocument[];
+    const foundationBlock = buildFoundationContext(docs);
+
+    if (!foundationBlock) return additionalContext;
+    if (!additionalContext) return foundationBlock;
+    return `${foundationBlock}\n\n${additionalContext}`;
+  } catch (error) {
+    console.error('Failed to fetch foundation docs for enriched context:', error);
+    return additionalContext;
+  }
+}
 
 // Allow up to 5 minutes for the full analysis pipeline
 export const maxDuration = 300;
@@ -52,7 +76,8 @@ export async function POST(
     // Run analysis after the response is sent, keeping the function alive
     after(async () => {
       try {
-        await runResearchAgentAuto(idea, additionalContext);
+        const enrichedContext = await buildEnrichedContext(id, additionalContext);
+        await runResearchAgentAuto(idea, enrichedContext);
       } catch (error) {
         // AGENT_PAUSED is expected when v2 agent hits time budget
         if (error instanceof Error && error.message === 'AGENT_PAUSED') {

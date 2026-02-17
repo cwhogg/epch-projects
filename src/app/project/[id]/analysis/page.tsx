@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAnalysisFromDb, getAnalysisContent, isRedisConfigured } from '@/lib/db';
+import { getAnalysisFromDb, getAnalysisContent, getFoundationDoc, isRedisConfigured } from '@/lib/db';
 import { getAnalysis } from '@/lib/data';
 import ScoreRing from '@/components/ScoreRing';
 import SEODeepDive from '@/components/SEODeepDive';
 import ReanalyzeForm from '@/components/ReanalyzeForm';
 import DeleteButton from '@/components/DeleteButton';
 import CollapsibleAnalysis from '@/components/CollapsibleAnalysis';
-import { Analysis } from '@/types';
+import { Analysis, FoundationDocument } from '@/types';
 import { getBadgeClass, getConfidenceStyle } from '@/lib/analysis-styles';
 import { getHeaderGradient } from '../utils';
 
@@ -24,17 +24,22 @@ interface PageContent {
   seoData?: string;
 }
 
-async function getPageData(id: string): Promise<{ analysis: Analysis; content: PageContent } | null> {
+async function getPageData(id: string): Promise<{ analysis: Analysis; content: PageContent; foundationDocs: FoundationDocument[] } | null> {
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
     if (analysis) {
-      const content = await getAnalysisContent(id);
-      return { analysis, content: content || { main: 'Analysis content not available' } };
+      const [content, strategyDoc, positioningDoc] = await Promise.all([
+        getAnalysisContent(id),
+        getFoundationDoc(analysis.ideaId, 'strategy').catch(() => null),
+        getFoundationDoc(analysis.ideaId, 'positioning').catch(() => null),
+      ]);
+      const foundationDocs = [strategyDoc, positioningDoc].filter(Boolean) as FoundationDocument[];
+      return { analysis, content: content || { main: 'Analysis content not available' }, foundationDocs };
     }
   }
   const fallback = getAnalysis(id);
   if (!fallback) return null;
-  return { analysis: fallback.analysis, content: fallback.content };
+  return { analysis: fallback.analysis, content: fallback.content, foundationDocs: [] };
 }
 
 export default async function AnalysisDetailPage({ params }: PageProps) {
@@ -45,7 +50,7 @@ export default async function AnalysisDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { analysis, content } = result;
+  const { analysis, content, foundationDocs } = result;
 
   const headerGradient = getHeaderGradient(analysis.recommendation);
 
@@ -87,7 +92,7 @@ export default async function AnalysisDetailPage({ params }: PageProps) {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <ReanalyzeForm ideaId={analysis.id} />
+              <ReanalyzeForm ideaId={analysis.id} foundationDocs={foundationDocs} />
               <DeleteButton ideaId={analysis.id} ideaName={analysis.ideaName} />
             </div>
           </div>
