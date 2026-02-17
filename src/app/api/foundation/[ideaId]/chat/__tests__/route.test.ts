@@ -270,19 +270,19 @@ describe('Foundation Chat API', () => {
     expect(res.status).toBe(500);
   });
 
-  it('includes strategy doc in system prompt when editing positioning', async () => {
+  it('includes strategy doc with timestamps when editing positioning', async () => {
     vi.mocked(isRedisConfigured).mockReturnValue(true);
 
     const strategyDoc = {
       id: 'strategy', ideaId: 'idea-123', type: 'strategy' as const,
       content: 'Our smallest viable audience is indie founders...',
       advisorId: 'seth-godin',
-      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: '2026-02-15T10:00:00.000Z', version: 2,
     };
     const positioningDoc = {
       id: 'positioning', ideaId: 'idea-123', type: 'positioning' as const,
       content: 'Current positioning', advisorId: 'april-dunford',
-      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+      generatedAt: '2026-01-05T00:00:00.000Z', editedAt: null, version: 1,
     };
 
     vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
@@ -307,6 +307,10 @@ describe('Foundation Chat API', () => {
     expect(systemPrompt).toContain('RELATED FOUNDATION DOCUMENTS');
     expect(systemPrompt).toContain('STRATEGY');
     expect(systemPrompt).toContain('Our smallest viable audience is indie founders');
+    // Strategy shows its editedAt timestamp (newer)
+    expect(systemPrompt).toContain('last updated: 2026-02-15T10:00:00.000Z');
+    // Current doc shows its generatedAt timestamp (older, since editedAt is null)
+    expect(systemPrompt).toContain('last updated: 2026-01-05T00:00:00.000Z');
   });
 
   it('includes strategy AND positioning when editing downstream docs like seo-strategy', async () => {

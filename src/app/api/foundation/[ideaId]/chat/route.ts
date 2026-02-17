@@ -61,11 +61,15 @@ export async function POST(
 
     // Load context documents so the advisor can ground edits in the full picture
     const contextTypes = CHAT_CONTEXT_DOCS[body.docType] ?? [];
-    const contextDocs: { type: string; content: string }[] = [];
+    const contextDocs: { type: string; content: string; lastUpdated: string }[] = [];
     for (const ctxType of contextTypes) {
       const ctxDoc = await getFoundationDoc(ideaId, ctxType);
       if (ctxDoc) {
-        contextDocs.push({ type: ctxType, content: ctxDoc.content });
+        contextDocs.push({
+          type: ctxType,
+          content: ctxDoc.content,
+          lastUpdated: ctxDoc.editedAt || ctxDoc.generatedAt,
+        });
       }
     }
 
@@ -87,13 +91,17 @@ export async function POST(
       }
     }
 
-    // Add related foundation documents
+    // Add related foundation documents with timestamps
     if (contextDocs.length > 0) {
       contextSection += '\nRELATED FOUNDATION DOCUMENTS:\n';
-      for (const { type, content } of contextDocs) {
-        contextSection += `\n## ${type.replace(/-/g, ' ').toUpperCase()}\n${content}\n`;
+      for (const { type, content, lastUpdated } of contextDocs) {
+        contextSection += `\n## ${type.replace(/-/g, ' ').toUpperCase()} (last updated: ${lastUpdated})\n${content}\n`;
       }
     }
+
+    // Build current document header with timestamp for comparison
+    const currentDocLastUpdated = doc.editedAt || doc.generatedAt;
+    const currentDocHeader = `CURRENT DOCUMENT (${body.docType.replace(/-/g, ' ')}, last updated: ${currentDocLastUpdated})`;
 
     const systemPrompt = `${advisorPrompt}
 
@@ -101,7 +109,7 @@ export async function POST(
 
 You are helping the user refine their ${body.docType} document through conversation.
 ${contextSection}
-CURRENT DOCUMENT:
+${currentDocHeader}:
 ${body.currentContent}
 
 RULES:
