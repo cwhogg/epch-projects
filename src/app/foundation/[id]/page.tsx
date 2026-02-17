@@ -244,6 +244,7 @@ export default function FoundationPage({ params }: PageProps) {
           return isExpanded && doc ? (
             <ExpandedDocCard
               key={type}
+              ideaId={ideaId}
               type={type}
               label={label}
               advisor={advisor}
