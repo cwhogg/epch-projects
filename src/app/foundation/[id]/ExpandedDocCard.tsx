@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import type { FoundationDocument, FoundationDocType } from '@/types';
-import { CheckCircleIcon, ChevronUpIcon, ChatIcon, RefreshIcon } from './FoundationIcons';
+import { CheckCircleIcon, ChevronUpIcon, ChatIcon } from './FoundationIcons';
 import MarkdownContent from '@/components/MarkdownContent';
 
 interface ExpandedDocCardProps {
@@ -13,19 +13,16 @@ interface ExpandedDocCardProps {
   advisor: string;
   doc: FoundationDocument;
   idx: number;
-  generating: boolean;
-  isRunning: boolean;
   versionBadgeStyle: CSSProperties;
   editedBadgeStyle: CSSProperties;
   onCollapse: () => void;
-  onRegenerate: (type: FoundationDocType) => void;
   formatDate: (iso: string) => string;
 }
 
 export default function ExpandedDocCard({
-  ideaId, type, label, advisor, doc, idx, generating, isRunning,
+  ideaId, type, label, advisor, doc, idx,
   versionBadgeStyle, editedBadgeStyle,
-  onCollapse, onRegenerate, formatDate,
+  onCollapse, formatDate,
 }: ExpandedDocCardProps) {
   return (
     <div
@@ -111,15 +108,6 @@ export default function ExpandedDocCard({
             <ChatIcon />
             Update via conversation
           </Link>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => onRegenerate(type)}
-              disabled={generating || isRunning}
-            >
-              <RefreshIcon /> Regenerate
-            </button>
-          </div>
         </div>
       </div>
     </div>

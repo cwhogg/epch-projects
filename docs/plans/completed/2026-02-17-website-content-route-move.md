@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Update nav-utils tests and implementation
+### ✅ Task 1: Update nav-utils tests and implementation
 
 **Files:**
 - Modify: `src/lib/__tests__/nav-utils.test.ts`
@@ -77,7 +77,7 @@ git commit -m "feat: add /website/ and /content/ to nav-utils Projects tab"
 
 ---
 
-### Task 2: Create /website/[id] page with regenerate button
+### ✅ Task 2: Create /website/[id] page with regenerate button
 
 **Files:**
 - Create: `src/app/website/[id]/page.tsx`
@@ -144,7 +144,7 @@ git commit -m "feat: add /website/[id] route with regenerate button"
 
 ---
 
-### Task 3: Create /content/[id] pages
+### ✅ Task 3: Create /content/[id] pages
 
 **Files:**
 - Create: `src/app/content/[id]/page.tsx`
@@ -247,7 +247,7 @@ git commit -m "feat: add /content/[id] routes"
 
 > **Task ordering note:** Tasks 4, 5, and 6 are safe in any commit order. The redirects added in Task 4 ensure old URLs remain functional regardless of whether Task 5 (link updates) or Task 6 (old file deletion) has been committed. Execute them in the listed order for cleanliness, but a partial commit set won't break the app.
 
-### Task 4: Add redirects for old URLs
+### ✅ Task 4: Add redirects for old URLs
 
 **Files:**
 - Modify: `next.config.ts:8-16`
@@ -313,7 +313,7 @@ git commit -m "feat: add permanent redirects for old painted-door and content UR
 
 ---
 
-### Task 5: Update all link references across the codebase
+### ✅ Task 5: Update all link references across the codebase
 
 **Files:**
 - Modify: `src/app/analyses/[id]/page.tsx:249,351,382`
@@ -456,7 +456,7 @@ git commit -m "refactor: update all internal links to new /website/ and /content
 
 ---
 
-### Task 6: Delete old route directories
+### ✅ Task 6: Delete old route directories
 
 **Files:**
 - Delete: `src/app/analyses/[id]/painted-door/page.tsx`
@@ -488,7 +488,7 @@ git commit -m "chore: remove old painted-door and content route files (now at /w
 
 ---
 
-### Task 7: Update architecture.md
+### ✅ Task 7: Update architecture.md
 
 **Files:**
 - Modify: `docs/architecture.md`
@@ -582,7 +582,7 @@ git commit -m "docs: update architecture.md with new route paths"
 
 ---
 
-### Task 8: Build and test verification
+### ✅ Task 8: Build and test verification
 
 This is a regression check — verifying nothing is broken. New route pages are copy-and-modify operations with no new logic, so the nav-utils tests (Task 1) are the only new test coverage. The build check is the primary validation that all routes resolve and all imports are intact.
 

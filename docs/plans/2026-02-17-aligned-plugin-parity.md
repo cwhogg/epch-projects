@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Update Plugin CLAUDE.md with Behavioral Guardrails
+### ✅ Task 1: Update Plugin CLAUDE.md with Behavioral Guardrails
 
 **Files:**
 - Modify: `CLAUDE.md`
@@ -49,7 +49,7 @@ git commit -m "feat: add behavioral guardrails to plugin CLAUDE.md"
 
 ---
 
-### Task 2: Port All 5 Hook Scripts to Plugin
+### ✅ Task 2: Port All 5 Hook Scripts to Plugin
 
 **Files:**
 - Create: `hooks/auto-approve-worktrees.js`
@@ -86,7 +86,7 @@ git commit -m "feat: port all 5 hook scripts to plugin"
 
 ---
 
-### Task 3: Update hooks.json with All Event Types
+### ✅ Task 3: Update hooks.json with All Event Types
 
 **Files:**
 - Modify: `hooks/hooks.json`
@@ -192,7 +192,7 @@ git commit -m "feat: configure all 5 hook event types in hooks.json"
 
 ---
 
-### Task 4: Delete Sync Infrastructure
+### ✅ Task 4: Delete Sync Infrastructure
 
 **Files:**
 - Delete: `scripts/sync-from-local.sh`
@@ -217,7 +217,7 @@ git commit -m "chore: remove sync infrastructure (plugin is now canonical source
 
 ---
 
-### Task 5: Convert Kanban Format to Folder-Based System
+### ✅ Task 5: Convert Kanban Format to Folder-Based System
 
 **Files:**
 - Modify: `skills/kickstart/SKILL.md`
@@ -280,7 +280,7 @@ git commit -m "feat: convert all skills to folder-based kanban system (KB-NNN)"
 
 ---
 
-### Task 6: Port Code-Reviewer Agent
+### ✅ Task 6: Port Code-Reviewer Agent
 
 **Files:**
 - Create: `agents/code-reviewer.md`
@@ -300,7 +300,7 @@ git commit -m "feat: port code-reviewer agent to plugin"
 
 ---
 
-### Task 7: Port Code-Simplifier Agent
+### ✅ Task 7: Port Code-Simplifier Agent
 
 **Files:**
 - Create: `agents/code-simplifier.md`
@@ -320,7 +320,7 @@ git commit -m "feat: port code-simplifier agent to plugin"
 
 ---
 
-### Task 8: Port Test-Auditor System (7 Files)
+### ✅ Task 8: Port Test-Auditor System (7 Files)
 
 **Files:**
 - Create: `agents/test-auditor.md`
@@ -369,7 +369,7 @@ git commit -m "feat: port test-auditor system (orchestrator + 4 workers + 2 refs
 
 ---
 
-### Task 9: Port Kanban-Triage Agent
+### ✅ Task 9: Port Kanban-Triage Agent
 
 **Files:**
 - Create: `agents/kanban-triage.md`
@@ -394,7 +394,7 @@ git commit -m "feat: port kanban-triage agent to plugin"
 
 ---
 
-### Task 10: Restore Step 1d and Step 6 in Finishing-a-Development-Branch
+### ✅ Task 10: Restore Step 1d and Step 6 in Finishing-a-Development-Branch
 
 **Files:**
 - Modify: `skills/finishing-a-development-branch/SKILL.md`
@@ -424,7 +424,7 @@ git commit -m "feat: restore Step 1d (code simplification) and Step 6 (plan arch
 
 ---
 
-### Task 11: Port Kanban-Resolve Skill
+### ✅ Task 11: Port Kanban-Resolve Skill
 
 **Files:**
 - Create: `skills/kanban-resolve/SKILL.md`
@@ -452,7 +452,7 @@ git commit -m "feat: port kanban-resolve skill to plugin"
 
 ---
 
-### Task 12: Port Create-New-Skill (+ Supporting Files)
+### ✅ Task 12: Port Create-New-Skill (+ Supporting Files)
 
 **Files:**
 - Create: `skills/create-new-skill/SKILL.md`
@@ -483,7 +483,7 @@ git commit -m "feat: port create-new-skill with all supporting files"
 
 ---
 
-### Task 13: Create Advisors Directory and Copy All Advisor Files
+### ✅ Task 13: Create Advisors Directory and Copy All Advisor Files
 
 **Files:**
 - Create: `advisors/` directory structure with all 61 advisor .md files
@@ -535,7 +535,7 @@ git commit -m "feat: ship 62 advisor prompts + registry with plugin"
 
 ---
 
-### Task 14: Port Use-Advisor Skill (Update for Plugin Paths)
+### ✅ Task 14: Port Use-Advisor Skill (Update for Plugin Paths)
 
 **Files:**
 - Create: `skills/use-advisor/SKILL.md`
@@ -571,7 +571,7 @@ git commit -m "feat: port use-advisor skill with plugin-relative discovery"
 
 ---
 
-### Task 15: Port Use-Framework Skill (Update for Plugin Paths)
+### ✅ Task 15: Port Use-Framework Skill (Update for Plugin Paths)
 
 **Files:**
 - Create: `skills/use-framework/SKILL.md`
@@ -600,7 +600,7 @@ git commit -m "feat: port use-framework skill with plugin-relative discovery"
 
 ---
 
-### Task 16: Upgrade Brainstorming to Multi-Critic Architecture
+### ✅ Task 16: Upgrade Brainstorming to Multi-Critic Architecture
 
 **Files:**
 - Modify: `skills/brainstorming/SKILL.md`
@@ -634,7 +634,7 @@ git commit -m "feat: upgrade brainstorming to multi-critic architecture (opus, d
 
 ---
 
-### Task 17: Upgrade Writing-Plans to Dual-Critic Architecture
+### ✅ Task 17: Upgrade Writing-Plans to Dual-Critic Architecture
 
 **Files:**
 - Modify: `skills/writing-plans/SKILL.md`
@@ -666,7 +666,7 @@ git commit -m "feat: upgrade writing-plans to dual-critic (Architect + Verifier,
 
 ---
 
-### Task 18: Remove Ghost References and Fix Content Issues
+### ✅ Task 18: Remove Ghost References and Fix Content Issues
 
 **Files:**
 - Modify: `skills/using-git-worktrees/SKILL.md`
@@ -687,7 +687,7 @@ git commit -m "fix: remove ghost references (subagent-driven-development, elemen
 
 ---
 
-### Task 19: Fix Eval-Audit Hook Threshold Logic
+### ✅ Task 19: Fix Eval-Audit Hook Threshold Logic
 
 **Files:**
 - Create: `hooks/check-eval-audit.sh`
@@ -715,7 +715,7 @@ git commit -m "fix: eval-audit hook now compares threshold and triggers audit ta
 
 ---
 
-### Task 20: Update README with Permission Model and Complete Inventory
+### ✅ Task 20: Update README with Permission Model and Complete Inventory
 
 **Files:**
 - Modify: `README.md`
@@ -768,7 +768,7 @@ git commit -m "docs: update README with permissions, complete skill/agent/hook/a
 
 ---
 
-### Task 21: Update plugin.json Version
+### ✅ Task 21: Update plugin.json Version
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json`
@@ -785,7 +785,7 @@ git commit -m "chore: bump version to 0.2.0 for plugin parity release"
 
 ---
 
-### Task 22: Final Verification
+### ✅ Task 22: Final Verification
 
 **Step 1:** Run Grep across the entire plugin repo for leaked paths:
 - Search for `/Users/ericpage/` — should return 0 results

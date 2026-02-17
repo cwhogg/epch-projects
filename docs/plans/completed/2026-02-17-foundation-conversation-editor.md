@@ -22,7 +22,7 @@ Branch: `feature/foundation-conversation-editor`
 
 ---
 
-### Task 1: Extract DOC_CONFIG to Shared Module
+### ✅ Task 1: Extract DOC_CONFIG to Shared Module
 
 The foundation overview page (`page.tsx`) defines `DOC_CONFIG` inline. The new edit page also needs this data. Extract it to a shared module.
 
@@ -93,7 +93,7 @@ git commit -m "refactor: extract DOC_CONFIG to shared module and export DOC_ADVI
 
 ---
 
-### Task 2: Stream Parser — Write Failing Tests
+### ✅ Task 2: Stream Parser — Write Failing Tests
 
 The stream parser is a state machine that processes chunked text responses and separates conversational text from `<updated_document>` content. This is a pure utility with no dependencies — ideal for writing tests first.
 
@@ -258,7 +258,7 @@ git commit -m "test: add failing tests for stream parser"
 
 ---
 
-### Task 3: Stream Parser — Implementation
+### ✅ Task 3: Stream Parser — Implementation
 
 **Files:**
 - Create: `src/lib/parse-stream.ts`
@@ -361,7 +361,7 @@ git commit -m "feat: implement stream parser for updated_document tag extraction
 
 ---
 
-### Task 4: PATCH Handler — Write Failing Tests
+### ✅ Task 4: PATCH Handler — Write Failing Tests
 
 Add a PATCH handler to the existing foundation route to persist document edits. Write tests first.
 
@@ -531,7 +531,7 @@ git commit -m "test: add failing tests for PATCH foundation handler"
 
 ---
 
-### Task 5: PATCH Handler — Implementation
+### ✅ Task 5: PATCH Handler — Implementation
 
 **Files:**
 - Modify: `src/app/api/foundation/[ideaId]/route.ts`
@@ -613,7 +613,7 @@ git commit -m "feat: add PATCH handler for saving foundation doc edits"
 
 ---
 
-### Task 6: Chat API Endpoint — Write Failing Tests
+### ✅ Task 6: Chat API Endpoint — Write Failing Tests
 
 The streaming chat endpoint is the first streaming API route in this codebase.
 
@@ -909,7 +909,7 @@ git commit -m "test: add failing tests for foundation chat streaming endpoint"
 
 ---
 
-### Task 7: Chat API Endpoint — Implementation
+### ✅ Task 7: Chat API Endpoint — Implementation
 
 **Files:**
 - Create: `src/app/api/foundation/[ideaId]/chat/route.ts`
@@ -1040,7 +1040,7 @@ git commit -m "feat: add streaming chat endpoint for foundation document editing
 
 ---
 
-### Task 8: Editor Page — Layout, Document Editor, and Save
+### ✅ Task 8: Editor Page — Layout, Document Editor, and Save
 
 Build the editor page with the split-pane layout, document editing textarea, toolbar with save, and unsaved changes warning.
 
@@ -1430,7 +1430,7 @@ git commit -m "feat: add foundation document conversation editor page"
 
 ---
 
-### Task 9: Wire Up Link in ExpandedDocCard
+### ✅ Task 9: Wire Up Link in ExpandedDocCard
 
 Replace the disabled "Update via conversation" `<span>` with a `<Link>` to the edit page. Add `ideaId` as a prop.
 
@@ -1512,7 +1512,7 @@ git commit -m "feat: wire up Update via conversation link to editor page"
 
 ---
 
-### Task 10: Integration Verification and Architecture Doc Update
+### ✅ Task 10: Integration Verification and Architecture Doc Update
 
 **Files:**
 - Modify: `docs/architecture.md`

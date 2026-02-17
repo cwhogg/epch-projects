@@ -221,6 +221,39 @@ describe('Foundation agent tools', () => {
       expect(onDocProgress).toHaveBeenCalledWith('strategy', 'error');
     });
 
+    it('returns error when Claude returns empty content', async () => {
+      const onDocProgress = vi.fn();
+      const toolsWithProgress = createFoundationTools(ideaId, onDocProgress);
+
+      vi.mocked(buildContentContext).mockResolvedValue(mockContext);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: '' }],
+      });
+
+      const tool = toolsWithProgress.find(t => t.name === 'generate_foundation_doc')!;
+      const result = await tool.execute({ docType: 'strategy' }) as Record<string, unknown>;
+
+      expect(result.error).toContain('empty content');
+      expect(saveFoundationDoc).not.toHaveBeenCalled();
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'running');
+      expect(onDocProgress).toHaveBeenCalledWith('strategy', 'error');
+    });
+
+    it('returns error when Claude returns non-text content block', async () => {
+      vi.mocked(buildContentContext).mockResolvedValue(mockContext);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'tool_use', id: 'x', name: 'test', input: {} }],
+      });
+
+      const tool = tools.find(t => t.name === 'generate_foundation_doc')!;
+      const result = await tool.execute({ docType: 'strategy' }) as Record<string, unknown>;
+
+      expect(result.error).toContain('empty content');
+      expect(saveFoundationDoc).not.toHaveBeenCalled();
+    });
+
     it('does NOT call onDocProgress when upstream doc is missing', async () => {
       const onDocProgress = vi.fn();
       const toolsWithProgress = createFoundationTools(ideaId, onDocProgress);

@@ -1,15 +1,17 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import type { FoundationDocument, FoundationDocType } from '@/types';
 import {
   CheckCircleIcon, EmptyCircleIcon, ReadyCircleIcon, ErrorCircleIcon,
-  PlayIcon, RetryIcon, WarningIcon,
+  PlayIcon, RetryIcon, WarningIcon, ChatIcon,
 } from './FoundationIcons';
 
 type CardState = 'empty' | 'ready' | 'generating' | 'generated' | 'edited' | 'error' | 'pending';
 
 interface CollapsedDocCardProps {
+  ideaId: string;
   type: FoundationDocType;
   label: string;
   advisor: string;
@@ -27,7 +29,7 @@ interface CollapsedDocCardProps {
 }
 
 export default function CollapsedDocCard({
-  type, label, advisor, requires, doc, state, idx, generating, isRunning,
+  ideaId, type, label, advisor, requires, doc, state, idx, generating, isRunning,
   versionBadgeStyle, editedBadgeStyle,
   onExpand, onGenerate, getPreview,
 }: CollapsedDocCardProps) {
@@ -107,13 +109,16 @@ export default function CollapsedDocCard({
             <button className="btn btn-ghost btn-sm" onClick={() => onExpand(type)}>View</button>
           )}
           {state === 'generated' || state === 'edited' ? (
-            <button
+            <Link
+              href={`/foundation/${ideaId}/edit/${type}`}
               className="btn btn-secondary btn-sm"
-              onClick={() => onGenerate(type)}
-              disabled={generating || isRunning}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                textDecoration: 'none',
+              }}
             >
-              Regenerate
-            </button>
+              <ChatIcon size={14} /> Update
+            </Link>
           ) : state === 'ready' ? (
             <button
               className="btn btn-primary btn-sm"

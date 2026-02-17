@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects Page — Validation Status Cards</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:wght@500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#FAF9F7',
+            'bg-secondary': '#F3F2EF',
+            'bg-card': '#FFFFFF',
+            'bg-elevated': '#FFFFFF',
+            'text-primary': '#1C1917',
+            'text-secondary': '#57534E',
+            'text-muted': '#94918C',
+            'border-subtle': 'rgba(28, 25, 23, 0.06)',
+            'border-default': 'rgba(28, 25, 23, 0.10)',
+            'accent-coral': '#ff6b5b',
+            'accent-coral-soft': 'rgba(255, 107, 91, 0.12)',
+            'accent-emerald': '#10b981',
+            'accent-amber': '#f59e0b',
+            'color-danger': '#ef4444',
+            'color-info': '#3b82f6',
+          },
+          fontFamily: {
+            'display': ['Fraunces', 'Georgia', 'serif'],
+            'body': ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            'sm': '0.5rem',
+            'md': '0.75rem',
+            'lg': '1rem',
+            'xl': '1.5rem',
+          },
+          boxShadow: {
+            'card': '0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04)',
+            'elevated': '0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06)',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background-color: #FAF9F7;
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+
+    .card-interactive {
+      background: #FFFFFF;
+      border: 1px solid rgba(28, 25, 23, 0.06);
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card-interactive:hover {
+      border-color: rgba(28, 25, 23, 0.10);
+      box-shadow: 0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06), 0 0 0 1px rgba(255, 107, 91, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* Validation status segment — discrete solid color, no partial fill */
+    .status-segment {
+      height: 8px;
+      border-radius: 9999px;
+    }
+
+    /* Status colors */
+    .status-untested   { background: rgba(28, 25, 23, 0.10); }
+    .status-testing    { background: #f59e0b; }
+    .status-validated  { background: #10b981; }
+    .status-invalidated { background: #ef4444; }
+    .status-pivoted    { background: #ff6b5b; }
+
+    .badge {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .stage-label {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94918C;
+    }
+
+    /* Staggered entrance animations */
+    @keyframes slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.6s ease forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.10s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.20s; }
+  </style>
+</head>
+<body class="px-4 sm:px-6 lg:px-8 py-12">
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="font-display text-2xl sm:text-3xl font-medium text-text-primary" style="letter-spacing: -0.02em;">
+      Projects
+    </h1>
+    <p class="mt-2 text-sm text-text-secondary">
+      4 active projects in pipeline
+    </p>
+  </div>
+
+  <!-- Card List -->
+  <div class="flex flex-col gap-4">
+
+    <!-- Card 1: Demand + Reach validated (green), Engagement testing (amber), WTP + Differ untested (gray) -->
+    <div class="card-interactive p-5 sm:p-6 animate-slide-up delay-1">
+      <!-- Row 1: Project Identity -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="font-display text-lg font-medium text-text-primary" style="letter-spacing: -0.02em;">
+            The Deep Mirror
+          </span>
+          <span class="badge badge-success">Tier 2</span>
+        </div>
+        <svg class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+
+      <!-- Row 2: Validation Status Segments -->
+      <div class="mt-4">
+        <div class="flex gap-0.5">
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-testing"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+        </div>
+        <!-- Assumption Labels -->
+        <div class="hidden sm:flex mt-2 gap-0.5">
+          <span class="flex-1 stage-label text-center">Demand</span>
+          <span class="flex-1 stage-label text-center">Reach</span>
+          <span class="flex-1 stage-label text-center">Engage</span>
+          <span class="flex-1 stage-label text-center">WTP</span>
+          <span class="flex-1 stage-label text-center">Differ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Demand validated (green), Reach invalidated (red), rest untested (gray) -->
+    <div class="card-interactive p-5 sm:p-6 animate-slide-up delay-2">
+      <!-- Row 1: Project Identity -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="font-display text-lg font-medium text-text-primary" style="letter-spacing: -0.02em;">
+            Quiet Momentum
+          </span>
+          <span class="badge badge-warning">Tier 1</span>
+        </div>
+        <svg class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+
+      <!-- Row 2: Validation Status Segments -->
+      <div class="mt-4">
+        <div class="flex gap-0.5">
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-invalidated"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+        </div>
+        <!-- Assumption Labels -->
+        <div class="hidden sm:flex mt-2 gap-0.5">
+          <span class="flex-1 stage-label text-center">Demand</span>
+          <span class="flex-1 stage-label text-center">Reach</span>
+          <span class="flex-1 stage-label text-center">Engage</span>
+          <span class="flex-1 stage-label text-center">WTP</span>
+          <span class="flex-1 stage-label text-center">Differ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: All 5 untested (all gray — no canvas data yet) -->
+    <div class="card-interactive p-5 sm:p-6 animate-slide-up delay-3">
+      <!-- Row 1: Project Identity -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="font-display text-lg font-medium text-text-primary" style="letter-spacing: -0.02em;">
+            Midnight Collective
+          </span>
+          <span class="badge badge-warning">Tier 1</span>
+        </div>
+        <svg class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+
+      <!-- Row 2: Validation Status Segments -->
+      <div class="mt-4">
+        <div class="flex gap-0.5">
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+          <div class="flex-1 status-segment status-untested"></div>
+        </div>
+        <!-- Assumption Labels -->
+        <div class="hidden sm:flex mt-2 gap-0.5">
+          <span class="flex-1 stage-label text-center">Demand</span>
+          <span class="flex-1 stage-label text-center">Reach</span>
+          <span class="flex-1 stage-label text-center">Engage</span>
+          <span class="flex-1 stage-label text-center">WTP</span>
+          <span class="flex-1 stage-label text-center">Differ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: 4 validated (green), Differentiation pivoted (coral) -->
+    <div class="card-interactive p-5 sm:p-6 animate-slide-up delay-4">
+      <!-- Row 1: Project Identity -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="font-display text-lg font-medium text-text-primary" style="letter-spacing: -0.02em;">
+            Signal & Noise
+          </span>
+          <span class="badge badge-success">Tier 2</span>
+        </div>
+        <svg class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+
+      <!-- Row 2: Validation Status Segments -->
+      <div class="mt-4">
+        <div class="flex gap-0.5">
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-validated"></div>
+          <div class="flex-1 status-segment status-pivoted"></div>
+        </div>
+        <!-- Assumption Labels -->
+        <div class="hidden sm:flex mt-2 gap-0.5">
+          <span class="flex-1 stage-label text-center">Demand</span>
+          <span class="flex-1 stage-label text-center">Reach</span>
+          <span class="flex-1 stage-label text-center">Engage</span>
+          <span class="flex-1 stage-label text-center">WTP</span>
+          <span class="flex-1 stage-label text-center">Differ</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Annotation Legend -->
+  <div class="mt-12 p-5 sm:p-6 rounded-lg bg-bg-secondary border border-border-subtle">
+    <h2 class="font-display text-base font-medium text-text-primary mb-4" style="letter-spacing: -0.02em;">
+      Mockup Notes
+    </h2>
+    <div class="space-y-3 text-sm text-text-secondary">
+      <div class="flex gap-3 items-start">
+        <span class="inline-block w-4 h-2 rounded-full mt-1.5 flex-shrink-0 status-validated"></span>
+        <span><strong class="text-text-primary">Validated</strong> (green) — Evidence confirms the assumption holds</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="inline-block w-4 h-2 rounded-full mt-1.5 flex-shrink-0 status-testing"></span>
+        <span><strong class="text-text-primary">Testing</strong> (amber) — An experiment is actively running</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="inline-block w-4 h-2 rounded-full mt-1.5 flex-shrink-0 status-invalidated"></span>
+        <span><strong class="text-text-primary">Invalidated</strong> (red) — Evidence contradicts the assumption</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="inline-block w-4 h-2 rounded-full mt-1.5 flex-shrink-0 status-pivoted"></span>
+        <span><strong class="text-text-primary">Pivoted</strong> (coral) — Curator approved a pivot, re-testing in progress</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="inline-block w-4 h-2 rounded-full mt-1.5 flex-shrink-0 status-untested"></span>
+        <span><strong class="text-text-primary">Untested</strong> (gray) — No experiment has run yet (or no canvas data exists)</span>
+      </div>
+      <div class="mt-4 pt-3 border-t border-border-subtle text-text-muted text-xs">
+        Card 1: Demand + Reach validated, Engagement testing, WTP + Differ untested | Card 2: Demand validated, Reach invalidated, rest untested | Card 3: All 5 untested (no canvas data) | Card 4: 4 validated, Differentiation pivoted
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

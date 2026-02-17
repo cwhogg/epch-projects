@@ -269,17 +269,15 @@ function FoundationPageInner({ params }: PageProps) {
               advisor={advisor}
               doc={doc}
               idx={idx}
-              generating={generating}
-              isRunning={isRunning}
               versionBadgeStyle={versionBadgeStyle}
               editedBadgeStyle={editedBadgeStyle}
               onCollapse={() => setExpandedDoc(null)}
-              onRegenerate={handleGenerate}
               formatDate={formatDate}
             />
           ) : (
             <CollapsedDocCard
               key={type}
+              ideaId={ideaId}
               type={type}
               label={label}
               advisor={advisor}

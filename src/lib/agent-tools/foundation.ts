@@ -263,6 +263,11 @@ export function createFoundationTools(
 
           const content = response.content[0].type === 'text' ? response.content[0].text : '';
 
+          if (!content.trim()) {
+            onDocProgress?.(docType, 'error');
+            return { error: `Generation returned empty content for ${docType}. Please retry.` };
+          }
+
           // Check for existing doc to determine version
           const existing = await getFoundationDoc(ideaId, docType);
           const version = existing ? existing.version + 1 : 1;

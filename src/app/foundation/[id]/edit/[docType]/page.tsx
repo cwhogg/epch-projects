@@ -143,8 +143,8 @@ export default function FoundationEditorPage({ params }: PageProps) {
           return updated;
         });
 
-        // If document content arrived, update editor
-        if (result.documentContent !== null) {
+        // If document content arrived, update editor (guard against empty)
+        if (result.documentContent !== null && result.documentContent.trim().length > 0) {
           setContent((currentContent) => {
             setPreviousContent(currentContent);
             return result.documentContent!;
