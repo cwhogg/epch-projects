@@ -1,6 +1,6 @@
 import { getRedis, parseValue, isRedisConfigured } from './redis';
 import { buildLeaderboard } from './utils';
-import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece, FoundationDocument, FoundationDocType, FoundationProgress, FOUNDATION_DOC_TYPES } from '@/types';
+import { ProductIdea, Analysis, LeaderboardEntry, ContentCalendar, ContentPiece, ContentProgress, GSCPropertyLink, GSCAnalyticsData, RejectedPiece, FoundationDocument, FoundationDocType, FoundationProgress, FOUNDATION_DOC_TYPES, CanvasState, Assumption, AssumptionType, PivotSuggestion, PivotRecord, ASSUMPTION_TYPES } from '@/types';
 
 export { isRedisConfigured } from './redis';
 
@@ -77,6 +77,9 @@ export async function deleteIdeaFromDb(id: string): Promise<boolean> {
   // Foundation documents + progress
   await deleteAllFoundationDocs(id);
   await r.del(`foundation_progress:${id}`);
+
+  // Validation canvas data
+  await deleteCanvasData(id);
 
   return deleted > 0;
 }
@@ -351,6 +354,73 @@ export async function getFoundationProgress(ideaId: string): Promise<FoundationP
   const data = await getRedis().get(`foundation_progress:${ideaId}`);
   if (!data) return null;
   return parseValue<FoundationProgress>(data);
+}
+
+// Validation Canvas
+
+export async function saveCanvasState(ideaId: string, state: CanvasState): Promise<void> {
+  await getRedis().set(`canvas:${ideaId}`, JSON.stringify(state));
+}
+
+export async function getCanvasState(ideaId: string): Promise<CanvasState | null> {
+  const data = await getRedis().get(`canvas:${ideaId}`);
+  if (!data) return null;
+  return parseValue<CanvasState>(data);
+}
+
+export async function saveAssumption(ideaId: string, assumption: Assumption): Promise<void> {
+  await getRedis().set(`assumption:${ideaId}:${assumption.type}`, JSON.stringify(assumption));
+}
+
+export async function getAssumption(ideaId: string, type: AssumptionType): Promise<Assumption | null> {
+  const data = await getRedis().get(`assumption:${ideaId}:${type}`);
+  if (!data) return null;
+  return parseValue<Assumption>(data);
+}
+
+export async function getAllAssumptions(ideaId: string): Promise<Partial<Record<AssumptionType, Assumption>>> {
+  const result: Partial<Record<AssumptionType, Assumption>> = {};
+  for (const type of ASSUMPTION_TYPES) {
+    const assumption = await getAssumption(ideaId, type);
+    if (assumption) result[type] = assumption;
+  }
+  return result;
+}
+
+export async function savePivotSuggestions(ideaId: string, type: AssumptionType, suggestions: PivotSuggestion[]): Promise<void> {
+  await getRedis().set(`pivot-suggestions:${ideaId}:${type}`, JSON.stringify(suggestions));
+}
+
+export async function getPivotSuggestions(ideaId: string, type: AssumptionType): Promise<PivotSuggestion[]> {
+  const data = await getRedis().get(`pivot-suggestions:${ideaId}:${type}`);
+  if (!data) return [];
+  return parseValue<PivotSuggestion[]>(data);
+}
+
+export async function clearPivotSuggestions(ideaId: string, type: AssumptionType): Promise<void> {
+  await getRedis().del(`pivot-suggestions:${ideaId}:${type}`);
+}
+
+export async function appendPivotHistory(ideaId: string, type: AssumptionType, record: PivotRecord): Promise<void> {
+  const existing = await getPivotHistory(ideaId, type);
+  existing.push(record);
+  await getRedis().set(`pivots:${ideaId}:${type}`, JSON.stringify(existing));
+}
+
+export async function getPivotHistory(ideaId: string, type: AssumptionType): Promise<PivotRecord[]> {
+  const data = await getRedis().get(`pivots:${ideaId}:${type}`);
+  if (!data) return [];
+  return parseValue<PivotRecord[]>(data);
+}
+
+export async function deleteCanvasData(ideaId: string): Promise<void> {
+  const r = getRedis();
+  await r.del(`canvas:${ideaId}`);
+  for (const type of ASSUMPTION_TYPES) {
+    await r.del(`assumption:${ideaId}:${type}`);
+    await r.del(`pivot-suggestions:${ideaId}:${type}`);
+    await r.del(`pivots:${ideaId}:${type}`);
+  }
 }
 
 export async function getAllContentCalendars(): Promise<ContentCalendar[]> {

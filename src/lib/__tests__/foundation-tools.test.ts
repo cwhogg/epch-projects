@@ -124,7 +124,7 @@ describe('Foundation agent tools', () => {
       expertiseProfile: '',
     };
 
-    it('generates a strategy doc using Richard Rumelt prompt', async () => {
+    it('generates a strategy doc using Seth Godin prompt', async () => {
       vi.mocked(buildContentContext).mockResolvedValue(mockContext);
       vi.mocked(getFoundationDoc).mockResolvedValue(null);
 
@@ -137,7 +137,7 @@ describe('Foundation agent tools', () => {
 
       expect(mockCreate).toHaveBeenCalledTimes(1);
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.system).toContain('Richard Rumelt');
+      expect(callArgs.system).toContain('Seth Godin');
       expect(result.success).toBe(true);
       expect(saveFoundationDoc).toHaveBeenCalled();
     });

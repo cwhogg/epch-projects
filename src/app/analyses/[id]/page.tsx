@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, getGSCAnalytics, isRedisConfigured } from '@/lib/db';
-import { getAllFoundationDocs } from '@/lib/db';
+import { getAllFoundationDocs, getCanvasState, getAllAssumptions, getPivotSuggestions, getPivotHistory } from '@/lib/db';
 import { getPaintedDoorSite, getEmailSignupCount } from '@/lib/painted-door-db';
 import { getAnalysis } from '@/lib/data';
 import ScoreRing from '@/components/ScoreRing';
-import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
+import ValidationCanvas from '@/components/ValidationCanvas';
+import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES, ASSUMPTION_TYPES } from '@/types';
+import type { ValidationCanvasData } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +34,7 @@ interface DashboardData {
   risks: string[];
   agreedKeywords: number;
   serpValidated: number;
+  validationCanvas: ValidationCanvasData | null;
 }
 
 const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
@@ -81,13 +84,14 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
     const analysis = await getAnalysisFromDb(id);
     if (!analysis) return null;
 
-    const [content, foundationDocsMap, calendar, pieces, gscLink, pdSite] = await Promise.all([
+    const [content, foundationDocsMap, calendar, pieces, gscLink, pdSite, canvasState] = await Promise.all([
       getAnalysisContent(id),
       getAllFoundationDocs(analysis.ideaId).catch(() => ({})),
       getContentCalendar(id),
       getContentPieces(id),
       getGSCLink(id),
       getPaintedDoorSite(id).catch(() => null),
+      getCanvasState(id).catch(() => null),
     ]);
 
     // Parse SEO data for analysis card summary
@@ -103,6 +107,32 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
 
     // Get signup count if site exists
     const websiteSignups = pdSite ? await getEmailSignupCount(pdSite.id).catch(() => 0) : 0;
+
+    // Fetch validation canvas data
+    let validationCanvas: ValidationCanvasData | null = null;
+    if (canvasState) {
+      const [canvasAssumptions, ...pivotResults] = await Promise.all([
+        getAllAssumptions(id).catch(() => ({})),
+        ...ASSUMPTION_TYPES.flatMap(aType => [
+          getPivotSuggestions(id, aType).catch(() => []),
+          getPivotHistory(id, aType).catch(() => []),
+        ]),
+      ]);
+      const canvasPivotSuggestions: Record<string, unknown[]> = {};
+      const canvasPivotHistory: Record<string, unknown[]> = {};
+      ASSUMPTION_TYPES.forEach((aType, i) => {
+        const sug = pivotResults[i * 2] as unknown[];
+        const hist = pivotResults[i * 2 + 1] as unknown[];
+        if (sug.length > 0) canvasPivotSuggestions[aType] = sug;
+        if (hist.length > 0) canvasPivotHistory[aType] = hist;
+      });
+      validationCanvas = {
+        canvas: canvasState,
+        assumptions: canvasAssumptions as Record<string, unknown>,
+        pivotSuggestions: canvasPivotSuggestions,
+        pivotHistory: canvasPivotHistory,
+      } as unknown as ValidationCanvasData;
+    }
 
     // Get GSC summary metrics if linked
     let gscImpressions: number | null = null;
@@ -147,6 +177,7 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
       risks: analysis.risks ?? [],
       agreedKeywords,
       serpValidated,
+      validationCanvas,
     };
   }
 
@@ -171,6 +202,7 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
     risks: fallback.analysis.risks ?? [],
     agreedKeywords: 0,
     serpValidated: 0,
+    validationCanvas: null,
   };
 }
 
@@ -263,6 +295,17 @@ export default async function ProjectDashboard({ params }: PageProps) {
           </div>
         </div>
       </header>
+
+      {/* Validation Canvas */}
+      {data.validationCanvas && (
+        <ValidationCanvas
+          ideaId={id}
+          canvas={data.validationCanvas.canvas}
+          assumptions={data.validationCanvas.assumptions}
+          pivotSuggestions={data.validationCanvas.pivotSuggestions}
+          pivotHistory={data.validationCanvas.pivotHistory}
+        />
+      )}
 
       {/* Pipeline Summary Cards */}
       <div className="flex flex-col gap-3">
