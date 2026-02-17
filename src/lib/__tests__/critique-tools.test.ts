@@ -49,6 +49,11 @@ vi.mock('@/lib/content-recipes', async (importOriginal) => {
   };
 });
 
+// Mock framework loader
+vi.mock('@/lib/frameworks/framework-loader', () => ({
+  getFrameworkPrompt: vi.fn().mockReturnValue(null),
+}));
+
 // Mock p-limit
 vi.mock('p-limit', () => ({
   default: () => <T>(fn: () => T) => fn(),
@@ -124,6 +129,64 @@ describe('Critique tools', () => {
       await expect(
         tool.execute({ contentContext: 'Test context' }),
       ).rejects.toThrow('Redis write failed');
+    });
+
+    it('concatenates framework prompt when recipe has authorFramework', async () => {
+      const { getFrameworkPrompt } = await import(
+        '@/lib/frameworks/framework-loader'
+      );
+      vi.mocked(getFrameworkPrompt).mockReturnValue('## Landing Page Assembly\nPhase 1: ...');
+
+      const recipeCopy = {
+        ...recipes.website,
+        authorFramework: 'landing-page-assembly',
+      };
+      const frameworkTools = createCritiqueTools(
+        'fw-run',
+        ideaId,
+        recipeCopy,
+      );
+
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: 'text', text: 'Draft with framework' }],
+      });
+
+      const tool = frameworkTools.find((t) => t.name === 'generate_draft')!;
+      await tool.execute({ contentContext: 'Test context' });
+
+      const systemArg = mockCreate.mock.calls[0][0].system;
+      expect(systemArg).toContain('## FRAMEWORK');
+      expect(systemArg).toContain('Landing Page Assembly');
+    });
+
+    it('proceeds without framework when getFrameworkPrompt returns null', async () => {
+      const { getFrameworkPrompt } = await import(
+        '@/lib/frameworks/framework-loader'
+      );
+      vi.mocked(getFrameworkPrompt).mockReturnValue(null);
+
+      const recipeCopy = {
+        ...recipes.website,
+        authorFramework: 'nonexistent-framework',
+      };
+      const nullFwTools = createCritiqueTools(
+        'null-fw-run',
+        ideaId,
+        recipeCopy,
+      );
+
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: 'text', text: 'Draft without framework' }],
+      });
+
+      const tool = nullFwTools.find((t) => t.name === 'generate_draft')!;
+      const result = (await tool.execute({
+        contentContext: 'Test context',
+      })) as { success: boolean };
+
+      expect(result.success).toBe(true);
+      const systemArg = mockCreate.mock.calls[0][0].system;
+      expect(systemArg).not.toContain('## FRAMEWORK');
     });
   });
 

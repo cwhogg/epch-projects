@@ -15,6 +15,7 @@ import { parseLLMJson } from '@/lib/llm-utils';
 import { selectCritics, type ContentRecipe } from '@/lib/content-recipes';
 import { advisorRegistry, type AdvisorEntry } from '@/lib/advisors/registry';
 import { applyEditorRubric } from '@/lib/editor-decision';
+import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 import pLimit from 'p-limit';
 
 const DRAFT_TTL = 7200; // 2 hours
@@ -215,7 +216,13 @@ export function createCritiqueTools(
           }
         }
 
-        const systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
+        let systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
+        if (recipe.authorFramework) {
+          const frameworkPrompt = getFrameworkPrompt(recipe.authorFramework);
+          if (frameworkPrompt) {
+            systemPrompt += '\n\n## FRAMEWORK\n' + frameworkPrompt;
+          }
+        }
         const userPrompt =
           `Write ${recipe.contentType} content for this product.\n\n` +
           `CONTEXT:\n${contentContext}\n\n` +
