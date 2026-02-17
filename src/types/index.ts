@@ -452,3 +452,60 @@ export interface RoundSummary {
   fixedItems: string[];
   wellScoredAspects: string[];
 }
+
+// Validation Canvas Types
+
+export type AssumptionType = 'demand' | 'reachability' | 'engagement' | 'wtp' | 'differentiation';
+
+export const ASSUMPTION_TYPES: AssumptionType[] = [
+  'demand', 'reachability', 'engagement', 'wtp', 'differentiation',
+];
+
+export type AssumptionStatus = 'untested' | 'testing' | 'validated' | 'invalidated' | 'pivoted';
+
+export interface AssumptionThreshold {
+  validated: string;
+  invalidated: string;
+  windowDays: number;
+}
+
+export interface Assumption {
+  type: AssumptionType;
+  status: AssumptionStatus;
+  statement: string;
+  evidence: string[];
+  threshold: AssumptionThreshold;
+  linkedStage: string;
+  validatedAt?: number;
+  invalidatedAt?: number;
+}
+
+export interface PivotSuggestion {
+  statement: string;
+  evidence: string[];
+  impact: string;
+  experiment: string;
+}
+
+export interface PivotRecord {
+  fromStatement: string;
+  toStatement: string;
+  reason: string;
+  suggestedBy: 'system';
+  approvedBy: 'curator';
+  timestamp: number;
+  alternatives: PivotSuggestion[];
+}
+
+export interface CanvasState {
+  status: 'active' | 'killed';
+  killedAt?: number;
+  killedReason?: string;
+}
+
+export interface ValidationCanvasData {
+  canvas: CanvasState;
+  assumptions: Record<AssumptionType, Assumption>;
+  pivotSuggestions: Partial<Record<AssumptionType, PivotSuggestion[]>>;
+  pivotHistory: Partial<Record<AssumptionType, PivotRecord[]>>;
+}
