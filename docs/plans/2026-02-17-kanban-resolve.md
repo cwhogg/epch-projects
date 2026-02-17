@@ -79,7 +79,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 5: Parallelize pivot data fetches (KB-027 + KB-028)
+### ✅ Task 5: Parallelize pivot data fetches (KB-027 + KB-028)
 
 **KBs:** KB-027, KB-028
 
