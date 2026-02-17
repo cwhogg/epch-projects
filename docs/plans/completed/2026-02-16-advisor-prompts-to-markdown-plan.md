@@ -237,7 +237,7 @@ Expected: No new lint errors.
 
 ---
 
-### Task 5: Commit
+### ✅ Task 5: Commit
 
 **Step 1: Stage all changes**
 
