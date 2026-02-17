@@ -95,7 +95,8 @@ describe('Critique pipeline integration', () => {
     expect(draftResult.success).toBe(true);
 
     // Step 2: Run critiques — all pass with high scores
-    mockCreate.mockResolvedValueOnce({
+    // Named critics that resolve: shirin-oreizy, copywriter; dynamic: april-dunford = 3 total
+    const highScoreCritique = {
       content: [
         {
           type: 'tool_use',
@@ -104,7 +105,11 @@ describe('Critique pipeline integration', () => {
           input: { score: 8, pass: true, issues: [] },
         },
       ],
-    });
+    };
+    mockCreate
+      .mockResolvedValueOnce(highScoreCritique)
+      .mockResolvedValueOnce(highScoreCritique)
+      .mockResolvedValueOnce(highScoreCritique);
 
     const critiqueTool = tools.find((t) => t.name === 'run_critiques')!;
     const critiqueResult = (await critiqueTool.execute({})) as {
@@ -143,8 +148,8 @@ describe('Critique pipeline integration', () => {
     const genTool = tools.find((t) => t.name === 'generate_draft')!;
     await genTool.execute({ contentContext: 'context' });
 
-    // Round 1: Critique with high-severity issue
-    mockCreate.mockResolvedValueOnce({
+    // Round 1: Critique with high-severity issue (3 critics: shirin-oreizy, copywriter, april-dunford)
+    const highSevCritique = {
       content: [
         {
           type: 'tool_use',
@@ -163,7 +168,11 @@ describe('Critique pipeline integration', () => {
           },
         },
       ],
-    });
+    };
+    mockCreate
+      .mockResolvedValueOnce(highSevCritique)
+      .mockResolvedValueOnce(highSevCritique)
+      .mockResolvedValueOnce(highSevCritique);
     const critTool = tools.find((t) => t.name === 'run_critiques')!;
     const crit1 = (await critTool.execute({})) as {
       critiques: Array<{ score: number; issues: Array<{ severity: string }> }>;
@@ -192,8 +201,8 @@ describe('Critique pipeline integration', () => {
     const revTool = tools.find((t) => t.name === 'revise_draft')!;
     await revTool.execute({ brief: ed1.brief });
 
-    // Round 2: Critique — issue resolved
-    mockCreate.mockResolvedValueOnce({
+    // Round 2: Critique — issue resolved (3 critics again)
+    const resolvedCritique = {
       content: [
         {
           type: 'tool_use',
@@ -202,7 +211,11 @@ describe('Critique pipeline integration', () => {
           input: { score: 8, pass: true, issues: [] },
         },
       ],
-    });
+    };
+    mockCreate
+      .mockResolvedValueOnce(resolvedCritique)
+      .mockResolvedValueOnce(resolvedCritique)
+      .mockResolvedValueOnce(resolvedCritique);
     const crit2 = (await critTool.execute({})) as {
       critiques: Array<{ score: number }>;
     };
@@ -313,8 +326,8 @@ describe('Critique pipeline integration', () => {
     const genTool = tools.find((t) => t.name === 'generate_draft')!;
     await genTool.execute({ contentContext: 'context' });
 
-    // Round 1: Score 3, below threshold, medium-severity only
-    mockCreate.mockResolvedValueOnce({
+    // Round 1: Score 3, below threshold, medium-severity only (3 critics)
+    const medSevCritique = {
       content: [
         {
           type: 'tool_use',
@@ -327,7 +340,11 @@ describe('Critique pipeline integration', () => {
           },
         },
       ],
-    });
+    };
+    mockCreate
+      .mockResolvedValueOnce(medSevCritique)
+      .mockResolvedValueOnce(medSevCritique)
+      .mockResolvedValueOnce(medSevCritique);
     const critTool = tools.find((t) => t.name === 'run_critiques')!;
     const crit1 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
 
@@ -345,8 +362,8 @@ describe('Critique pipeline integration', () => {
     const revTool = tools.find((t) => t.name === 'revise_draft')!;
     await revTool.execute({ brief: 'Fix it' });
 
-    // Round 2: Score REGRESSED to 2 (lower than round 1's 3) — oscillation guard should approve
-    mockCreate.mockResolvedValueOnce({
+    // Round 2: Score REGRESSED to 2 (lower than round 1's 3) — oscillation guard should approve (3 critics)
+    const regressedCritique = {
       content: [
         {
           type: 'tool_use',
@@ -359,7 +376,11 @@ describe('Critique pipeline integration', () => {
           },
         },
       ],
-    });
+    };
+    mockCreate
+      .mockResolvedValueOnce(regressedCritique)
+      .mockResolvedValueOnce(regressedCritique)
+      .mockResolvedValueOnce(regressedCritique);
     const crit2 = (await critTool.execute({})) as { critiques: Array<{ score: number }> };
 
     // Editor should approve due to oscillation guard (score went from 3 → 2)
