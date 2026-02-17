@@ -99,7 +99,7 @@ function ContentGeneratePageInner() {
 
       if (isDone) {
         setTimeout(() => {
-          router.push(`/analyses/${analysisId}/content`);
+          router.push(`/content/${analysisId}`);
         }, 2000);
       }
     } catch (err) {
@@ -166,7 +166,7 @@ function ContentGeneratePageInner() {
           </div>
           <p className="text-sm mb-6" style={{ color: 'var(--color-danger)' }}>{error}</p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
+            <Link href={`/content/${analysisId}`} className="btn btn-primary">
               Back to Content Options
             </Link>
           </div>
@@ -394,7 +394,7 @@ function ContentGeneratePageInner() {
           style={{ borderTop: '1px solid var(--border-subtle)', animationDelay: '0.4s' }}
         >
           <Link
-            href={`/analyses/${analysisId}/content`}
+            href={`/content/${analysisId}`}
             className="text-sm flex items-center gap-1 transition-colors"
             style={{ color: 'var(--text-muted)' }}
           >

@@ -25,12 +25,12 @@ describe('isActive (project-centric nav)', () => {
       expect(isActive('/foundation/abc', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc/content', () => {
-      expect(isActive('/analyses/abc/content', '/')).toBe(true);
+    it('activates on /content/abc (content detail)', () => {
+      expect(isActive('/content/abc', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc/painted-door', () => {
-      expect(isActive('/analyses/abc/painted-door', '/')).toBe(true);
+    it('activates on /website/abc (website detail)', () => {
+      expect(isActive('/website/abc', '/')).toBe(true);
     });
 
     it('activates on /analyses/abc/analytics', () => {
@@ -84,9 +84,9 @@ describe('isActive (project-centric nav)', () => {
       '/analyses/abc',
       '/analyses/abc/analysis',
       '/foundation/abc',
-      '/analyses/abc/content',
+      '/content/abc',
       '/analyses/abc/analytics',
-      '/analyses/abc/painted-door',
+      '/website/abc',
       '/ideas/new',
       '/ideas/abc/analyze',
       '/analytics',

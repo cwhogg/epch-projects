@@ -93,7 +93,7 @@ export default function ContentPieceViewerPage() {
           <p className="text-sm mb-4" style={{ color: 'var(--color-danger)' }}>
             {error || 'This content piece could not be loaded.'}
           </p>
-          <Link href={`/analyses/${analysisId}/content`} className="btn btn-primary">
+          <Link href={`/content/${analysisId}`} className="btn btn-primary">
             Back to Content Options
           </Link>
         </div>
@@ -109,7 +109,7 @@ export default function ContentPieceViewerPage() {
       {/* Header */}
       <div className="animate-slide-up stagger-1">
         <Link
-          href={`/analyses/${analysisId}/content`}
+          href={`/content/${analysisId}`}
           className="inline-flex items-center gap-1 text-sm mb-4 transition-colors hover:text-[var(--accent-coral)]"
           style={{ color: 'var(--text-muted)' }}
         >

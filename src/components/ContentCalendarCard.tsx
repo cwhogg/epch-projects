@@ -125,7 +125,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
         <div className="pt-0.5">
           {isComplete ? (
             <Link
-              href={`/analyses/${analysisId}/content/${piece.id}`}
+              href={`/content/${analysisId}/${piece.id}`}
               className="w-5 h-5 rounded flex items-center justify-center"
               style={{ background: 'rgba(52, 211, 153, 0.15)' }}
             >
@@ -197,7 +197,7 @@ export default function ContentCalendarCard({ piece, analysisId, selected, onTog
           <h3 className="text-sm font-medium mb-1">
             {isComplete ? (
               <Link
-                href={`/analyses/${analysisId}/content/${piece.id}`}
+                href={`/content/${analysisId}/${piece.id}`}
                 className="underline decoration-1 underline-offset-2 transition-colors hover:text-[var(--accent-coral)]"
                 style={{ color: 'var(--text-primary)' }}
               >

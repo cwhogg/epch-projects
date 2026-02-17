@@ -246,7 +246,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
               </a>
             )}
             {!data.websiteStatus && (
-              <Link href={`/analyses/${id}/painted-door`} className="btn btn-ghost text-sm">
+              <Link href={`/website/${id}`} className="btn btn-ghost text-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="2" y1="12" x2="22" y2="12" />
@@ -348,7 +348,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
         </Link>
 
         {/* Website Card */}
-        <Link href={`/analyses/${id}/painted-door`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-4">
+        <Link href={`/website/${id}`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-4">
           <div className="flex justify-between items-center">
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Painted Door Site</span>
             <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -379,7 +379,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
         </Link>
 
         {/* Content Card */}
-        <Link href={`/analyses/${id}/content`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-5">
+        <Link href={`/content/${id}`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-5">
           <div className="flex justify-between items-center">
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Content Pipeline</span>
             <svg className="transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
