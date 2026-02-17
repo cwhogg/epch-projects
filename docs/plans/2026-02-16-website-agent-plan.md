@@ -17,7 +17,7 @@
 > Complete these steps manually before starting Task 1.
 
 - [ ] Ensure the `landing-page-assembly` framework exists at `src/lib/frameworks/prompts/landing-page-assembly/prompt.md` **AND** has a registry entry in `src/lib/frameworks/registry.ts`. Both are required — without the registry entry, `getFrameworkPrompt('landing-page-assembly')` returns `null` and logs an error on every draft/revision call. If the framework doesn't exist yet, create it via the `/add-framework` skill first.
-- [ ] Verify Julian Shapiro, Oli Gardner, and Joanna Wiebe advisor prompt files exist: check that `src/lib/advisors/prompts/julian-shapiro.md`, `oli-gardner.md`, and `joanna-wiebe.md` exist on disk (the prompt loader reads `.md` files via `readFileSync`, not from a registry list). Also verify registry entries exist in `src/lib/advisors/registry.ts` (oli-gardner at line 120, julian-shapiro at line 152, joanna-wiebe at line 159).
+- [ ] Verify Julian Shapiro, Oli Gardner, and Joanna Wiebe advisor prompt files exist: check that `src/lib/advisors/prompts/julian-shapiro.md`, `oli-gardner.md`, and `joanna-wiebe.md` exist on disk (the prompt loader reads `.md` files via `readFileSync`, not from a registry list). Also verify registry entries exist in `src/lib/advisors/registry.ts` (oli-gardner at line 120, julian-shapiro at line 152, joanna-wiebe at line 174).
 
 ---
 
@@ -121,7 +121,7 @@ website: {
 
 The `selectCritics` author-exclusion test (line 61) uses `recipes.website` which now has `authorAdvisor: 'julian-shapiro'`. The `testRegistry` doesn't contain `julian-shapiro`, so the exclusion logic has nothing to exclude — the test becomes vacuous. Fix this by adding `julian-shapiro` to `testRegistry` with `evaluationExpertise` (so it would be a candidate if not excluded), then assert it's excluded:
 
-Add to `testRegistry` (after the `shirin-oreizy` entry at line 38):
+Add to `testRegistry` (after the closing `},` of the `shirin-oreizy` entry at line 41):
 ```typescript
 {
   id: 'julian-shapiro',
