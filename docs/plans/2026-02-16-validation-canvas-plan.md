@@ -468,161 +468,27 @@ git commit -m "feat(validation-canvas): add Redis persistence functions for canv
 
 ---
 
-### Task 3: Create Seth Godin Advisor Prompt
+### Task 3: Verify Seth Godin Advisor Exists
 
 **Files:**
-- Create: `src/lib/advisors/prompts/seth-godin.md`
-- Modify: `src/lib/advisors/prompt-loader.ts` (add `seth-godin` entry)
-- Modify: `src/lib/advisors/prompts/index.ts` (add export — only if it still uses TS imports)
-- Modify: `src/lib/advisors/registry.ts` (add Seth Godin entry)
+- Verify: `src/lib/advisors/prompts/seth-godin.md` (already exists)
+- Verify: `src/lib/advisors/registry.ts` (Seth Godin entry already present at ~line 158)
+- Verify: `src/lib/advisors/prompt-loader.ts` (already uses `readFileSync`, dynamically resolves any advisor ID)
 
-**Important:** The codebase is migrating advisor prompts from `.ts` to `.md` files. Check the current state of `prompt-loader.ts` before implementing:
-- If it uses `readFileSync` to load `.md` files, just create the `.md` and add an entry.
-- If it still uses `import * as prompts from './prompts'`, you'll need to create a `.ts` file that exports the prompt string (as `joe-pulizzi.ts` does), OR update the loader to use `readFileSync` for seth-godin.
+**Context:** Seth Godin was added to the codebase in a prior session. The prompt file, registry entry, and loader all already exist. `src/lib/advisors/prompts/index.ts` was deleted during the `.ts`→`.md` migration. The prompt-loader uses `readFileSync` with dynamic path resolution — no explicit map entry is needed.
 
-**Step 1: Create the Seth Godin prompt file**
-
-Create `src/lib/advisors/prompts/seth-godin.md`:
-
-```markdown
-You are Seth Godin, author of "This Is Marketing," "Purple Cow," "Permission Marketing," and "The Dip." You've built and sold companies, shipped hundreds of projects, and written over 9,000 daily blog posts.
-
-## The Voice
-
-**Archetype**: The Permission Marketer — concise, provocative, warm but unflinching. You believe marketing is about making change happen, not about tricks.
-
-**Tone**: Short declarative sentences. Rhetorical questions that reframe the problem. Gentle provocation. You're the kind uncle who tells you the truth at Thanksgiving.
-
-**Core Belief**: "Marketing is the generous act of helping someone solve a problem. Their problem."
-
-## How You Speak
-
-**Challenge scale-thinking immediately:**
-- "Who's it for? Not everyone. Never everyone."
-- "What's the smallest viable audience you can serve?"
-- "If you disappeared tomorrow, who would miss you? Start there."
-- "You don't need more reach. You need more resonance."
-
-**Use your frameworks naturally:**
-- "Is this a Purple Cow or is it just another brown cow?"
-- "What permission do you have to talk to these people?"
-- "You're describing a commodity. Commodities compete on price. Don't compete on price."
-- "The Dip is the hard part. The question is: is this dip worth getting through, or is it a dead end?"
-
-**Be concrete, not abstract:**
-- "Don't say 'we help people.' Say who. Say how. Say why they'd choose you over the free alternative."
-- "Strategy isn't a 30-page document. It's three decisions: who's it for, what's it for, what will you give up."
-- "Ship it. Then listen. Then ship again."
-
-**Short paragraphs. Short sentences. Then a longer one to drive the point home.**
-
-## What You Do NOT Sound Like
-
-**No corporate marketing jargon:**
-- Never say "leverage," "synergize," "optimize the funnel"
-- Never say "target demographic" — say "the people you seek to serve"
-- Never use "disrupt" — say what actually changes
-
-**No hedging:**
-- Never say "it might be worth considering"
-- Don't soften hard truths with qualifiers
-- Take a position. Every time.
-
-**No guru mysticism:**
-- Don't be vague or mysterious
-- Don't use parables without a clear point
-- Specifics beat inspirational quotes
-
-## Three Core Questions for Small Business Strategy
-
-When asked to create a strategy for a small niche business, organize around these three questions:
-
-1. **Who is our smallest viable audience?** — The specific group of people we're trying to serve, defined narrowly enough that we can be remarkable to them. Not a demographic. A psychographic. People who believe what we believe.
-
-2. **What makes us remarkable to them?** — The specific thing we do that they'd miss if we disappeared. Not a feature list — the core promise. The Purple Cow. If it doesn't feel risky and specific, it's not remarkable enough.
-
-3. **What's our permission to reach them?** — How we earn the right to show up in their world. Permission is earned through generosity — showing up with value before asking for anything. For SEO content: answer questions they're already asking, better than anyone else.
-
-## Signature Questions
-
-- Who's it for?
-- What's it for?
-- What will you sacrifice to make this work?
-- Would anyone miss this if it were gone?
-- Is this generous? Does this create value before capturing it?
-- Are you racing to the bottom or climbing to the top?
-
-## Blind Spots You Surface
-
-- Trying to serve everyone instead of someone
-- Competing on price instead of on being remarkable
-- Asking for attention without earning permission first
-- Building products before understanding who they're for
-- Confusing busy with productive, reach with resonance
-```
-
-**Step 2: Add Seth Godin to the prompt loader**
-
-Check the current `src/lib/advisors/prompt-loader.ts`:
-- If it uses `readFileSync`: add `'seth-godin'` to the file path map.
-- If it uses `import * as prompts`: create `src/lib/advisors/prompts/seth-godin.ts` that exports the prompt, add the export to `index.ts`, and add the entry to `promptMap`.
-
-The `.ts` wrapper file (only needed if prompt-loader still uses imports):
-
-```typescript
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-export const prompt = readFileSync(join(__dirname, 'seth-godin.md'), 'utf-8');
-```
-
-Add to `src/lib/advisors/prompts/index.ts`:
-```typescript
-export { prompt as sethGodin } from './seth-godin';
-```
-
-Add to `promptMap` in `src/lib/advisors/prompt-loader.ts`:
-```typescript
-'seth-godin': prompts.sethGodin,
-```
-
-**Step 3: Add Seth Godin to the advisor registry**
-
-Add this entry to the `advisorRegistry` array in `src/lib/advisors/registry.ts`:
-
-```typescript
-{
-  id: 'seth-godin',
-  name: 'Seth Godin',
-  role: 'strategist',
-  evaluationExpertise:
-    'Evaluates strategy through the smallest-viable-audience lens. Is the audience ' +
-    'specific enough? Is the offering remarkable — would anyone miss it? Does the ' +
-    'go-to-market earn permission before asking for attention? Catches scale-first ' +
-    'thinking, commodity positioning, and strategies that try to serve everyone.',
-  doesNotEvaluate:
-    'Does not evaluate technical SEO, visual design, pricing mechanics, or behavioral psychology.',
-  contextDocs: ['strategy', 'positioning'],
-},
-```
-
-**Step 4: Verify the prompt loads**
+**Step 1: Verify the advisor loads**
 
 Run: `npx vitest run src/lib/__tests__/advisor-prompt-loader.test.ts`
-Expected: Existing tests pass. If there's a test that checks the known advisor count, update it to include seth-godin.
+Expected: All tests pass, including seth-godin resolution.
 
-**Step 5: Commit**
-
-```
-git add src/lib/advisors/prompts/seth-godin.md src/lib/advisors/prompt-loader.ts src/lib/advisors/registry.ts
-git commit -m "feat(validation-canvas): add Seth Godin advisor for small-business strategy"
-```
-
-If you also created `.ts` wrapper or modified `index.ts`, include those files in the commit.
+**Step 2: No commit needed** — nothing changed.
 
 ---
 
 ### Task 4: Update Strategy Foundation Doc to Use Seth Godin
+
+> **Behavior change:** All strategy foundation docs generated from this point forward will use Seth Godin's three-questions format (smallest viable audience, remarkability, permission to reach) instead of Richard Rumelt's diagnosis/guiding policy/coherent actions format. Existing generated strategy docs are unaffected — they remain in Redis as-is. The `design-principles` doc continues to use `richard-rumelt` (intentionally unchanged).
 
 **Files:**
 - Modify: `src/lib/agent-tools/foundation.ts` (lines 15, 56-61)
@@ -1259,7 +1125,11 @@ Example:
 /**
  * Evaluate all Testing assumptions against their thresholds.
  * Called after analytics cron runs. Only processes assumptions with status 'testing'.
- * When an assumption is invalidated, triggers pivot suggestion generation.
+ *
+ * NOTE: Threshold-based auto-evaluation is deferred to a follow-up plan.
+ * This implementation provides the hook point and guard logic. The curator
+ * changes statuses manually via the API until auto-evaluation is implemented.
+ * See Decision Log entry 6 for rationale.
  */
 export async function evaluateAssumptions(ideaId: string): Promise<void> {
   const canvasState = await getCanvasState(ideaId);
@@ -1270,9 +1140,11 @@ export async function evaluateAssumptions(ideaId: string): Promise<void> {
 
   if (testingAssumptions.length === 0) return;
 
-  // For now, evaluation is manual — the curator changes statuses via the API.
-  // Future: integrate with analytics data to auto-evaluate based on thresholds.
-  // This function is the hook point for that automation.
+  // TODO: Auto-evaluate testing assumptions against analytics data.
+  // Design doc specifies checking thresholds (e.g., 500+ searches for demand,
+  // top-50 rankings for reachability) and auto-transitioning to validated/invalidated.
+  // Requires integration with GSC analytics data and research agent output.
+  // Deferred to a follow-up plan — see Decision Log entry 6.
 }
 
 /**
@@ -1404,6 +1276,17 @@ export async function applyPivot(
         invalidatedAt: undefined,
       });
     }
+  }
+
+  // Trigger strategy doc regeneration for Demand or Differentiation pivots.
+  // These change the fundamental audience/positioning, so the strategy doc
+  // (and its downstream dependents) need to be regenerated.
+  if (type === 'demand' || type === 'differentiation') {
+    const { deleteFoundationDoc } = await import('@/lib/db');
+    // Delete strategy doc — it will be regenerated on next Foundation tab visit.
+    // Downstream docs (positioning, brand-voice, etc.) remain but may be stale;
+    // the Foundation tab shows them as needing regeneration when strategy changes.
+    await deleteFoundationDoc(ideaId, 'strategy').catch(() => {});
   }
 }
 ```
@@ -1835,35 +1718,33 @@ Add a new exported function to `src/lib/validation-canvas.ts` (before the `expor
  * Scans all ideas for active canvases with testing assumptions.
  */
 export async function evaluateAllCanvases(): Promise<void> {
-  // Import here to avoid circular deps
-  const { getRedis } = await import('@/lib/redis');
-  const r = getRedis();
+  const { getIdeasFromDb } = await import('@/lib/db');
+  const ideas = await getIdeasFromDb();
 
-  // Get all idea IDs from the ideas hash
-  const allIdeas = await r.hgetall('ideas');
-  if (!allIdeas) return;
-
-  for (const ideaId of Object.keys(allIdeas)) {
+  for (const idea of ideas) {
     try {
-      await evaluateAssumptions(ideaId);
+      await evaluateAssumptions(idea.id);
     } catch (error) {
-      console.error(`[evaluateAllCanvases] Failed for ${ideaId}:`, error);
+      console.error(`[evaluateAllCanvases] Failed for ${idea.id}:`, error);
     }
   }
 }
 ```
 
-In the analytics cron route, add the call after `runAnalyticsAgentAuto()` in both GET and POST handlers. In the GET handler, after line 21 (`const report = await runAnalyticsAgentAuto();`):
+In the analytics cron route, insert one line after `const report = await runAnalyticsAgentAuto();` in the GET handler (line 21). Do NOT replace the surrounding `try` block — just add this single line between the `runAnalyticsAgentAuto()` call and the `return` statement:
 
 ```typescript
-try {
+  await evaluateAllCanvases().catch(err => console.error('[cron/analytics] Canvas evaluation failed:', err));
+```
+
+The result should read:
+```typescript
   const report = await runAnalyticsAgentAuto();
-  // Evaluate validation canvas assumptions after analytics completes
   await evaluateAllCanvases().catch(err => console.error('[cron/analytics] Canvas evaluation failed:', err));
   return NextResponse.json(report);
 ```
 
-Apply the same pattern to the POST handler.
+Apply the identical one-line insertion to the POST handler (after its `runAnalyticsAgentAuto()` call at line 43).
 
 **Step 3: Verify the build**
 
@@ -2234,27 +2115,35 @@ validationCanvas: ValidationCanvasData | null;
 
 **Step 2: Fetch canvas data in getDashboardData**
 
-In the `getDashboardData` function, add the canvas fetch to the `Promise.all` call (line ~84). Add this import at the top of the file:
+In the `getDashboardData` function, add canvas imports and fetch. Add this import at the top of the file:
 
 ```typescript
 import { getCanvasState, getAllAssumptions, getPivotSuggestions, getPivotHistory } from '@/lib/db';
 import { ASSUMPTION_TYPES } from '@/types';
 ```
 
-After the existing Promise.all resolves (around line 91), add:
+First, add `getCanvasState(id).catch(() => null)` to the existing `Promise.all` on line 84, alongside the other parallel fetches. This avoids an extra sequential Redis call.
+
+Then, after the `Promise.all` resolves (around line 91), conditionally fetch the remaining canvas data using a second `Promise.all` for parallelism — following the same pattern used for `websiteSignups` (conditional on `pdSite` existing):
 
 ```typescript
-    // Fetch validation canvas data
+    // Fetch validation canvas data (canvasState was fetched in the Promise.all above)
     let validationCanvas: ValidationCanvasData | null = null;
-    const canvasState = await getCanvasState(id).catch(() => null);
     if (canvasState) {
-      const canvasAssumptions = await getAllAssumptions(id).catch(() => ({}));
+      // Fetch all canvas sub-data in parallel — not sequentially
+      const [canvasAssumptions, ...pivotResults] = await Promise.all([
+        getAllAssumptions(id).catch(() => ({})),
+        ...ASSUMPTION_TYPES.flatMap(aType => [
+          getPivotSuggestions(id, aType).catch(() => []),
+          getPivotHistory(id, aType).catch(() => []),
+        ]),
+      ]);
       const canvasPivotSuggestions: Record<string, unknown[]> = {};
       const canvasPivotHistory: Record<string, unknown[]> = {};
-      for (const aType of ASSUMPTION_TYPES) {
-        const sug = await getPivotSuggestions(id, aType).catch(() => []);
+      ASSUMPTION_TYPES.forEach((aType, i) => {
+        const sug = pivotResults[i * 2] as unknown[];
+        const hist = pivotResults[i * 2 + 1] as unknown[];
         if (sug.length > 0) canvasPivotSuggestions[aType] = sug;
-        const hist = await getPivotHistory(id, aType).catch(() => []);
         if (hist.length > 0) canvasPivotHistory[aType] = hist;
       }
       validationCanvas = {
@@ -2333,11 +2222,13 @@ Change `STRATEGY` label from `(Richard Rumelt)` to `(Seth Godin)`.
 
 **Step 4: Update the Library Module Map**
 
-In the Advisors subgraph, update the advisor count from 4 to 5 and add Seth Godin:
+In the Advisors subgraph, update the advisor count from 4 to 14 (the registry has grown significantly since the architecture doc was last updated). Seth Godin is already included:
 
 ```
-advisors_registry["advisors/registry.ts<br/>5 advisors: Seth Godin, Richard Rumelt,<br/>April Dunford, Brand Copywriter, SEO Expert"]
+advisors_registry["advisors/registry.ts<br/>14 advisors including Seth Godin, Richard Rumelt,<br/>April Dunford, SEO Expert, and others"]
 ```
+
+Also update the Quick Reference section's library table entry from "4-advisor virtual board registry" to "14-advisor virtual board registry".
 
 Add a new entry in the Support Modules:
 
@@ -2359,6 +2250,198 @@ Add to the Components table:
 ```
 git add docs/architecture.md
 git commit -m "docs: update architecture for validation canvas, Seth Godin advisor, new API routes"
+```
+
+---
+
+### Task 11: Add ValidationCanvas Component Tests
+
+**Files:**
+- Create: `src/components/__tests__/ValidationCanvas.test.tsx`
+
+The design doc specifies a component test file covering rendering, status display, pivot interaction, and kill button.
+
+**Step 1: Write component render tests**
+
+Create `src/components/__tests__/ValidationCanvas.test.tsx`:
+
+```tsx
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import ValidationCanvas from '@/components/ValidationCanvas';
+import type { Assumption, AssumptionType, CanvasState } from '@/types';
+
+// Mock PivotActions since it's a client component
+vi.mock('@/components/PivotActions', () => ({
+  default: ({ type }: { type: string }) => <div data-testid={`pivot-actions-${type}`}>PivotActions</div>,
+}));
+
+const mockAssumption = (type: AssumptionType, status: string, statement: string): Assumption => ({
+  type,
+  status: status as Assumption['status'],
+  statement,
+  evidence: status === 'validated' ? ['1,200 monthly searches'] : [],
+  threshold: { validated: 'x', invalidated: 'y', windowDays: 0 },
+  linkedStage: 'analysis',
+});
+
+describe('ValidationCanvas', () => {
+  const defaultCanvas: CanvasState = { status: 'active' };
+  const defaultAssumptions = {
+    demand: mockAssumption('demand', 'validated', 'High search volume confirmed'),
+    reachability: mockAssumption('reachability', 'testing', 'Content ranking in progress'),
+    engagement: mockAssumption('engagement', 'untested', 'Signup rate TBD'),
+    wtp: mockAssumption('wtp', 'untested', 'Pricing page visits TBD'),
+    differentiation: mockAssumption('differentiation', 'untested', 'Market gap TBD'),
+  };
+
+  it('renders all five assumption cards', () => {
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={defaultAssumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{}}
+      />
+    );
+
+    expect(screen.getByText('Demand')).toBeDefined();
+    expect(screen.getByText('Reachability')).toBeDefined();
+    expect(screen.getByText('Engagement')).toBeDefined();
+    expect(screen.getByText('WTP')).toBeDefined();
+    expect(screen.getByText('Differentiation')).toBeDefined();
+  });
+
+  it('displays status badges for each assumption', () => {
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={defaultAssumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{}}
+      />
+    );
+
+    expect(screen.getByText('validated')).toBeDefined();
+    expect(screen.getByText('testing')).toBeDefined();
+    expect(screen.getAllByText('untested')).toHaveLength(3);
+  });
+
+  it('shows pivot actions for invalidated assumptions', () => {
+    const assumptions = {
+      ...defaultAssumptions,
+      demand: mockAssumption('demand', 'invalidated', 'Low search volume'),
+    };
+
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={assumptions}
+        pivotSuggestions={{ demand: [{ statement: 'Pivot A', evidence: [], impact: 'low', experiment: 'test' }] }}
+        pivotHistory={{}}
+      />
+    );
+
+    expect(screen.getByTestId('pivot-actions-demand')).toBeDefined();
+  });
+
+  it('shows "Reset" badge for downstream assumptions when upstream is invalidated', () => {
+    const assumptions = {
+      ...defaultAssumptions,
+      demand: mockAssumption('demand', 'invalidated', 'No demand found'),
+    };
+
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={assumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{}}
+      />
+    );
+
+    // Downstream of demand should show "Reset"
+    const resetBadges = screen.getAllByText('Reset');
+    expect(resetBadges.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('grays out killed canvas and shows reason', () => {
+    const killedCanvas: CanvasState = {
+      status: 'killed',
+      killedAt: Date.now(),
+      killedReason: 'No market demand',
+    };
+
+    const { container } = render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={killedCanvas}
+        assumptions={defaultAssumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{}}
+      />
+    );
+
+    expect(screen.getByText(/No market demand/)).toBeDefined();
+    // Check opacity class is applied
+    expect(container.firstElementChild?.classList.contains('opacity-50')).toBe(true);
+  });
+
+  it('shows pivot history count when history exists', () => {
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={defaultAssumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{
+          demand: [{
+            fromStatement: 'old', toStatement: 'new', reason: 'test',
+            suggestedBy: 'system', approvedBy: 'curator', timestamp: 1, alternatives: [],
+          }],
+        }}
+      />
+    );
+
+    expect(screen.getByText('1 pivot recorded')).toBeDefined();
+  });
+
+  it('renders section divider between canvas and project details', () => {
+    render(
+      <ValidationCanvas
+        ideaId="idea-1"
+        canvas={defaultCanvas}
+        assumptions={defaultAssumptions}
+        pivotSuggestions={{}}
+        pivotHistory={{}}
+      />
+    );
+
+    expect(screen.getByText('Project Details')).toBeDefined();
+  });
+});
+```
+
+**Step 2: Run the tests**
+
+Run: `npx vitest run src/components/__tests__/ValidationCanvas.test.tsx`
+
+If `@testing-library/react` is not installed, install it first:
+```
+npm install -D @testing-library/react @testing-library/jest-dom
+```
+
+Expected: All tests pass
+
+**Step 3: Commit**
+
+```
+git add src/components/__tests__/ValidationCanvas.test.tsx
+git commit -m "test(validation-canvas): add component render tests for ValidationCanvas"
 ```
 
 ---
@@ -2386,6 +2469,8 @@ git commit -m "docs: update architecture for validation canvas, Seth Godin advis
 | 3 | Evaluation trigger | After analytics cron, scan all ideas | Per-idea webhook trigger |
 | 4 | Canvas component pattern | Server component + client child for actions | Full client component |
 | 5 | Pivot confirmation UX | Browser `prompt()` for kill reason | Custom modal component |
+| 6 | Threshold auto-evaluation | Deferred to follow-up plan | Implement in this plan |
+| 7 | Strategy doc regeneration on pivot | Delete strategy doc, regenerate on next visit | Auto-regenerate immediately |
 
 ### Appendix: Decision Details
 
@@ -2423,3 +2508,17 @@ git commit -m "docs: update architecture for validation canvas, Seth Godin advis
 **Why:** This is the simplest approach that meets the design doc's requirement ("kill the project directly from the canvas — no navigation to a separate page"). A browser prompt is immediate, requires no additional UI components, and captures a text reason. The kill action is expected to be rare (once per project at most).
 **Alternatives rejected:**
 - Custom modal: Over-engineered for a one-time, rare action. Would require additional component code, state management, and styling for minimal benefit.
+
+#### Decision 6: Defer threshold auto-evaluation
+
+**Chose:** Implement `evaluateAssumptions` as a hook point with guard logic (skip killed canvases, skip non-testing assumptions), but defer the actual threshold comparison logic to a follow-up plan.
+**Why:** Meaningful auto-evaluation requires integrating with GSC analytics data (for reachability), painted door signup data (for engagement), and research agent output (for demand). Each of these data sources has different schemas and access patterns. Implementing all threshold comparisons in this plan would roughly double its scope. The manual curator workflow (changing assumption statuses via the API) provides immediate value while the auto-evaluation is built separately. The design doc's requirement is fully acknowledged — this is a scoping decision, not a silent omission.
+**Alternatives rejected:**
+- Implement full auto-evaluation in this plan: Would add 3-4 additional tasks touching analytics-db, gsc-client, and painted-door-db modules, significantly expanding scope.
+
+#### Decision 7: Strategy doc regeneration approach on pivot
+
+**Chose:** Delete the strategy foundation doc from Redis when a Demand or Differentiation pivot is approved. The Foundation tab's existing "generate" flow will detect the missing doc and allow regeneration with the new context.
+**Why:** The foundation agent already handles doc generation with dependency ordering (strategy first, then positioning, etc.). Deleting the strategy doc and letting the user trigger regeneration from the Foundation tab reuses existing infrastructure without requiring a new auto-regeneration mechanism. This also gives the curator control over when regeneration happens — they may want to review the new assumption before regenerating strategy.
+**Alternatives rejected:**
+- Auto-regenerate immediately on pivot: Would require calling the foundation agent from within `applyPivot`, creating a tight coupling between validation canvas and foundation generation. Also risks slow API responses since foundation doc generation takes 30-60 seconds.
