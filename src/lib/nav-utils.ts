@@ -2,7 +2,7 @@ export function isActive(pathname: string, href: string): boolean {
   switch (href) {
     case '/':
       // Projects tab: home + all project sub-pages
-      return pathname === '/' || pathname.startsWith('/analyses/');
+      return pathname === '/' || pathname.startsWith('/analyses/') || /^\/foundation\/[^/]+/.test(pathname);
     case '/ideas/new':
       // Ideation tab: idea creation + analysis trigger
       return pathname.startsWith('/ideas/');

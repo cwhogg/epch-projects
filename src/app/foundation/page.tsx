@@ -151,14 +151,14 @@ export default async function FoundationPage() {
                 <div className="flex items-center gap-2 mt-auto pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   {!allComplete && (
                     <Link
-                      href={`/analyses/${idea.ideaId}/foundation`}
+                      href={`/foundation/${idea.ideaId}`}
                       className="btn btn-primary text-xs"
                     >
                       {hasAny ? 'Generate Missing' : 'Generate All'}
                     </Link>
                   )}
                   <Link
-                    href={`/analyses/${idea.ideaId}/foundation`}
+                    href={`/foundation/${idea.ideaId}`}
                     className="btn-ghost text-xs rounded-lg"
                     style={{ color: 'var(--text-secondary)' }}
                   >

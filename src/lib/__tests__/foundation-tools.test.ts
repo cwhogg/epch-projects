@@ -148,7 +148,7 @@ describe('Foundation agent tools', () => {
         if (type === 'strategy') {
           return {
             id: 'strategy', ideaId, type: 'strategy',
-            content: 'Existing strategy', advisorId: 'richard-rumelt',
+            content: 'Existing strategy', advisorId: 'seth-godin',
             generatedAt: '2026-01-01T00:00:00Z', editedAt: null, version: 1,
           };
         }

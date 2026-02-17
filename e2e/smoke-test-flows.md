@@ -40,9 +40,9 @@ Do not retry failed flows. Report failures as-is so they can be investigated.
 
 ### C1: Home Page Load [QUICK]
 - Navigate to the app URL
-- Verify page renders with the main heading visible
-- Verify 6 pipeline stage cards render (Ideation, Analysis, Website, Content, Testing, Optimization)
-- Verify counts load (Website count should always be >= 2; Analysis count depends on data)
+- Verify "Projects" heading visible
+- Verify project cards render — each card shows: project name, tier badge (e.g. Tier 1/Tier 2), and validation status segments (Demand, Reach, Engage, WTP, Differ) or "Awaiting validation" fallback text
+- Verify "Test New Product" link visible and points to `/ideas/new`
 - Note the page load time
 
 ### C2: Analysis Leaderboard [QUICK]
@@ -122,7 +122,7 @@ Do not retry failed flows. Report failures as-is so they can be investigated.
 - Verify piece status updates
 
 ### F1: Generate Foundation Docs
-- Navigate to an existing analysis's foundation page: `/analyses/{id}/foundation`
+- Navigate to an existing analysis's foundation page: `/foundation/{id}`
 - **Prerequisite:** Only click "Generate All" if some docs are missing. Skip if all 6 docs already exist.
 - If generating, verify progress updates (Strategy completes first, then Positioning, then remaining docs cascade)
 - Wait for completion (timeout: 180s — 6 docs may take longer)

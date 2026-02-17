@@ -21,8 +21,8 @@ describe('isActive (project-centric nav)', () => {
       expect(isActive('/analyses/abc/analysis', '/')).toBe(true);
     });
 
-    it('activates on /analyses/abc/foundation', () => {
-      expect(isActive('/analyses/abc/foundation', '/')).toBe(true);
+    it('activates on /foundation/abc (foundation detail)', () => {
+      expect(isActive('/foundation/abc', '/')).toBe(true);
     });
 
     it('activates on /analyses/abc/content', () => {
@@ -83,7 +83,7 @@ describe('isActive (project-centric nav)', () => {
       '/',
       '/analyses/abc',
       '/analyses/abc/analysis',
-      '/analyses/abc/foundation',
+      '/foundation/abc',
       '/analyses/abc/content',
       '/analyses/abc/analytics',
       '/analyses/abc/painted-door',

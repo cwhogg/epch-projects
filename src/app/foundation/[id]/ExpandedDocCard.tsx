@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import type { FoundationDocument, FoundationDocType } from '@/types';
 import { CheckCircleIcon, ChevronUpIcon, ChatIcon, RefreshIcon } from './FoundationIcons';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface ExpandedDocCardProps {
   type: FoundationDocType;
@@ -89,9 +90,7 @@ export default function ExpandedDocCard({
         borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
         padding: '1.5rem',
       }}>
-        <div className="prose-editorial" style={{ whiteSpace: 'pre-wrap' }}>
-          {doc.content}
-        </div>
+        <MarkdownContent content={doc.content} />
 
         {/* Footer actions */}
         <div style={{

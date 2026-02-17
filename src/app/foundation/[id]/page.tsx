@@ -30,7 +30,7 @@ const DOC_CONFIG: {
   advisor: string;
   requires: string | null;
 }[] = [
-  { type: 'strategy', label: 'Strategy', advisor: 'Richard Rumelt', requires: null },
+  { type: 'strategy', label: 'Strategy', advisor: 'Seth Godin', requires: null },
   { type: 'positioning', label: 'Positioning Statement', advisor: 'April Dunford', requires: 'Strategy' },
   { type: 'brand-voice', label: 'Brand Voice', advisor: 'Brand Copywriter', requires: 'Positioning' },
   { type: 'design-principles', label: 'Design Principles', advisor: 'Derived', requires: 'Positioning + Strategy' },
@@ -161,7 +161,7 @@ export default function FoundationPage({ params }: PageProps) {
         }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Link
-            href={`/analyses/${ideaId}`}
+            href="/"
             style={{
               fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-muted)',
               textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
@@ -169,7 +169,7 @@ export default function FoundationPage({ params }: PageProps) {
             }}
           >
             <ArrowLeftIcon />
-            Back to Analysis
+            Back to Projects
           </Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
             <div>

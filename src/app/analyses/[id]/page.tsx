@@ -301,7 +301,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
         </Link>
 
         {/* Foundation Card */}
-        <Link href={`/analyses/${id}/foundation`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-3">
+        <Link href={`/foundation/${id}`} className="card-static p-5 block transition-all hover:border-[var(--border-default)] hover:-translate-y-0.5 hover:shadow-lg animate-slide-up stagger-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Foundation Documents</span>
