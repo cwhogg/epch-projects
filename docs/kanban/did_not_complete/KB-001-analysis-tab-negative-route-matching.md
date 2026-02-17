@@ -8,3 +8,5 @@
 - **Why out of scope:** Simplification opportunity — not a bug or part of the current task
 - **Severity:** MEDIUM
 - **Created:** 2026-02-16
+- **Resolved:** 2026-02-16
+- **Fix:** Closed during triage — false positive. The negative matching pattern described in the KB is not present in the current code. The `/analytics` case at `src/lib/nav-utils.ts:9-12` already uses positive allowlist matching (`pathname === '/analytics' || pathname === '/testing'`). The pattern was likely resolved during the nav-redesign. No action required.
