@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Shared mock Redis instance so tests can inspect calls
+const mockRedisGet = vi.fn();
+const mockRedisSet = vi.fn();
+const mockRedis = { get: mockRedisGet, set: mockRedisSet };
+
 // Mock everything the module imports
 vi.mock('@/lib/redis', () => ({
-  getRedis: () => ({
-    set: vi.fn(),
-    get: vi.fn(),
-  }),
+  getRedis: () => mockRedis,
   isRedisConfigured: () => true,
 }));
 
@@ -123,5 +125,105 @@ describe('content-critique-agent system prompt', () => {
     const prompt = config.systemPrompt;
 
     expect(prompt).toContain('AVAILABLE CRITICS');
+  });
+});
+
+describe('content-critique-agent onProgress', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(runAgent).mockResolvedValue({
+      runId: 'test-run',
+      agentId: 'content-critique',
+      status: 'complete',
+      messages: [],
+      turnCount: 1,
+      resumeCount: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+    });
+  });
+
+  async function getOnProgress() {
+    const { runContentCritiquePipeline } = await import(
+      '@/lib/content-critique-agent'
+    );
+    await runContentCritiquePipeline('idea-1', 'website', 'Test context');
+    const config = vi.mocked(runAgent).mock.calls[0][0];
+    // Clear mocks after pipeline setup so we only track onProgress calls
+    mockRedisGet.mockClear();
+    mockRedisSet.mockClear();
+    return config.onProgress!;
+  }
+
+  it('skips Redis read for unhandled step types', async () => {
+    const onProgress = await getOnProgress();
+
+    await onProgress('thinking', 'some detail');
+
+    expect(mockRedisGet).not.toHaveBeenCalled();
+    expect(mockRedisSet).not.toHaveBeenCalled();
+  });
+
+  it('reads and updates Redis for tool_call step', async () => {
+    const onProgress = await getOnProgress();
+    const progress = JSON.stringify({
+      status: 'running',
+      currentStep: 'Starting...',
+      round: 0,
+    });
+    mockRedisGet.mockResolvedValueOnce(progress);
+
+    await onProgress('tool_call', 'generate_draft');
+
+    expect(mockRedisGet).toHaveBeenCalledTimes(1);
+    expect(mockRedisSet).toHaveBeenCalledTimes(1);
+    const saved = JSON.parse(mockRedisSet.mock.calls[0][1]);
+    expect(saved.currentStep).toBe('generate_draft');
+  });
+
+  it('reads and updates Redis for complete step', async () => {
+    const onProgress = await getOnProgress();
+    const progress = JSON.stringify({
+      status: 'running',
+      currentStep: 'Working...',
+      round: 1,
+    });
+    mockRedisGet.mockResolvedValueOnce(progress);
+
+    await onProgress('complete', undefined);
+
+    expect(mockRedisGet).toHaveBeenCalledTimes(1);
+    expect(mockRedisSet).toHaveBeenCalledTimes(1);
+    const saved = JSON.parse(mockRedisSet.mock.calls[0][1]);
+    expect(saved.status).toBe('complete');
+    expect(saved.currentStep).toBe('Content pipeline complete!');
+  });
+
+  it('reads and updates Redis for error step', async () => {
+    const onProgress = await getOnProgress();
+    const progress = JSON.stringify({
+      status: 'running',
+      currentStep: 'Working...',
+      round: 1,
+    });
+    mockRedisGet.mockResolvedValueOnce(progress);
+
+    await onProgress('error', 'Something went wrong');
+
+    expect(mockRedisGet).toHaveBeenCalledTimes(1);
+    expect(mockRedisSet).toHaveBeenCalledTimes(1);
+    const saved = JSON.parse(mockRedisSet.mock.calls[0][1]);
+    expect(saved.status).toBe('error');
+    expect(saved.currentStep).toBe('Something went wrong');
+  });
+
+  it('returns early without writing when Redis get returns null', async () => {
+    const onProgress = await getOnProgress();
+    mockRedisGet.mockResolvedValueOnce(null);
+
+    await onProgress('tool_call', 'generate_draft');
+
+    expect(mockRedisGet).toHaveBeenCalledTimes(1);
+    expect(mockRedisSet).not.toHaveBeenCalled();
   });
 });

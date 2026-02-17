@@ -15,7 +15,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 1: Extract buildAuthorSystemPrompt helper (KB-023)
+### ✅ Task 1: Extract buildAuthorSystemPrompt helper (KB-023)
 
 **KBs:** KB-023
 
@@ -31,7 +31,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 2: Deduplicate redirect in checkProgress (KB-024)
+### ✅ Task 2: Deduplicate redirect in checkProgress (KB-024)
 
 **KBs:** KB-024
 
@@ -47,7 +47,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 3: Early-return guard in onProgress (KB-025)
+### ✅ Task 3: Early-return guard in onProgress (KB-025)
 
 **KBs:** KB-025
 
@@ -63,7 +63,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 4: Extract runAnalytics helper in cron route (KB-026)
+### ✅ Task 4: Extract runAnalytics helper in cron route (KB-026)
 
 **KBs:** KB-026
 
@@ -79,7 +79,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 5: Parallelize pivot data fetches (KB-027 + KB-028)
+### ✅ Task 5: Parallelize pivot data fetches (KB-027 + KB-028)
 
 **KBs:** KB-027, KB-028
 
@@ -95,7 +95,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 6: Extract createAlert helper in detectChanges (KB-032)
+### ✅ Task 6: Extract createAlert helper in detectChanges (KB-032)
 
 **KBs:** KB-032
 
@@ -112,7 +112,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 7: Cache compare_weeks outputs for save_report (KB-030)
+### ✅ Task 7: Cache compare_weeks outputs for save_report (KB-030)
 
 **KBs:** KB-030
 
@@ -130,7 +130,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 8: Extract runAgentLifecycle helper (KB-029)
+### ✅ Task 8: Extract runAgentLifecycle helper (KB-029)
 
 **KBs:** KB-029
 
@@ -152,7 +152,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 9: Extract validation helpers from validate_code (KB-031)
+### ✅ Task 9: Extract validation helpers from validate_code (KB-031)
 
 **KBs:** KB-031
 

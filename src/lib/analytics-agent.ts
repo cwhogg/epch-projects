@@ -11,22 +11,14 @@ import {
 import {
   PieceSnapshot,
   PerformanceAlert,
+  AlertSeverity,
   WeeklyReport,
   GSCQueryRow,
   ContentType,
 } from '@/types';
-import {
-  runAgent,
-  resumeAgent,
-  getAgentState,
-  deleteAgentState,
-  saveActiveRun,
-  getActiveRunId,
-  clearActiveRun,
-} from '@/lib/agent-runtime';
+import { runAgentLifecycle } from '@/lib/agent-runtime';
 import { createAnalyticsTools } from '@/lib/agent-tools/analytics';
 import { createPlanTools, createScratchpadTools } from '@/lib/agent-tools/common';
-import type { AgentConfig } from '@/types';
 
 // Returns ISO week string like "2026-W05"
 export function getWeekId(date?: Date): string {
@@ -234,6 +226,25 @@ export function createPieceSnapshots(
   return { snapshots, unmatchedPages };
 }
 
+function createAlert(
+  current: PieceSnapshot,
+  severity: AlertSeverity,
+  message: string,
+  metric: string,
+  previousValue: number,
+  currentValue: number,
+): PerformanceAlert {
+  return {
+    pieceSlug: current.slug,
+    pieceTitle: current.title,
+    severity,
+    message,
+    metric,
+    previousValue,
+    currentValue,
+  };
+}
+
 // Detect significant changes between current and previous week
 export function detectChanges(
   currentSnapshots: PieceSnapshot[],
@@ -251,15 +262,14 @@ export function detectChanges(
 
     // First appearance check
     if (!prev && current.impressions >= minImpressions) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'info',
-        message: `First appearance in GSC with ${current.impressions} impressions and ${current.clicks} clicks`,
-        metric: 'impressions',
-        previousValue: 0,
-        currentValue: current.impressions,
-      });
+      alerts.push(createAlert(
+        current,
+        'info',
+        `First appearance in GSC with ${current.impressions} impressions and ${current.clicks} clicks`,
+        'impressions',
+        0,
+        current.impressions,
+      ));
       continue;
     }
 
@@ -270,67 +280,62 @@ export function detectChanges(
 
     // Clicks up >= 50%
     if (prev.clicks > 0 && current.clicks >= prev.clicks * 1.5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'positive',
-        message: `Clicks up ${Math.round(((current.clicks - prev.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: current.clicks,
-      });
+      alerts.push(createAlert(
+        current,
+        'positive',
+        `Clicks up ${Math.round(((current.clicks - prev.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
+        'clicks',
+        prev.clicks,
+        current.clicks,
+      ));
     }
 
     // Clicks down >= 30%
     if (prev.clicks > 0 && current.clicks <= prev.clicks * 0.7) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Clicks down ${Math.round(((prev.clicks - current.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: current.clicks,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Clicks down ${Math.round(((prev.clicks - current.clicks) / prev.clicks) * 100)}% (${prev.clicks} → ${current.clicks})`,
+        'clicks',
+        prev.clicks,
+        current.clicks,
+      ));
     }
 
     // Position improved by >= 5 (lower is better)
     if (prev.position - current.position >= 5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'positive',
-        message: `Position improved by ${Math.round((prev.position - current.position) * 10) / 10} (${prev.position} → ${current.position})`,
-        metric: 'position',
-        previousValue: prev.position,
-        currentValue: current.position,
-      });
+      alerts.push(createAlert(
+        current,
+        'positive',
+        `Position improved by ${Math.round((prev.position - current.position) * 10) / 10} (${prev.position} → ${current.position})`,
+        'position',
+        prev.position,
+        current.position,
+      ));
     }
 
     // Position dropped by >= 5
     if (current.position - prev.position >= 5) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Position dropped by ${Math.round((current.position - prev.position) * 10) / 10} (${prev.position} → ${current.position})`,
-        metric: 'position',
-        previousValue: prev.position,
-        currentValue: current.position,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Position dropped by ${Math.round((current.position - prev.position) * 10) / 10} (${prev.position} → ${current.position})`,
+        'position',
+        prev.position,
+        current.position,
+      ));
     }
 
     // Had >5 clicks, now 0
     if (prev.clicks > 5 && current.clicks === 0) {
-      alerts.push({
-        pieceSlug: current.slug,
-        pieceTitle: current.title,
-        severity: 'warning',
-        message: `Traffic lost — had ${prev.clicks} clicks, now 0`,
-        metric: 'clicks',
-        previousValue: prev.clicks,
-        currentValue: 0,
-      });
+      alerts.push(createAlert(
+        current,
+        'warning',
+        `Traffic lost — had ${prev.clicks} clicks, now 0`,
+        'clicks',
+        prev.clicks,
+        0,
+      ));
     }
   }
 
@@ -501,56 +506,33 @@ async function runAnalyticsAgentV2(): Promise<WeeklyReport> {
 
   const weekId = getWeekId();
 
-  // --- Check for a paused run to resume ---
-  const existingRunId = await getActiveRunId('analytics', weekId);
-  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
-  if (pausedState && pausedState.status !== 'paused') {
-    pausedState = null;
-  }
-
-  const runId = pausedState ? pausedState.runId : `analytics-${weekId}-${Date.now()}`;
-
-  const tools = [
-    ...createPlanTools(runId),
-    ...createAnalyticsTools(siteUrl),
-    ...createScratchpadTools(),
-  ];
-
-  const config: AgentConfig = {
-    agentId: 'analytics',
-    runId,
-    model: CLAUDE_MODEL,
-    maxTokens: 4096,
-    maxTurns: 15,
-    tools,
-    systemPrompt: ANALYTICS_SYSTEM_PROMPT,
-    onProgress: async (step, detail) => {
-      console.log(`[analytics-v2] ${step}: ${detail ?? ''}`);
+  await runAgentLifecycle(
+    'analytics',
+    weekId,
+    (runId, _isResume, pausedState) => {
+      if (pausedState) {
+        console.log(`[analytics-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+      }
+      const tools = [
+        ...createPlanTools(runId),
+        ...createAnalyticsTools(siteUrl),
+        ...createScratchpadTools(),
+      ];
+      return {
+        agentId: 'analytics',
+        runId,
+        model: CLAUDE_MODEL,
+        maxTokens: 4096,
+        maxTurns: 15,
+        tools,
+        systemPrompt: ANALYTICS_SYSTEM_PROMPT,
+        onProgress: async (step, detail) => {
+          console.log(`[analytics-v2] ${step}: ${detail ?? ''}`);
+        },
+      };
     },
-  };
-
-  // --- Run or resume ---
-  let state;
-  if (pausedState) {
-    console.log(`[analytics-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
-    state = await resumeAgent(config, pausedState);
-  } else {
-    const initialMessage = `Run the weekly analytics report for site ${siteUrl}. Current week: ${weekId}. Fetch the data, analyze performance changes, and save a report with actionable insights.`;
-    state = await runAgent(config, initialMessage);
-  }
-
-  // --- Handle result ---
-  if (state.status === 'paused') {
-    await saveActiveRun('analytics', weekId, runId);
-    throw new Error('AGENT_PAUSED');
-  }
-
-  await clearActiveRun('analytics', weekId);
-  await deleteAgentState(runId);
-
-  if (state.status === 'error') {
-    throw new Error(state.error || 'Analytics agent failed');
-  }
+    () => `Run the weekly analytics report for site ${siteUrl}. Current week: ${weekId}. Fetch the data, analyze performance changes, and save a report with actionable insights.`,
+  );
 
   // The report was saved by the save_report tool — fetch it
   const { getWeeklyReport: getReport } = await import('@/lib/analytics-db');

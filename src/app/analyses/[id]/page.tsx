@@ -96,19 +96,18 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
     if (canvasState) {
       const [canvasAssumptions, ...pivotResults] = await Promise.all([
         getAllAssumptions(id).catch(() => ({})),
-        ...ASSUMPTION_TYPES.flatMap(aType => [
-          getPivotSuggestions(id, aType).catch(() => []),
-          getPivotHistory(id, aType).catch(() => []),
-        ]),
+        ...ASSUMPTION_TYPES.map(async (aType) => ({
+          type: aType,
+          suggestions: await getPivotSuggestions(id, aType).catch(() => []),
+          history: await getPivotHistory(id, aType).catch(() => []),
+        })),
       ]);
       const canvasPivotSuggestions: Record<string, unknown[]> = {};
       const canvasPivotHistory: Record<string, unknown[]> = {};
-      ASSUMPTION_TYPES.forEach((aType, i) => {
-        const sug = pivotResults[i * 2] as unknown[];
-        const hist = pivotResults[i * 2 + 1] as unknown[];
-        if (sug.length > 0) canvasPivotSuggestions[aType] = sug;
-        if (hist.length > 0) canvasPivotHistory[aType] = hist;
-      });
+      for (const { type, suggestions, history } of pivotResults) {
+        if (suggestions.length > 0) canvasPivotSuggestions[type] = suggestions;
+        if (history.length > 0) canvasPivotHistory[type] = history;
+      }
       validationCanvas = {
         canvas: canvasState,
         assumptions: canvasAssumptions as Record<string, unknown>,

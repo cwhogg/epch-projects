@@ -36,15 +36,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const assumptions = await getAllAssumptions(ideaId);
 
-    // Gather pivot suggestions and history for all types
+    // Gather pivot suggestions and history for all types in parallel
+    const pivotResults = await Promise.all(
+      ASSUMPTION_TYPES.map(async (type) => ({
+        type,
+        suggestions: await getPivotSuggestions(ideaId, type),
+        history: await getPivotHistory(ideaId, type),
+      })),
+    );
     const pivotSuggestions: Record<string, unknown[]> = {};
     const pivotHistoryMap: Record<string, unknown[]> = {};
-
-    for (const type of ASSUMPTION_TYPES) {
-      const suggestions = await getPivotSuggestions(ideaId, type);
+    for (const { type, suggestions, history } of pivotResults) {
       if (suggestions.length > 0) pivotSuggestions[type] = suggestions;
-
-      const history = await getPivotHistory(ideaId, type);
       if (history.length > 0) pivotHistoryMap[type] = history;
     }
 

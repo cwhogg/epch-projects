@@ -17,6 +17,7 @@ import {
 } from '@/lib/analytics-agent';
 import type {
   PieceSnapshot,
+  PerformanceAlert,
   WeeklyReport,
   GSCQueryRow,
   ContentType,
@@ -36,6 +37,8 @@ export function createAnalyticsTools(siteUrl: string): ToolDefinition[] {
   let cachedSnapshots: PieceSnapshot[] | null = null;
   let cachedUnmatchedPages: GSCQueryRow[] | null = null;
   let cachedWeekId: string | null = null;
+  let cachedPreviousSnapshots: PieceSnapshot[] | null = null;
+  let cachedAlerts: PerformanceAlert[] | null = null;
 
   return [
     {
@@ -195,6 +198,10 @@ export function createAnalyticsTools(siteUrl: string): ToolDefinition[] {
         const previousSnapshots = await getWeeklySnapshot(previousWeekId);
         const alerts = detectChanges(cachedSnapshots, previousSnapshots);
 
+        // Cache for save_report to reuse
+        cachedPreviousSnapshots = previousSnapshots;
+        cachedAlerts = alerts;
+
         // Calculate site-level summaries
         const totalClicks = cachedSnapshots.reduce((sum, s) => sum + s.clicks, 0);
         const totalImpressions = cachedSnapshots.reduce((sum, s) => sum + s.impressions, 0);
@@ -297,13 +304,13 @@ Be specific — reference actual post titles, keywords, and numbers. No generic 
           ? Math.round((totalClicks / totalImpressions) * 10000) / 10000
           : 0;
 
-        // Get previous week data
+        // Reuse cached previous-week data from compare_weeks, or fetch if skipped
         const previousWeekId = getPreviousWeekId(cachedWeekId);
-        const previousSnapshots = await getWeeklySnapshot(previousWeekId);
+        const previousSnapshots = cachedPreviousSnapshots ?? await getWeeklySnapshot(previousWeekId);
         const prevTotalClicks = previousSnapshots.reduce((sum, s) => sum + s.clicks, 0);
         const prevTotalImpressions = previousSnapshots.reduce((sum, s) => sum + s.impressions, 0);
 
-        const alerts = detectChanges(cachedSnapshots, previousSnapshots);
+        const alerts = cachedAlerts ?? detectChanges(cachedSnapshots, previousSnapshots);
 
         const pieces = buildWeeklyReport(cachedSnapshots, previousSnapshots, cachedSlugLookup, cachedWeekId);
 
