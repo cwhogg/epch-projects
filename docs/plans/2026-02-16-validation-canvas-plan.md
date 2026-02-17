@@ -486,7 +486,7 @@ Expected: All tests pass, including seth-godin resolution.
 
 ---
 
-### Task 4: Update Strategy Foundation Doc to Use Seth Godin
+### ✅ Task 4: Update Strategy Foundation Doc to Use Seth Godin
 
 > **Behavior change:** All strategy foundation docs generated from this point forward will use Seth Godin's three-questions format (smallest viable audience, remarkability, permission to reach) instead of Richard Rumelt's diagnosis/guiding policy/coherent actions format. Existing generated strategy docs are unaffected — they remain in Redis as-is. The `design-principles` doc continues to use `richard-rumelt` (intentionally unchanged).
 
@@ -551,7 +551,7 @@ git commit -m "feat(validation-canvas): switch strategy doc from Richard Rumelt 
 
 ---
 
-### Task 5: Implement Core Validation Canvas Logic
+### ✅ Task 5: Implement Core Validation Canvas Logic
 
 **Files:**
 - Create: `src/lib/validation-canvas.ts`
@@ -1305,7 +1305,7 @@ git commit -m "feat(validation-canvas): implement core logic — generate, evalu
 
 ---
 
-### Task 6: Create Validation Canvas API Routes
+### ✅ Task 6: Create Validation Canvas API Routes
 
 **Files:**
 - Create: `src/app/api/validation/[ideaId]/route.ts`
@@ -1692,7 +1692,7 @@ git commit -m "feat(validation-canvas): add API routes — GET canvas, POST pivo
 
 ---
 
-### Task 7: Integrate with Analytics Cron
+### ✅ Task 7: Integrate with Analytics Cron
 
 **Files:**
 - Modify: `src/app/api/cron/analytics/route.ts`
@@ -1760,7 +1760,7 @@ git commit -m "feat(validation-canvas): integrate assumption evaluation with ana
 
 ---
 
-### Task 8: Build the ValidationCanvas UI Component
+### ✅ Task 8: Build the ValidationCanvas UI Component
 
 **Files:**
 - Create: `src/components/ValidationCanvas.tsx`
@@ -2093,7 +2093,7 @@ git commit -m "feat(validation-canvas): add canvas UI component with pivot actio
 
 ---
 
-### Task 9: Integrate Canvas into Project Page
+### ✅ Task 9: Integrate Canvas into Project Page
 
 **Files:**
 - Modify: `src/app/analyses/[id]/page.tsx`
