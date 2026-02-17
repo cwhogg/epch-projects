@@ -148,7 +148,7 @@ Do NOT commit yet — run tests first in the next task.
 
 ---
 
-### Task 4: Update tests and verify
+### ✅ Task 4: Update tests and verify
 
 **Files:**
 - Modify: `src/lib/__tests__/advisor-prompt-loader.test.ts`

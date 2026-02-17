@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { getAdvisorSystemPrompt, clearAdvisorCache } from '@/lib/advisors/prompt-loader';
 import { advisorRegistry } from '@/lib/advisors/registry';
 
 describe('Advisor prompt loader', () => {
+  beforeEach(() => {
+    clearAdvisorCache();
+  });
+
   it('loads Richard Rumelt prompt', () => {
     const prompt = getAdvisorSystemPrompt('richard-rumelt');
     expect(prompt).toContain('Richard Rumelt');
@@ -44,5 +48,16 @@ describe('Advisor prompt loader', () => {
       expect(entry.name).toBeTruthy();
       expect(['author', 'critic', 'editor', 'strategist']).toContain(entry.role);
     }
+  });
+
+  it('clearAdvisorCache resets cached prompts', () => {
+    const first = getAdvisorSystemPrompt('richard-rumelt');
+    expect(first).toContain('Richard Rumelt');
+
+    clearAdvisorCache();
+
+    const second = getAdvisorSystemPrompt('richard-rumelt');
+    expect(second).toContain('Richard Rumelt');
+    expect(second).toBe(first);
   });
 });
