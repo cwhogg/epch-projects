@@ -63,7 +63,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 4: Extract runAnalytics helper in cron route (KB-026)
+### ✅ Task 4: Extract runAnalytics helper in cron route (KB-026)
 
 **KBs:** KB-026
 
