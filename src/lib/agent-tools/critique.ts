@@ -389,7 +389,13 @@ export function createCritiqueTools(
 
         revisionPrompt += `CURRENT DRAFT:\n${draft}\n\nRevise the draft now.`;
 
-        const systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
+        let systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
+        if (recipe.authorFramework) {
+          const frameworkPrompt = getFrameworkPrompt(recipe.authorFramework);
+          if (frameworkPrompt) {
+            systemPrompt += '\n\n## FRAMEWORK\n' + frameworkPrompt;
+          }
+        }
 
         const response = await getAnthropic().messages.create({
           model: CLAUDE_MODEL,

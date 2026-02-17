@@ -342,6 +342,31 @@ describe('Critique tools', () => {
         tool.execute({ brief: 'Fix something' }),
       ).rejects.toThrow('API error');
     });
+
+    it('concatenates framework prompt during revision', async () => {
+      const { getFrameworkPrompt } = await import(
+        '@/lib/frameworks/framework-loader'
+      );
+      vi.mocked(getFrameworkPrompt).mockReturnValue('## Landing Page Assembly\nPhase 1: ...');
+
+      const recipeCopy = {
+        ...recipes.website,
+        authorFramework: 'landing-page-assembly',
+      };
+      const fwTools = createCritiqueTools('fw-revise-run', ideaId, recipeCopy);
+
+      mockRedis.get.mockResolvedValueOnce('Original draft');
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: 'text', text: 'Revised with framework' }],
+      });
+
+      const tool = fwTools.find((t) => t.name === 'revise_draft')!;
+      await tool.execute({ brief: 'Fix hero section' });
+
+      const systemArg = mockCreate.mock.calls[0][0].system;
+      expect(systemArg).toContain('## FRAMEWORK');
+      expect(systemArg).toContain('Landing Page Assembly');
+    });
   });
 
   describe('summarize_round', () => {
