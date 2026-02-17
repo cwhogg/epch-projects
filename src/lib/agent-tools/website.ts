@@ -19,6 +19,246 @@ import { CLAUDE_MODEL } from '../config';
 import { createGitHubRepo, pushFilesToGitHub, createVercelProject, triggerDeployViaGitPush } from '../github-api';
 
 // ---------------------------------------------------------------------------
+// Validation helpers — each checks allFiles and returns { issues, suggestions }
+// ---------------------------------------------------------------------------
+
+type ValidationResult = { issues: string[]; suggestions: string[] };
+
+export function checkLayoutMetadata(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const layout = allFiles['app/layout.tsx'] || '';
+  if (layout) {
+    if (!layout.includes('openGraph') && !layout.includes('og:')) {
+      issues.push('layout.tsx: Missing Open Graph metadata');
+      suggestions.push('Add openGraph property to metadata export in layout.tsx');
+    }
+    if (!layout.includes('twitter') && !layout.includes('twitter:')) {
+      issues.push('layout.tsx: Missing Twitter Card metadata');
+      suggestions.push('Add twitter property to metadata export in layout.tsx');
+    }
+    if (!layout.includes('description')) {
+      issues.push('layout.tsx: Missing meta description');
+      suggestions.push('Add description to metadata export using seoDescription');
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkH1Count(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const page = allFiles['app/page.tsx'] || '';
+  if (page) {
+    const h1Matches = page.match(/<h1[\s>]/gi) || [];
+    if (h1Matches.length === 0) {
+      issues.push('page.tsx: No <h1> tag found');
+      suggestions.push('Add exactly one <h1> containing the primary keyword');
+    } else if (h1Matches.length > 1) {
+      issues.push(`page.tsx: Found ${h1Matches.length} <h1> tags (should be exactly 1)`);
+      suggestions.push('Convert extra <h1> tags to <h2>');
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkSemanticHtml(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const page = allFiles['app/page.tsx'] || '';
+  if (page) {
+    if (!page.includes('<main')) {
+      issues.push('page.tsx: Missing <main> element');
+      suggestions.push('Wrap page content in a <main> element');
+    }
+    if (!page.includes('<section')) {
+      issues.push('page.tsx: No <section> elements found');
+      suggestions.push('Wrap major content blocks in <section> elements with aria-label');
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkTailwindImport(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const css = allFiles['app/globals.css'] || '';
+  if (css) {
+    if (css.includes('@tailwind')) {
+      issues.push('globals.css: Uses @tailwind directives (Tailwind v3 syntax)');
+      suggestions.push('Replace @tailwind directives with @import "tailwindcss" (Tailwind v4)');
+    }
+    if (!css.includes('@import') && !css.includes('tailwindcss')) {
+      issues.push('globals.css: Missing Tailwind v4 import');
+      suggestions.push('Add @import "tailwindcss" at the top of globals.css');
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkThemeColors(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const css = allFiles['app/globals.css'] || '';
+  if (css) {
+    const applyMatches = css.matchAll(/@apply\s+[^;]*\b(bg|text|border|ring|shadow|outline|decoration|from|to|via)-([\w-]+)/g);
+    const builtinColors = new Set([
+      'white', 'black', 'transparent', 'current', 'inherit',
+      'slate', 'gray', 'zinc', 'neutral', 'stone',
+      'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
+      'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
+    ]);
+    const hasThemeBlock = css.includes('@theme');
+    const themeColors = new Set<string>();
+    if (hasThemeBlock) {
+      const themeMatch = css.match(/@theme\s*\{([^}]*)\}/);
+      if (themeMatch) {
+        const colorVars = themeMatch[1].matchAll(/--color-([\w-]+)/g);
+        for (const m of colorVars) themeColors.add(m[1]);
+      }
+    }
+
+    for (const match of applyMatches) {
+      const colorName = match[2].split('-')[0];
+      if (!builtinColors.has(colorName) && !themeColors.has(match[2]) && !themeColors.has(colorName)) {
+        issues.push(`globals.css: @apply uses "${match[1]}-${match[2]}" but "${colorName}" is not registered in @theme`);
+        suggestions.push(`Add --color-${colorName}: #hexval; inside a @theme { } block in globals.css`);
+        break;
+      }
+    }
+
+    if (!hasThemeBlock && /:root\s*\{[^}]*--color-/.test(css)) {
+      issues.push('globals.css: Custom colors defined in :root instead of @theme — Tailwind v4 utility classes (bg-primary, text-accent, etc.) will not work');
+      suggestions.push('Move --color-* variables from :root into a @theme { } block');
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkPostcssConfig(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const postcssConfig = allFiles['postcss.config.mjs'] || allFiles['postcss.config.js'] || '';
+  if (!postcssConfig) {
+    issues.push('Missing postcss.config.mjs — required for Tailwind v4');
+    suggestions.push('Add postcss.config.mjs with @tailwindcss/postcss plugin');
+  } else if (!postcssConfig.includes('@tailwindcss/postcss')) {
+    issues.push('postcss.config: Missing @tailwindcss/postcss plugin');
+    suggestions.push('Add @tailwindcss/postcss to the plugins in postcss.config.mjs');
+  }
+  return { issues, suggestions };
+}
+
+export function checkUseClientDirectives(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  for (const [filePath, content] of Object.entries(allFiles)) {
+    if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) continue;
+    const hasClientHooks = /\b(useState|useEffect|useRef|useCallback|useMemo|useReducer|onClick|onChange|onSubmit)\b/.test(content);
+    const hasUseClient = content.includes("'use client'") || content.includes('"use client"');
+    if (hasClientHooks && !hasUseClient && !filePath.includes('route.ts')) {
+      issues.push(`${filePath}: Uses client hooks/handlers but missing 'use client' directive`);
+      suggestions.push(`Add 'use client' at the top of ${filePath}`);
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkRemovedNextJsApis(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  for (const [filePath, content] of Object.entries(allFiles)) {
+    if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) continue;
+    if (content.includes('request.ip') || content.includes('req.ip')) {
+      issues.push(`${filePath}: Uses request.ip which does not exist on NextRequest in Next.js 15`);
+      suggestions.push(`Replace with request.headers.get('x-forwarded-for') || 'unknown'`);
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkAsyncParams(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  for (const [filePath, content] of Object.entries(allFiles)) {
+    if (!filePath.includes('[') || !filePath.endsWith('page.tsx')) continue;
+    if (content.includes('params: {') && !content.includes('params: Promise<')) {
+      issues.push(`${filePath}: Uses sync params pattern (Next.js 14 style)`);
+      suggestions.push(`Update to async params: type Props = { params: Promise<{ slug: string }> }`);
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkPackageJson(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+  const pkg = allFiles['package.json'];
+  if (!pkg) {
+    issues.push('Missing package.json');
+    suggestions.push('Generate package.json with all required dependencies');
+  } else {
+    const requiredDeps = ['next', 'react', '@upstash/redis', 'gray-matter', 'tailwindcss'];
+    for (const dep of requiredDeps) {
+      if (!pkg.includes(dep)) {
+        issues.push(`package.json: Missing dependency "${dep}"`);
+        suggestions.push(`Add "${dep}" to dependencies in package.json`);
+      }
+    }
+  }
+  return { issues, suggestions };
+}
+
+export function checkBrokenLinks(allFiles: Record<string, string>): ValidationResult {
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+
+  const generatedRoutes = new Set<string>();
+  generatedRoutes.add('/');
+  for (const filePath of Object.keys(allFiles)) {
+    const pageMatch = filePath.match(/^app\/(.+)\/page\.tsx$/);
+    if (pageMatch) {
+      const route = '/' + pageMatch[1];
+      generatedRoutes.add(route);
+      if (route.includes('[')) {
+        const base = route.replace(/\/\[.*$/, '');
+        generatedRoutes.add(base + '/*');
+      }
+    }
+  }
+  for (const filePath of Object.keys(allFiles)) {
+    if (filePath.startsWith('content/blog/')) generatedRoutes.add('/blog/*');
+    if (filePath.startsWith('content/comparison/') || filePath.startsWith('content/compare/')) generatedRoutes.add('/compare/*');
+    if (filePath.startsWith('content/faq/')) generatedRoutes.add('/faq/*');
+  }
+
+  const brokenLinks: string[] = [];
+  for (const [filePath, content] of Object.entries(allFiles)) {
+    if (!filePath.endsWith('.tsx')) continue;
+    const linkMatches = content.matchAll(/href=["'`](\/?[a-z][a-z0-9\-\/]*)["'`]/gi);
+    for (const match of linkMatches) {
+      const href = match[1].startsWith('/') ? match[1] : '/' + match[1];
+      if (href.startsWith('/#')) continue;
+      if (generatedRoutes.has(href)) continue;
+      const parentPath = href.replace(/\/[^/]+$/, '');
+      if (generatedRoutes.has(parentPath + '/*')) continue;
+      brokenLinks.push(`${filePath}: links to "${href}" but no page exists for this route`);
+    }
+  }
+  if (brokenLinks.length > 0) {
+    const seenRoutes = new Set<string>();
+    for (const link of brokenLinks) {
+      const route = link.match(/"([^"]+)"/)?.[1] || '';
+      if (seenRoutes.has(route)) continue;
+      seenRoutes.add(route);
+      issues.push(link);
+    }
+    suggestions.push('Remove links to pages that do not exist, or generate the missing pages. Only link to routes that have a corresponding page.tsx file or will be served by a dynamic [slug] route with content.');
+  }
+  return { issues, suggestions };
+}
+
+// ---------------------------------------------------------------------------
 // Create all tools for the website (painted door) agent
 // ---------------------------------------------------------------------------
 
@@ -274,195 +514,26 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
       execute: async () => {
         if (Object.keys(allFiles).length === 0) return { error: 'No files generated yet' };
 
+        const checks = [
+          checkLayoutMetadata,
+          checkH1Count,
+          checkSemanticHtml,
+          checkTailwindImport,
+          checkThemeColors,
+          checkPostcssConfig,
+          checkUseClientDirectives,
+          checkRemovedNextJsApis,
+          checkAsyncParams,
+          checkPackageJson,
+          checkBrokenLinks,
+        ];
+
         const issues: string[] = [];
         const suggestions: string[] = [];
-
-        // Check layout.tsx for OG tags and meta description
-        const layout = allFiles['app/layout.tsx'] || '';
-        if (layout) {
-          if (!layout.includes('openGraph') && !layout.includes('og:')) {
-            issues.push('layout.tsx: Missing Open Graph metadata');
-            suggestions.push('Add openGraph property to metadata export in layout.tsx');
-          }
-          if (!layout.includes('twitter') && !layout.includes('twitter:')) {
-            issues.push('layout.tsx: Missing Twitter Card metadata');
-            suggestions.push('Add twitter property to metadata export in layout.tsx');
-          }
-          if (!layout.includes('description')) {
-            issues.push('layout.tsx: Missing meta description');
-            suggestions.push('Add description to metadata export using seoDescription');
-          }
-        }
-
-        // Check page.tsx for H1 and semantic HTML
-        const page = allFiles['app/page.tsx'] || '';
-        if (page) {
-          const h1Matches = page.match(/<h1[\s>]/gi) || [];
-          if (h1Matches.length === 0) {
-            issues.push('page.tsx: No <h1> tag found');
-            suggestions.push('Add exactly one <h1> containing the primary keyword');
-          } else if (h1Matches.length > 1) {
-            issues.push(`page.tsx: Found ${h1Matches.length} <h1> tags (should be exactly 1)`);
-            suggestions.push('Convert extra <h1> tags to <h2>');
-          }
-
-          if (!page.includes('<main')) {
-            issues.push('page.tsx: Missing <main> element');
-            suggestions.push('Wrap page content in a <main> element');
-          }
-          if (!page.includes('<section')) {
-            issues.push('page.tsx: No <section> elements found');
-            suggestions.push('Wrap major content blocks in <section> elements with aria-label');
-          }
-        }
-
-        // Check globals.css for Tailwind v4 syntax
-        const css = allFiles['app/globals.css'] || '';
-        if (css) {
-          if (css.includes('@tailwind')) {
-            issues.push('globals.css: Uses @tailwind directives (Tailwind v3 syntax)');
-            suggestions.push('Replace @tailwind directives with @import "tailwindcss" (Tailwind v4)');
-          }
-          if (!css.includes('@import') && !css.includes('tailwindcss')) {
-            issues.push('globals.css: Missing Tailwind v4 import');
-            suggestions.push('Add @import "tailwindcss" at the top of globals.css');
-          }
-
-          // Check that custom colors are registered in @theme, not just :root
-          const applyMatches = css.matchAll(/@apply\s+[^;]*\b(bg|text|border|ring|shadow|outline|decoration|from|to|via)-([\w-]+)/g);
-          const builtinColors = new Set([
-            'white', 'black', 'transparent', 'current', 'inherit',
-            'slate', 'gray', 'zinc', 'neutral', 'stone',
-            'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
-            'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
-          ]);
-          const hasThemeBlock = css.includes('@theme');
-          const themeColors = new Set<string>();
-          if (hasThemeBlock) {
-            const themeMatch = css.match(/@theme\s*\{([^}]*)\}/);
-            if (themeMatch) {
-              const colorVars = themeMatch[1].matchAll(/--color-([\w-]+)/g);
-              for (const m of colorVars) themeColors.add(m[1]);
-            }
-          }
-
-          for (const match of applyMatches) {
-            const colorName = match[2].split('-')[0]; // handle bg-primary-500 → primary
-            if (!builtinColors.has(colorName) && !themeColors.has(match[2]) && !themeColors.has(colorName)) {
-              issues.push(`globals.css: @apply uses "${match[1]}-${match[2]}" but "${colorName}" is not registered in @theme`);
-              suggestions.push(`Add --color-${colorName}: #hexval; inside a @theme { } block in globals.css`);
-              break; // One warning is enough to flag the pattern
-            }
-          }
-
-          if (!hasThemeBlock && /:root\s*\{[^}]*--color-/.test(css)) {
-            issues.push('globals.css: Custom colors defined in :root instead of @theme — Tailwind v4 utility classes (bg-primary, text-accent, etc.) will not work');
-            suggestions.push('Move --color-* variables from :root into a @theme { } block');
-          }
-        }
-
-        // Check postcss.config.mjs exists
-        const postcssConfig = allFiles['postcss.config.mjs'] || allFiles['postcss.config.js'] || '';
-        if (!postcssConfig) {
-          issues.push('Missing postcss.config.mjs — required for Tailwind v4');
-          suggestions.push('Add postcss.config.mjs with @tailwindcss/postcss plugin');
-        } else if (!postcssConfig.includes('@tailwindcss/postcss')) {
-          issues.push('postcss.config: Missing @tailwindcss/postcss plugin');
-          suggestions.push('Add @tailwindcss/postcss to the plugins in postcss.config.mjs');
-        }
-
-        // Check for use client directive where needed
-        for (const [filePath, content] of Object.entries(allFiles)) {
-          if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) continue;
-          const hasClientHooks = /\b(useState|useEffect|useRef|useCallback|useMemo|useReducer|onClick|onChange|onSubmit)\b/.test(content);
-          const hasUseClient = content.includes("'use client'") || content.includes('"use client"');
-          if (hasClientHooks && !hasUseClient && !filePath.includes('route.ts')) {
-            issues.push(`${filePath}: Uses client hooks/handlers but missing 'use client' directive`);
-            suggestions.push(`Add 'use client' at the top of ${filePath}`);
-          }
-        }
-
-        // Check for removed Next.js 15 APIs
-        for (const [filePath, content] of Object.entries(allFiles)) {
-          if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) continue;
-          if (content.includes('request.ip') || content.includes('req.ip')) {
-            issues.push(`${filePath}: Uses request.ip which does not exist on NextRequest in Next.js 15`);
-            suggestions.push(`Replace with request.headers.get('x-forwarded-for') || 'unknown'`);
-          }
-        }
-
-        // Check for Next.js 15 async params pattern in dynamic routes
-        for (const [filePath, content] of Object.entries(allFiles)) {
-          if (!filePath.includes('[') || !filePath.endsWith('page.tsx')) continue;
-          if (content.includes('params: {') && !content.includes('params: Promise<')) {
-            issues.push(`${filePath}: Uses sync params pattern (Next.js 14 style)`);
-            suggestions.push(`Update to async params: type Props = { params: Promise<{ slug: string }> }`);
-          }
-        }
-
-        // Check package.json exists and has key deps
-        const pkg = allFiles['package.json'];
-        if (!pkg) {
-          issues.push('Missing package.json');
-          suggestions.push('Generate package.json with all required dependencies');
-        } else {
-          const requiredDeps = ['next', 'react', '@upstash/redis', 'gray-matter', 'tailwindcss'];
-          for (const dep of requiredDeps) {
-            if (!pkg.includes(dep)) {
-              issues.push(`package.json: Missing dependency "${dep}"`);
-              suggestions.push(`Add "${dep}" to dependencies in package.json`);
-            }
-          }
-        }
-
-        // Check internal links resolve to generated pages
-        const generatedRoutes = new Set<string>();
-        generatedRoutes.add('/'); // landing page always exists
-        for (const filePath of Object.keys(allFiles)) {
-          // app/blog/page.tsx → /blog, app/compare/[slug]/page.tsx → /compare/* (dynamic)
-          const pageMatch = filePath.match(/^app\/(.+)\/page\.tsx$/);
-          if (pageMatch) {
-            const route = '/' + pageMatch[1];
-            generatedRoutes.add(route);
-            // Dynamic routes: /blog/[slug] means /blog/* is valid
-            if (route.includes('[')) {
-              const base = route.replace(/\/\[.*$/, '');
-              generatedRoutes.add(base + '/*');
-            }
-          }
-        }
-        // Content directories mean dynamic content will be served
-        for (const filePath of Object.keys(allFiles)) {
-          if (filePath.startsWith('content/blog/')) generatedRoutes.add('/blog/*');
-          if (filePath.startsWith('content/comparison/') || filePath.startsWith('content/compare/')) generatedRoutes.add('/compare/*');
-          if (filePath.startsWith('content/faq/')) generatedRoutes.add('/faq/*');
-        }
-
-        const brokenLinks: string[] = [];
-        for (const [filePath, content] of Object.entries(allFiles)) {
-          if (!filePath.endsWith('.tsx')) continue;
-          // Match href="/..." patterns (both JSX and template literals)
-          const linkMatches = content.matchAll(/href=["'`](\/?[a-z][a-z0-9\-\/]*)["'`]/gi);
-          for (const match of linkMatches) {
-            const href = match[1].startsWith('/') ? match[1] : '/' + match[1];
-            if (href.startsWith('/#')) continue; // anchor links are fine
-            if (generatedRoutes.has(href)) continue; // exact match
-            // Check if covered by a dynamic route wildcard
-            const parentPath = href.replace(/\/[^/]+$/, '');
-            if (generatedRoutes.has(parentPath + '/*')) continue;
-            brokenLinks.push(`${filePath}: links to "${href}" but no page exists for this route`);
-          }
-        }
-        if (brokenLinks.length > 0) {
-          // Deduplicate by route
-          const seenRoutes = new Set<string>();
-          for (const link of brokenLinks) {
-            const route = link.match(/"([^"]+)"/)?.[1] || '';
-            if (seenRoutes.has(route)) continue;
-            seenRoutes.add(route);
-            issues.push(link);
-          }
-          suggestions.push('Remove links to pages that do not exist, or generate the missing pages. Only link to routes that have a corresponding page.tsx file or will be served by a dynamic [slug] route with content.');
+        for (const check of checks) {
+          const result = check(allFiles);
+          issues.push(...result.issues);
+          suggestions.push(...result.suggestions);
         }
 
         const score = Math.max(0, 10 - issues.length);
