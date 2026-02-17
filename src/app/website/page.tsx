@@ -65,7 +65,7 @@ async function getSites(): Promise<SiteEntry[]> {
           status: site.status,
           signupCount,
           siteUrl: site.siteUrl,
-          detailsHref: `/analyses/${site.ideaId}/painted-door`,
+          detailsHref: `/website/${site.ideaId}`,
         } satisfies SiteEntry;
       }),
     );

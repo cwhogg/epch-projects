@@ -210,7 +210,7 @@ export function useContentCalendar(analysisId: string) {
     const ids = Array.from(selectedIds);
     // Store selected IDs for the generate page
     sessionStorage.setItem(`content-gen-${analysisId}`, JSON.stringify(ids));
-    router.push(`/analyses/${analysisId}/content/generate`);
+    router.push(`/content/${analysisId}/generate`);
   };
 
   const handleMovePiece = async (pieceId: string, direction: 'up' | 'down') => {

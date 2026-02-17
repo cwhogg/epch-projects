@@ -86,7 +86,7 @@ export default function SiteCardActions({
         )}
         {ideaId && status === 'live' && (
           <Link
-            href={`/analyses/${ideaId}/content`}
+            href={`/content/${ideaId}`}
             className="text-xs px-3 py-1.5 rounded-lg transition-colors"
             style={{
               background: 'rgba(255, 107, 91, 0.1)',

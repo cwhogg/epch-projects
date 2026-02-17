@@ -112,7 +112,7 @@ export default async function ContentPage() {
                 className="card p-5 flex flex-col"
                 style={{ animationDelay: `${0.1 + index * 0.05}s`, opacity: isActive ? 1 : 0.5 }}
               >
-                <Link href={`/analyses/${cal.ideaId}/content`} className="block flex-1">
+                <Link href={`/content/${cal.ideaId}`} className="block flex-1">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <h3 className="font-display font-medium text-base" style={{ color: 'var(--text-primary)' }}>
                       {cal.ideaName}
