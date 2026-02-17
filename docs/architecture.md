@@ -143,6 +143,7 @@ graph TB
         S_CONTENT["content-prompts"]
         S_ANALYTICS_DB["analytics-db"]
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
+        S_FRAMEWORKS["frameworks/registry,<br/>frameworks/framework-loader"]
         S_EXPERTISE["expertise-profile"]
         S_UTILS["utils, llm-utils, data"]
     end
@@ -154,7 +155,7 @@ graph TB
         T_WEBSITE["website"]
         T_ANALYTICS["analytics"]
         T_FOUNDATION["foundation"]
-        T_CRITIQUE["critique<br/>(generate_draft, run_critiques,<br/>editor_decision, revise_draft,<br/>summarize_round, save_content)"]
+        T_CRITIQUE["critique<br/>(generate_draft +framework injection,<br/>run_critiques +advisorIds +named critics,<br/>editor_decision, revise_draft +framework,<br/>summarize_round, save_content)"]
     end
 
     Agents --> L_RUNTIME
@@ -191,6 +192,7 @@ graph TB
     T_ANALYTICS --> S_ANALYTICS_DB
     T_FOUNDATION --> L_DB
     T_FOUNDATION --> S_ADVISORS
+    T_CRITIQUE --> S_FRAMEWORKS
 ```
 
 ---
@@ -235,8 +237,14 @@ graph TB
         painted_door_templates["painted-door-templates.ts<br/>Next.js site templates (~21 files)<br/>assembleAllFiles()"]
     end
 
+    subgraph Frameworks["Frameworks"]
+        frameworks_registry["frameworks/registry.ts<br/>Framework metadata registry"]
+        frameworks_loader["frameworks/framework-loader.ts<br/>getFrameworkPrompt(frameworkId)<br/>Reads prompt.md from disk"]
+        frameworks_prompts["frameworks/prompts/<br/>Per-framework prompt + examples"]
+    end
+
     subgraph Advisors["Virtual Board"]
-        advisors_registry["advisors/registry.ts<br/>4 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert"]
+        advisors_registry["advisors/registry.ts<br/>10 advisors: strategy, author, critic roles<br/>Named critics + dynamic selection"]
         advisors_loader["advisors/prompt-loader.ts<br/>getAdvisorSystemPrompt(advisorId)"]
         advisors_prompts["advisors/prompts/<br/>Per-advisor system prompts"]
     end
@@ -689,7 +697,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 6 strategic foundation documents |
 | Website | `src/lib/painted-door-agent.ts` | `agent-tools/website.ts` | Brand identity → GitHub repo → Vercel deploy |
 | Analytics | `src/lib/analytics-agent.ts` | `agent-tools/analytics.ts` | Weekly GSC data collection and performance reports |
-| Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Multi-advisor critique cycle with dynamic selection |
+| Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Goal-oriented critique pipeline with framework injection, named critics, and agent-controlled critique selection |
 
 All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` env var. All share `agent-tools/common.ts` (plan, scratchpad, evaluation helpers).
 
@@ -717,12 +725,14 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
 | `src/lib/expertise-profile.ts` | Owner expertise profile for scoring calibration |
-| `src/lib/advisors/registry.ts` | 4-advisor virtual board registry |
+| `src/lib/advisors/registry.ts` | 10-advisor virtual board registry with named critics |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
 | `src/lib/utils.ts` | slugify, fuzzyMatchPair, buildLeaderboard |
 | `src/lib/llm-utils.ts` | parseLLMJson, cleanJSONString |
 | `src/lib/data.ts` | Filesystem fallback: ideas.json, experiments/ markdown parser |
-| `src/lib/content-recipes.ts` | Content recipe definitions and LLM-based critic selection |
+| `src/lib/frameworks/registry.ts` | Framework metadata registry |
+| `src/lib/frameworks/framework-loader.ts` | Per-framework prompt loader (reads `.md` from disk) |
+| `src/lib/content-recipes.ts` | Content recipe definitions with authorFramework, namedCritics, and LLM-based critic selection |
 | `src/lib/editor-decision.ts` | Mechanical editor rubric for critique pipeline |
 
 ### Components
