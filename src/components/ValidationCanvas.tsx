@@ -1,5 +1,6 @@
 import type { Assumption, AssumptionType, PivotSuggestion, CanvasState, PivotRecord } from '@/types';
 import PivotActions from './PivotActions';
+import AssumptionActions from './AssumptionActions';
 
 interface ValidationCanvasProps {
   ideaId: string;
@@ -152,6 +153,11 @@ export default function ValidationCanvas({
                   <span className="text-[11px] mt-2 inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                     {history.length} pivot{history.length !== 1 ? 's' : ''} recorded
                   </span>
+                )}
+
+                {/* Status actions (validate/invalidate/undo) */}
+                {!isKilled && !upstreamInvalidated && (
+                  <AssumptionActions ideaId={ideaId} type={type} status={status} />
                 )}
 
                 {/* Pivot suggestions (only for invalidated) */}
