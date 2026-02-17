@@ -112,7 +112,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 7: Cache compare_weeks outputs for save_report (KB-030)
+### ✅ Task 7: Cache compare_weeks outputs for save_report (KB-030)
 
 **KBs:** KB-030
 
