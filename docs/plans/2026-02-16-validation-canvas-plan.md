@@ -2122,7 +2122,19 @@ import { getCanvasState, getAllAssumptions, getPivotSuggestions, getPivotHistory
 import { ASSUMPTION_TYPES } from '@/types';
 ```
 
-First, add `getCanvasState(id).catch(() => null)` to the existing `Promise.all` on line 84, alongside the other parallel fetches. This avoids an extra sequential Redis call.
+Update the existing `Promise.all` on line 84 to include `getCanvasState` as a 7th parallel fetch. Change the destructuring from:
+
+```typescript
+const [content, foundationDocsMap, calendar, pieces, gscLink, pdSite] = await Promise.all([
+```
+
+to:
+
+```typescript
+const [content, foundationDocsMap, calendar, pieces, gscLink, pdSite, canvasState] = await Promise.all([
+```
+
+And add `getCanvasState(id).catch(() => null),` as the last entry in the `Promise.all` array, after `getPaintedDoorSite(id).catch(() => null),`.
 
 Then, after the `Promise.all` resolves (around line 91), conditionally fetch the remaining canvas data using a second `Promise.all` for parallelism — following the same pattern used for `websiteSignups` (conditional on `pdSite` existing):
 
