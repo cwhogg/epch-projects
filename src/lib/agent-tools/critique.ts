@@ -174,6 +174,17 @@ function findWellScoredAspects(critiques: AdvisorCritique[]): string[] {
   return aspects;
 }
 
+function buildAuthorSystemPrompt(recipe: ContentRecipe): string {
+  let systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
+  if (recipe.authorFramework) {
+    const frameworkPrompt = getFrameworkPrompt(recipe.authorFramework);
+    if (frameworkPrompt) {
+      systemPrompt += '\n\n## FRAMEWORK\n' + frameworkPrompt;
+    }
+  }
+  return systemPrompt;
+}
+
 export function createCritiqueTools(
   runId: string,
   ideaId: string,
@@ -216,13 +227,7 @@ export function createCritiqueTools(
           }
         }
 
-        let systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
-        if (recipe.authorFramework) {
-          const frameworkPrompt = getFrameworkPrompt(recipe.authorFramework);
-          if (frameworkPrompt) {
-            systemPrompt += '\n\n## FRAMEWORK\n' + frameworkPrompt;
-          }
-        }
+        const systemPrompt = buildAuthorSystemPrompt(recipe);
         const userPrompt =
           `Write ${recipe.contentType} content for this product.\n\n` +
           `CONTEXT:\n${contentContext}\n\n` +
@@ -438,13 +443,7 @@ export function createCritiqueTools(
 
         revisionPrompt += `CURRENT DRAFT:\n${draft}\n\nRevise the draft now.`;
 
-        let systemPrompt = getAdvisorSystemPrompt(recipe.authorAdvisor);
-        if (recipe.authorFramework) {
-          const frameworkPrompt = getFrameworkPrompt(recipe.authorFramework);
-          if (frameworkPrompt) {
-            systemPrompt += '\n\n## FRAMEWORK\n' + frameworkPrompt;
-          }
-        }
+        const systemPrompt = buildAuthorSystemPrompt(recipe);
 
         const response = await getAnthropic().messages.create({
           model: CLAUDE_MODEL,

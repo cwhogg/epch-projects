@@ -15,7 +15,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 1: Extract buildAuthorSystemPrompt helper (KB-023)
+### ✅ Task 1: Extract buildAuthorSystemPrompt helper (KB-023)
 
 **KBs:** KB-023
 
