@@ -11,7 +11,7 @@ import { CLAUDE_MODEL } from '@/lib/config';
 import { designPrinciplesSeed } from '@/lib/advisors/design-seed';
 
 // Advisor assignments per doc type
-const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
+export const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
   'strategy': 'seth-godin',
   'positioning': 'april-dunford',
   'brand-voice': 'copywriter',
