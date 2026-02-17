@@ -1,48 +1,49 @@
 # Design Principles
 
-EPCH Project Research is a product concept testing pipeline — a dark editorial dashboard where two power users track ideas from inception through SEO validation. The interface is bold, data-forward, and unapologetically technical.
+EPCH Project Research is a product concept testing pipeline — a warm editorial dashboard where two power users track ideas from inception through SEO validation. The interface is approachable, data-forward, and typographically rich.
 
 ## Design Direction
 
-**Personality:** Boldness & Clarity meets Data & Analysis
-- Dark-first with automatic light mode via `prefers-color-scheme`
+**Personality:** Warmth & Approachability meets Data & Analysis
+- Light-first with warm stone-tinted neutrals (not cool zinc/slate)
+- Dark mode via `prefers-color-scheme` falls back to charcoal palette
 - Data-forward with comfortable spacing — density where it earns it (tables, score comparisons), breathing room where it helps (section headers, card padding)
-- Typography-driven hierarchy — Fraunces headlines bring editorial warmth to an otherwise technical interface. The serif-meets-data tension is the personality.
-- Coral (#ff6b5b) as the primary action color. Stage identity colors are decorative, not informational.
+- Typography-driven hierarchy — Fraunces headlines bring editorial warmth that shines on the warm white foundation. The serif-meets-data tension is the personality.
+- Coral (#ff6b5b) as the primary action color. Vibrant and alive on warm white.
 
 **Emotional Job:** Momentum. Two collaborators deciding which product ideas to pursue need every screen to answer "what's the state of things, and what do I do next?" The interface should make progress feel inevitable — not by being minimal, but by making the next action obvious.
 
 ## Color Foundation
 
-Dark charcoal base with coral accent. Light mode adapts automatically using cool zinc neutrals.
+Warm off-white base with coral accent. Dark mode adapts automatically using charcoal neutrals.
 
-### Dark Mode (default)
+### Light Mode (default)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--bg-primary` | `#FAF9F7` | Page background — warm off-white with stone undertone |
+| `--bg-secondary` | `#F3F2EF` | Section backgrounds — warm light gray |
+| `--bg-card` | `#FFFFFF` | Card surfaces — pure white |
+| `--bg-elevated` | `#FFFFFF` | Inputs, tooltips, elevated surfaces |
+| `--text-primary` | `#1C1917` | Headlines, primary content — stone-900 |
+| `--text-secondary` | `#57534E` | Body text, descriptions — stone-600 |
+| `--text-muted` | `#94918C` | Labels, placeholders, metadata — warm gray |
+| `--border-subtle` | `rgba(28, 25, 23, 0.06)` | Card borders, dividers |
+| `--border-default` | `rgba(28, 25, 23, 0.10)` | Input borders, table rules |
+
+### Dark Mode
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--bg-primary` | `#0d0d0f` | Page background |
 | `--bg-secondary` | `#16161a` | Section backgrounds |
 | `--bg-card` | `#1c1c21` | Card surfaces |
-| `--bg-elevated` | `#232329` | Inputs, tooltips, elevated surfaces |
+| `--bg-elevated` | `#232329` | Elevated surfaces |
 | `--text-primary` | `#f4f4f5` | Headlines, primary content |
-| `--text-secondary` | `#a1a1aa` | Body text, descriptions |
-| `--text-muted` | `#71717a` | Labels, placeholders, metadata (see contrast note below) |
-| `--border-subtle` | `rgba(255,255,255,0.06)` | Card borders, dividers |
-| `--border-default` | `rgba(255,255,255,0.1)` | Input borders, table rules |
-
-### Light Mode
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--bg-primary` | `#fafafa` | Page background |
-| `--bg-secondary` | `#f4f4f5` | Section backgrounds |
-| `--bg-card` | `#ffffff` | Card surfaces |
-| `--bg-elevated` | `#ffffff` | Elevated surfaces |
-| `--text-primary` | `#18181b` | Headlines, primary content |
-| `--text-secondary` | `#52525b` | Body text |
-| `--text-muted` | `#a1a1aa` | Labels, metadata |
-| `--border-subtle` | `rgba(0,0,0,0.04)` | Card borders |
-| `--border-default` | `rgba(0,0,0,0.08)` | Input borders |
+| `--text-secondary` | `#a1a1aa` | Body text |
+| `--text-muted` | `#71717a` | Labels, metadata |
+| `--border-subtle` | `rgba(255, 255, 255, 0.06)` | Card borders |
+| `--border-default` | `rgba(255, 255, 255, 0.1)` | Input borders |
 
 ### Accent & Semantic Colors
 
@@ -53,16 +54,16 @@ Colors fall into three tiers. Users should only need to internalize the first tw
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--accent-coral` | `#ff6b5b` | Primary accent — buttons, active states, focus rings, selection, ranks |
-| `--accent-coral-soft` | `rgba(255,107,91,0.15)` | Coral tint backgrounds, inline tags |
+| `--accent-coral-soft` | `rgba(255, 107, 91, 0.12)` | Coral tint backgrounds, inline tags |
 
 **Tier 2 — Semantic** (traffic-light mental model: green/amber/red + blue for info):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--accent-emerald` | `#10b981` | Good — success, positive performance, high scores, "Getting clicks" |
-| `--accent-amber` | `#f59e0b` | Caution — warnings, medium confidence, "Impressions only" |
-| `--color-danger` | `#f87171` | Bad — errors, negative performance, declining metrics, low scores |
-| `--color-info` | `#60a5fa` | Neutral info — "Published" state, informational badges |
+| `--accent-emerald` | `#10b981` | Good — success, positive performance, high scores |
+| `--accent-amber` | `#f59e0b` | Caution — warnings, medium confidence |
+| `--color-danger` | `#ef4444` | Bad — errors, negative performance, low scores |
+| `--color-info` | `#3b82f6` | Neutral info — "Published" state, informational badges |
 
 **Tier 3 — Stage identity** (decorative — not informational, just visual variety):
 
@@ -77,9 +78,9 @@ Stage identity colors appear in header gradient blurs and inline tags. They neve
 
 ### Contrast Notes
 
-`--text-muted` (#71717a) on `--bg-card` (#1c1c21) yields ~3.2:1 contrast — passes WCAG AA for large text (18px+) but fails for body text. This is acceptable for its current usage (labels, placeholders, timestamps, metadata captions) which are supplementary, never primary content. Do not use `--text-muted` for body text or anything a user needs to read to complete a task. If muted text must appear at small sizes in critical contexts, use `--text-secondary` instead.
+`--text-muted` (#94918C) on `--bg-card` (#FFFFFF) yields ~3.5:1 contrast — passes WCAG AA for large text (18px+) and is comfortable for supplementary content at smaller sizes. Still not recommended for body text or primary content. If muted text must appear in critical contexts, use `--text-secondary` instead.
 
-In light mode, `--accent-coral` (#ff6b5b) on white (#ffffff) yields ~3.3:1. Coral should be used for interactive elements (buttons with white text, focus rings, borders) not as text color on white backgrounds. In light mode, coral text is acceptable on `--bg-secondary` (#f4f4f5) or darker.
+`--accent-coral` (#ff6b5b) on `--bg-card` (#FFFFFF) yields ~3.3:1. Coral should be used for interactive elements (buttons with white text, focus rings, borders) not as text color on white backgrounds. For coral text, use on `--bg-secondary` (#F3F2EF) or darker, or increase font weight/size.
 
 ## Typography
 
@@ -135,26 +136,26 @@ Cards use `--radius-lg` (16px). Badges use `--radius-full`. Inputs and buttons u
 
 ## Depth & Elevation
 
-Borders + shadows together. Dark mode relies more on border definition; shadows add atmosphere.
+Subtle single shadows on warm white. Cards sit gently on the page — lift, not float. The warm stone-tinted page background provides natural surface contrast against white cards, so shadows can stay light.
 
 ```css
-/* Card shadow */
---shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);       /* dark */
---shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);      /* light */
+/* Light mode (default) */
+--shadow-card: 0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04);
+--shadow-elevated: 0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06);
 
-/* Elevated shadow */
---shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);   /* dark */
---shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.1);   /* light */
+/* Dark mode */
+--shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+--shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
 ```
 
 ### Card Hover Behavior
 
-Interactive cards (`.card`) lift on hover with coral glow:
+Interactive cards (`.card`) lift subtly on hover with a coral accent:
 ```css
 .card:hover {
   border-color: var(--border-default);
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgba(255, 107, 91, 0.1);
-  transform: translateY(-3px);
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgba(255, 107, 91, 0.12);
+  transform: translateY(-2px);
 }
 ```
 
@@ -174,7 +175,7 @@ Both share: `background: var(--bg-card); border: 1px solid var(--border-subtle);
 
 ```css
 .btn-primary   /* Coral gradient (135deg #ff6b5b → #ff8f6b), white text, coral glow shadow */
-.btn-secondary /* bg-elevated, border-default, hover: lighter bg + stronger border */
+.btn-secondary /* bg-elevated, border-default, hover: slightly darker bg */
 .btn-ghost     /* Transparent, secondary text, hover: elevated bg */
 .btn-danger    /* Transparent, red text, red border, hover: red tint bg */
 ```
@@ -182,12 +183,12 @@ Both share: `background: var(--bg-card); border: 1px solid var(--border-subtle);
 ### Badges
 
 Two patterns:
-- **Pill badges** (`.badge-*`): Gradient backgrounds with colored borders, uppercase, full-round. For tier/status indicators (Tier 1, Tier 2, Tier 3).
-- **Inline tags**: Flat `rgba()` tint backgrounds, no border, smaller. For feature indicators (Competitors, Keywords, Content, Analytics).
+- **Pill badges** (`.badge-*`): Flat tint backgrounds with colored borders, uppercase, full-round. For tier/status indicators.
+- **Inline tags**: Flat `rgba()` tint backgrounds, no border, smaller. For feature indicators.
 
 ### Inputs
 
-`bg-elevated` background, `border-default` border. Focus state: coral border + coral soft ring (`0 0 0 3px var(--accent-coral-soft)`). Labels are uppercase, muted, 13px with tracking.
+`bg-elevated` background (white on light, dark surface on dark), `border-default` border. Focus state: coral border + coral soft ring (`0 0 0 3px var(--accent-coral-soft)`). Labels are uppercase, muted, 13px with tracking.
 
 ### Tables
 
@@ -198,13 +199,13 @@ Two patterns:
 
 ### Score Rings
 
-SVG circular progress indicators for analysis scores (Competition, WTP, Differentiation, SEO). Color-coded by value: emerald (7+), amber (4-6), danger (<4). Glow effect on high scores. Hover: scale(1.1).
+SVG circular progress indicators for analysis scores. Color-coded by value: emerald (7+), amber (4-6), danger (<4). Glow effect on high scores. Hover: scale(1.1).
 
 ### Status Colors
 
 Uses the Tier 1 + Tier 2 color system. A user scanning the screen should be able to read status with a traffic-light mental model:
-- **Green** (emerald): good — success, positive, high scores, "Getting clicks"
-- **Amber**: caution — medium confidence, "Impressions only"
+- **Green** (emerald): good — success, positive, high scores
+- **Amber**: caution — medium confidence
 - **Red** (danger): bad — errors, declining, low scores
 - **Blue** (info): neutral information — "Published"
 - **Coral**: active/in-progress — generating, selected, processing
@@ -225,10 +226,10 @@ Pipeline-specific: Mobile = vertical stack with down-arrows. Tablet = 3-col grid
 ## Navigation
 
 ### Desktop (sm+)
-Sticky top nav with glassmorphism: `backdrop-blur(16px)`, semi-transparent background, subtle bottom border. Logo left, 6 text nav links right. Active link: coral text color.
+Sticky top nav with translucent glass: warm off-white at 92% opacity, `backdrop-blur(16px)`, subtle bottom border. Logo left, nav links right. Active link: coral text color.
 
 ### Mobile (< sm)
-Fixed bottom tab bar with the same glassmorphism treatment, top border instead of bottom. Icon + label for each of the 6 pipeline stages. Active tab: coral color. Desktop nav links hidden.
+Fixed bottom tab bar with the same glassmorphism treatment, top border instead of bottom. Icon + label for each pipeline stage. Active tab: coral color. Desktop nav links hidden.
 
 ### Section Headers
 Each page uses a header pattern with: Fraunces title, secondary text description, and a subtle colored radial gradient blur behind (Tier 3 stage identity color, decorative only).
@@ -245,20 +246,21 @@ No spring or bouncy effects. No page transitions.
 
 ## Texture
 
-Noise overlay at 2% opacity over the entire viewport (SVG feTurbulence filter, fixed position). Adds subtle tactile quality to the dark surfaces without being visible on light mode.
+No noise texture overlay on light mode — the warm off-white background and white card contrast provide sufficient visual interest. Dark mode retains the subtle noise overlay at 2% opacity for tactile depth.
 
 ## Anti-Patterns
 
 Never:
-- Warm foundation colors (creams, warm grays) — this is a cool/neutral palette
+- Cool foundation colors (zinc, slate, blue-gray) as base neutrals — this is a warm/stone palette
 - Tier 3 colors carrying meaning — stage identity colors are decorative only
 - New accent colors without clear Tier 2 semantic purpose
 - Decorative gradients (the coral button gradient is the only one)
 - `--text-muted` for body text or critical content (contrast too low)
-- `--accent-coral` as text on white backgrounds in light mode
+- `--accent-coral` as text on pure white backgrounds (use on --bg-secondary or darker)
 - Border radius > 24px on anything except pills/badges
 - Heavy asymmetric padding
 - Spring/bouncy animations
+- Heavy drop shadows — this is a light, gentle depth strategy
 
 ## Questions to Ask
 

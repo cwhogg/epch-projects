@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecondLook — Validation Canvas (Pivot State)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d0d0f;
+      --bg-secondary: #16161a;
+      --bg-card: #1c1c21;
+      --bg-elevated: #232329;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-default: rgba(255,255,255,0.1);
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255,107,91,0.15);
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --color-danger: #f87171;
+      --color-info: #60a5fa;
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-full: 9999px;
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.02;
+      pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      z-index: 9999;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 13, 15, 0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links { display: flex; gap: 24px; }
+
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .nav-links a.active { color: var(--accent-coral); }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    .page-header { margin-bottom: 32px; }
+
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .page-header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .canvas-section { margin-bottom: 40px; }
+
+    .canvas-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .canvas-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* In the pivot state, the canvas switches to a stacked layout
+       so the invalidated card can expand with suggestions */
+    .canvas-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .canvas-row {
+      display: flex;
+      gap: 0;
+    }
+
+    .canvas-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 20px;
+      position: relative;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top row cards */
+    .canvas-row:first-child .canvas-card:first-child {
+      border-radius: var(--radius-lg) 0 0 0;
+    }
+
+    .canvas-row:first-child .canvas-card:last-child {
+      border-radius: 0 var(--radius-lg) 0 0;
+    }
+
+    .canvas-row .canvas-card + .canvas-card {
+      border-left: none;
+    }
+
+    /* Expanded invalidated card */
+    .canvas-expanded {
+      background: var(--bg-card);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      padding: 20px;
+    }
+
+    .canvas-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .canvas-type {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .canvas-status {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .status-validated {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-invalidated {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--color-danger);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+
+    .status-untested {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .status-reset {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-decoration: line-through;
+    }
+
+    .canvas-card.validated .canvas-type { color: var(--accent-emerald); }
+    .canvas-card.invalidated .canvas-type { color: var(--color-danger); }
+    .canvas-card.untested .canvas-type { color: var(--text-muted); }
+    .canvas-card.reset .canvas-type { color: var(--text-muted); }
+
+    .canvas-card.validated { border-color: rgba(16, 185, 129, 0.2); }
+    .canvas-card.invalidated { border-color: rgba(248, 113, 113, 0.25); }
+
+    .canvas-statement {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .canvas-statement.muted {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .canvas-statement.strikethrough {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .canvas-evidence {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .canvas-evidence .metric {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .canvas-evidence .metric-label {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .canvas-evidence.emerald .metric { color: var(--accent-emerald); }
+    .canvas-evidence.danger .metric { color: var(--color-danger); }
+
+    /* ---- PIVOT SUGGESTIONS ---- */
+    .pivot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .pivot-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-danger);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pivot-title svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .pivot-description {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .pivot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .pivot-option {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .pivot-option:hover {
+      border-color: var(--accent-coral);
+      background: rgba(255, 107, 91, 0.04);
+      transform: translateY(-2px);
+    }
+
+    .pivot-option.selected {
+      border-color: var(--accent-coral);
+      background: var(--accent-coral-soft);
+    }
+
+    .pivot-option-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .pivot-option-number {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    .pivot-option.selected .pivot-option-number {
+      color: var(--accent-coral);
+    }
+
+    .pivot-option-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .pivot-option-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .pivot-option-evidence {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .pivot-option-impact {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pivot-option-impact strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .pivot-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn {
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font-body);
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-coral {
+      background: linear-gradient(135deg, #ff6b5b, #ff8f6b);
+      color: white;
+      box-shadow: 0 2px 8px rgba(255, 107, 91, 0.3);
+    }
+
+    .btn-coral:hover {
+      box-shadow: 0 4px 12px rgba(255, 107, 91, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--color-danger);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .btn-danger-outline:hover {
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .pivot-actions-spacer { flex: 1; }
+
+    /* Reset indicator on downstream cards */
+    .reset-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .reset-indicator svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 1023px) {
+      .canvas-row { flex-direction: column; }
+      .canvas-card { border-radius: 0 !important; min-height: auto; }
+      .canvas-row .canvas-card + .canvas-card { border-left: 1px solid var(--border-subtle); border-top: none; }
+      .canvas-row:first-child .canvas-card:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important; }
+      .canvas-expanded { border-left: 1px solid rgba(248, 113, 113, 0.25); }
+      .pivot-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">epch</div>
+  <div class="nav-links">
+    <a href="#" class="active">Projects</a>
+    <a href="#">Ideation</a>
+    <a href="#">Analytics</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-header">
+    <h1>SecondLook</h1>
+    <p>AI-powered second opinions for patients with undiagnosed conditions</p>
+  </div>
+
+  <div class="canvas-section">
+    <div class="canvas-label">Validation Canvas</div>
+
+    <!-- Top row: all 5 assumption cards -->
+    <div class="canvas-row">
+
+      <!-- DEMAND — Validated -->
+      <div class="canvas-card validated">
+        <div class="canvas-card-header">
+          <span class="canvas-type">Demand</span>
+          <span class="canvas-status status-validated">Validated</span>
+        </div>
+        <div class="canvas-statement">
+          Patients with undiagnosed conditions actively search for second opinion services online.
+        </div>
+        <div class="canvas-evidence emerald">
+          <div>
+            <div class="metric">2,400+</div>
+            <div class="metric-label">monthly searches</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REACHABILITY — Invalidated -->
+      <div class="canvas-card invalidated">
+        <div class="canvas-card-header">
+          <span class="canvas-type">Reachability</span>
+          <span class="canvas-status status-invalidated">Invalidated</span>
+        </div>
+        <div class="canvas-statement strikethrough">
+          SEO content targeting diagnostic journey keywords can rank within 60 days.
+        </div>
+        <div class="canvas-evidence danger">
+          <div>
+            <div class="metric">0</div>
+            <div class="metric-label">posts ranked after 45 days</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENGAGEMENT — Reset (was untested, now shows reset indicator) -->
+      <div class="canvas-card reset">
+        <div class="canvas-card-header">
+          <span class="canvas-type">Engagement</span>
+          <span class="canvas-status status-reset">Reset</span>
+        </div>
+        <div class="canvas-statement muted">
+          Depends on reachability assumption.
+        </div>
+        <div class="reset-indicator">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+          Awaiting pivot decision
+        </div>
+      </div>
+
+      <!-- WTP — Reset -->
+      <div class="canvas-card reset">
+        <div class="canvas-card-header">
+          <span class="canvas-type">WTP</span>
+          <span class="canvas-status status-reset">Reset</span>
+        </div>
+        <div class="canvas-statement muted">
+          Depends on reachability assumption.
+        </div>
+      </div>
+
+      <!-- DIFFERENTIATION — Reset -->
+      <div class="canvas-card reset">
+        <div class="canvas-card-header">
+          <span class="canvas-type">Differentiation</span>
+          <span class="canvas-status status-reset">Reset</span>
+        </div>
+        <div class="canvas-statement muted">
+          Depends on reachability assumption.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Expanded pivot suggestions panel -->
+    <div class="canvas-expanded">
+      <div class="pivot-header">
+        <div class="pivot-title">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/></svg>
+          Pivot Suggestions for Reachability
+        </div>
+      </div>
+
+      <div class="pivot-description">
+        5 blog posts published over 45 days showed zero organic ranking movement. The health/medical niche has high domain authority requirements that a new site can't overcome quickly through content alone. Here are alternative approaches:
+      </div>
+
+      <div class="pivot-grid">
+
+        <!-- Option 1 -->
+        <div class="pivot-option selected">
+          <div class="pivot-option-header">
+            <span class="pivot-option-number">1</span>
+            <span class="pivot-option-badge">Recommended</span>
+          </div>
+          <div class="pivot-option-title">Target long-tail patient community keywords</div>
+          <div class="pivot-option-evidence">
+            "Ehlers-Danlos specialist near me" (320/mo) and "MCAS diagnosis timeline" (480/mo) have low competition from medical institutions. Patient community forums rank well — similar editorial tone.
+          </div>
+          <div class="pivot-option-impact">
+            <strong>Impact:</strong> 3 of 5 existing posts salvageable with angle shift. Painted door stays. SEO strategy doc needs regeneration.
+          </div>
+        </div>
+
+        <!-- Option 2 -->
+        <div class="pivot-option">
+          <div class="pivot-option-header">
+            <span class="pivot-option-number">2</span>
+          </div>
+          <div class="pivot-option-title">Shift to Reddit + community distribution</div>
+          <div class="pivot-option-evidence">
+            r/undiagnosed (42k members) and r/ChronicIllness (89k members) have high engagement. Valuable content shared organically. Bypasses SEO entirely for initial traction.
+          </div>
+          <div class="pivot-option-impact">
+            <strong>Impact:</strong> Content needs reformatting for Reddit. Painted door stays. Reachability metric shifts from rankings to referral traffic.
+          </div>
+        </div>
+
+        <!-- Option 3 -->
+        <div class="pivot-option">
+          <div class="pivot-option-header">
+            <span class="pivot-option-number">3</span>
+          </div>
+          <div class="pivot-option-title">Partner with existing health blogs for guest content</div>
+          <div class="pivot-option-evidence">
+            3 patient advocacy blogs in the rare disease space accept guest posts and have DA 40+. Backlink strategy could accelerate own domain authority while driving referral traffic.
+          </div>
+          <div class="pivot-option-impact">
+            <strong>Impact:</strong> Existing content usable as guest posts. New content needed for own site. Longer path but builds SEO foundation.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pivot-actions">
+        <button class="btn btn-coral">Approve Pivot 1</button>
+        <button class="btn btn-ghost">Dismiss Suggestions</button>
+        <div class="pivot-actions-spacer"></div>
+        <button class="btn btn-danger-outline">Kill Project</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
