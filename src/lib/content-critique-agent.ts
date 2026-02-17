@@ -1,13 +1,5 @@
-import type { AgentConfig, PipelineProgress } from '@/types';
-import {
-  runAgent,
-  resumeAgent,
-  getAgentState,
-  deleteAgentState,
-  saveActiveRun,
-  getActiveRunId,
-  clearActiveRun,
-} from './agent-runtime';
+import type { PipelineProgress } from '@/types';
+import { runAgentLifecycle } from './agent-runtime';
 import { createCritiqueTools } from './agent-tools/critique';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { createFoundationTools } from './agent-tools/foundation';
@@ -79,95 +71,73 @@ export async function runContentCritiquePipeline(
   const recipe = recipes[contentType];
   if (!recipe) throw new Error(`Unknown content type: ${contentType}`);
 
-  // Check for paused run
-  const existingRunId = await getActiveRunId('content-critique', ideaId);
-  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
-  if (pausedState && pausedState.status !== 'paused') {
-    pausedState = null;
-  }
-
-  const runId = pausedState
-    ? pausedState.runId
-    : `critique-${ideaId}-${Date.now()}`;
-
-  // Initialize progress
-  const progress = makeInitialProgress(contentType, recipe.maxRevisionRounds);
-  await getRedis().set(
-    `pipeline_progress:${runId}`,
-    JSON.stringify(progress),
-    { ex: PROGRESS_TTL },
-  );
-
-  const tools = [
-    ...createPlanTools(runId),
-    ...createScratchpadTools(),
-    ...createFoundationTools(ideaId),
-    ...createCritiqueTools(runId, ideaId, recipe),
-  ];
-
-  const config: AgentConfig = {
-    agentId: 'content-critique',
-    runId,
-    model: CLAUDE_MODEL,
-    maxTokens: 4096,
-    maxTurns: 30,
-    tools,
-    systemPrompt: buildSystemPrompt(recipe),
-    onProgress: async (step, detail) => {
-      console.log(`[content-critique] ${step}: ${detail ?? ''}`);
-
-      if (step !== 'tool_call' && step !== 'complete' && step !== 'error')
-        return;
-
-      const existing = await getRedis().get<string>(
-        `pipeline_progress:${runId}`,
-      );
-      if (!existing) return;
-
-      const p: PipelineProgress =
-        typeof existing === 'string' ? JSON.parse(existing) : existing;
-
-      if (step === 'tool_call' && detail) {
-        p.currentStep = detail;
-      } else if (step === 'complete') {
-        p.status = 'complete';
-        p.currentStep = 'Content pipeline complete!';
-      } else if (step === 'error') {
-        p.status = 'error';
-        p.currentStep = detail || 'Pipeline failed';
+  const state = await runAgentLifecycle(
+    'content-critique',
+    ideaId,
+    async (runId, _isResume, pausedState) => {
+      if (pausedState) {
+        console.log(
+          `[content-critique] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`,
+        );
       }
 
+      // Initialize progress tracking
+      const progress = makeInitialProgress(contentType, recipe.maxRevisionRounds);
       await getRedis().set(
         `pipeline_progress:${runId}`,
-        JSON.stringify(p),
+        JSON.stringify(progress),
         { ex: PROGRESS_TTL },
       );
+
+      const tools = [
+        ...createPlanTools(runId),
+        ...createScratchpadTools(),
+        ...createFoundationTools(ideaId),
+        ...createCritiqueTools(runId, ideaId, recipe),
+      ];
+
+      return {
+        agentId: 'content-critique',
+        runId,
+        model: CLAUDE_MODEL,
+        maxTokens: 4096,
+        maxTurns: 30,
+        tools,
+        systemPrompt: buildSystemPrompt(recipe),
+        onProgress: async (step, detail) => {
+          console.log(`[content-critique] ${step}: ${detail ?? ''}`);
+
+          if (step !== 'tool_call' && step !== 'complete' && step !== 'error')
+            return;
+
+          const existing = await getRedis().get<string>(
+            `pipeline_progress:${runId}`,
+          );
+          if (!existing) return;
+
+          const p: PipelineProgress =
+            typeof existing === 'string' ? JSON.parse(existing) : existing;
+
+          if (step === 'tool_call' && detail) {
+            p.currentStep = detail;
+          } else if (step === 'complete') {
+            p.status = 'complete';
+            p.currentStep = 'Content pipeline complete!';
+          } else if (step === 'error') {
+            p.status = 'error';
+            p.currentStep = detail || 'Pipeline failed';
+          }
+
+          await getRedis().set(
+            `pipeline_progress:${runId}`,
+            JSON.stringify(p),
+            { ex: PROGRESS_TTL },
+          );
+        },
+      };
     },
-  };
+    () => `Generate ${contentType} content for idea ${ideaId}.\n\nContent context:\n${contentContext}`,
+  );
 
-  const initialMessage = `Generate ${contentType} content for idea ${ideaId}.\n\nContent context:\n${contentContext}`;
-
-  let state;
-  if (pausedState) {
-    console.log(
-      `[content-critique] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`,
-    );
-    state = await resumeAgent(config, pausedState);
-  } else {
-    state = await runAgent(config, initialMessage);
-  }
-
-  if (state.status === 'paused') {
-    await saveActiveRun('content-critique', ideaId, runId);
-    throw new Error('AGENT_PAUSED');
-  }
-
-  await clearActiveRun('content-critique', ideaId);
-  await deleteAgentState(runId);
-
-  if (state.status === 'error') {
-    throw new Error(state.error || 'Content critique pipeline failed');
-  }
-
-  return { runId };
+  return { runId: state.runId };
 }

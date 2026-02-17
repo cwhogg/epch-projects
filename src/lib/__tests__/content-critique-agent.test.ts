@@ -29,13 +29,7 @@ vi.mock('@/lib/advisors/prompt-loader', () => ({
 }));
 
 vi.mock('@/lib/agent-runtime', () => ({
-  runAgent: vi.fn(),
-  resumeAgent: vi.fn(),
-  getAgentState: vi.fn().mockResolvedValue(null),
-  deleteAgentState: vi.fn(),
-  saveActiveRun: vi.fn(),
-  getActiveRunId: vi.fn().mockResolvedValue(null),
-  clearActiveRun: vi.fn(),
+  runAgentLifecycle: vi.fn(),
 }));
 
 vi.mock('@/lib/agent-tools/common', () => ({
@@ -56,22 +50,31 @@ vi.mock('@/lib/frameworks/framework-loader', () => ({
 }));
 
 // We need to access buildSystemPrompt — it's not exported.
-// Instead, test the system prompt via the AgentConfig passed to runAgent.
-import { runAgent } from '@/lib/agent-runtime';
+// Instead, test the system prompt via the AgentConfig passed to makeConfig.
+import { runAgentLifecycle } from '@/lib/agent-runtime';
+import type { AgentConfig } from '@/types';
+
+// Capture the config produced by makeConfig inside runAgentLifecycle
+let lastConfig: AgentConfig;
 
 describe('content-critique-agent system prompt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(runAgent).mockResolvedValue({
-      runId: 'test-run',
-      agentId: 'content-critique',
-      status: 'complete',
-      messages: [],
-      turnCount: 1,
-      resumeCount: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-    });
+    vi.mocked(runAgentLifecycle).mockImplementation(
+      async (_agentId, _entityId, makeConfig) => {
+        lastConfig = await makeConfig('test-run', false, null);
+        return {
+          runId: 'test-run',
+          agentId: 'content-critique',
+          status: 'complete' as const,
+          messages: [],
+          turnCount: 1,
+          resumeCount: 0,
+          totalInputTokens: 0,
+          totalOutputTokens: 0,
+        };
+      },
+    );
   });
 
   it('uses goal-oriented language, not procedural steps', async () => {
@@ -81,8 +84,7 @@ describe('content-critique-agent system prompt', () => {
 
     await runContentCritiquePipeline('idea-1', 'website', 'Test context');
 
-    const config = vi.mocked(runAgent).mock.calls[0][0];
-    const prompt = config.systemPrompt;
+    const prompt = lastConfig.systemPrompt;
 
     // Goal-oriented markers
     expect(prompt).toContain('Your goal');
@@ -103,8 +105,7 @@ describe('content-critique-agent system prompt', () => {
 
     await runContentCritiquePipeline('idea-1', 'website', 'Test context');
 
-    const config = vi.mocked(runAgent).mock.calls[0][0];
-    const prompt = config.systemPrompt;
+    const prompt = lastConfig.systemPrompt;
 
     expect(prompt).toContain('website');
     expect(prompt).toContain('4'); // minAggregateScore
@@ -121,8 +122,7 @@ describe('content-critique-agent system prompt', () => {
 
     await runContentCritiquePipeline('idea-1', 'website', 'Test context');
 
-    const config = vi.mocked(runAgent).mock.calls[0][0];
-    const prompt = config.systemPrompt;
+    const prompt = lastConfig.systemPrompt;
 
     expect(prompt).toContain('AVAILABLE CRITICS');
   });
@@ -131,16 +131,21 @@ describe('content-critique-agent system prompt', () => {
 describe('content-critique-agent onProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(runAgent).mockResolvedValue({
-      runId: 'test-run',
-      agentId: 'content-critique',
-      status: 'complete',
-      messages: [],
-      turnCount: 1,
-      resumeCount: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-    });
+    vi.mocked(runAgentLifecycle).mockImplementation(
+      async (_agentId, _entityId, makeConfig) => {
+        lastConfig = await makeConfig('test-run', false, null);
+        return {
+          runId: 'test-run',
+          agentId: 'content-critique',
+          status: 'complete' as const,
+          messages: [],
+          turnCount: 1,
+          resumeCount: 0,
+          totalInputTokens: 0,
+          totalOutputTokens: 0,
+        };
+      },
+    );
   });
 
   async function getOnProgress() {
@@ -148,11 +153,10 @@ describe('content-critique-agent onProgress', () => {
       '@/lib/content-critique-agent'
     );
     await runContentCritiquePipeline('idea-1', 'website', 'Test context');
-    const config = vi.mocked(runAgent).mock.calls[0][0];
     // Clear mocks after pipeline setup so we only track onProgress calls
     mockRedisGet.mockClear();
     mockRedisSet.mockClear();
-    return config.onProgress!;
+    return lastConfig.onProgress!;
   }
 
   it('skips Redis read for unhandled step types', async () => {

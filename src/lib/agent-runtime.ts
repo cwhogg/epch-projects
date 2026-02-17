@@ -100,7 +100,7 @@ export async function clearActiveRun(agentId: string, entityId: string): Promise
 export async function runAgentLifecycle(
   agentId: string,
   entityId: string,
-  makeConfig: (runId: string, isResume: boolean, pausedState: AgentState | null) => AgentConfig,
+  makeConfig: (runId: string, isResume: boolean, pausedState: AgentState | null) => AgentConfig | Promise<AgentConfig>,
   makeInitialMessage: () => string,
 ): Promise<AgentState> {
   // Check for a paused run to resume
@@ -113,7 +113,7 @@ export async function runAgentLifecycle(
   const isResume = !!pausedState;
   const runId = pausedState ? pausedState.runId : `${agentId}-${entityId}-${Date.now()}`;
 
-  const config = makeConfig(runId, isResume, pausedState);
+  const config = await makeConfig(runId, isResume, pausedState);
 
   // Run or resume
   let state: AgentState;
