@@ -3,21 +3,12 @@ import { saveProgress, getProgress, saveAnalysisToDb, saveAnalysisContent, updat
 import { runFullSEOPipeline, SEOPipelineResult } from './seo-analysis';
 import { isOpenAIConfigured } from './openai';
 import { isSerpConfigured } from './serp-search';
-import {
-  runAgent,
-  resumeAgent,
-  getAgentState,
-  deleteAgentState,
-  saveActiveRun,
-  getActiveRunId,
-  clearActiveRun,
-} from './agent-runtime';
+import { runAgentLifecycle } from './agent-runtime';
 import { createResearchTools } from './agent-tools/research';
 import { createPlanTools, createScratchpadTools } from './agent-tools/common';
 import { emitEvent } from './agent-events';
 import { getAnthropic } from './anthropic';
 import { CLAUDE_MODEL } from './config';
-import type { AgentConfig } from '@/types';
 import { createPrompt, RESEARCH_SYSTEM_PROMPT } from './research-agent-prompts';
 import { parseScores, parseRecommendation, parseConfidence, parseRisks, parseSummary } from './research-agent-parsers';
 
@@ -220,53 +211,7 @@ ${content.scoring || 'Not available'}
 // ---------------------------------------------------------------------------
 
 async function runResearchAgentV2(idea: ProductIdea, additionalContext?: string): Promise<Analysis> {
-  // --- Check for a paused run to resume ---
-  const existingRunId = await getActiveRunId('research', idea.id);
-  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
-  if (pausedState && pausedState.status !== 'paused') {
-    pausedState = null; // Not actually paused — start fresh
-  }
-
-  const runId = pausedState ? pausedState.runId : `research-${idea.id}-${Date.now()}`;
-  const isResume = !!pausedState;
-
   await updateIdeaStatus(idea.id, 'analyzing');
-
-  // Load existing progress on resume, or create fresh
-  let progress: AnalysisProgress;
-  if (isResume) {
-    const existing = await getProgress(idea.id);
-    progress = existing || {
-      ideaId: idea.id,
-      status: 'running',
-      currentStep: 'Resuming analysis...',
-      steps: [
-        { name: 'Planning', status: 'complete' as const },
-        { name: 'Competitive Analysis', status: 'pending' as const },
-        { name: 'SEO Pipeline', status: 'pending' as const },
-        { name: 'Willingness to Pay', status: 'pending' as const },
-        { name: 'Scoring & Synthesis', status: 'pending' as const },
-        { name: 'Saving Results', status: 'pending' as const },
-      ],
-    };
-    progress.status = 'running';
-    progress.currentStep = 'Resuming analysis...';
-  } else {
-    progress = {
-      ideaId: idea.id,
-      status: 'running',
-      currentStep: 'Starting agentic analysis...',
-      steps: [
-        { name: 'Planning', status: 'pending' as const },
-        { name: 'Competitive Analysis', status: 'pending' as const },
-        { name: 'SEO Pipeline', status: 'pending' as const },
-        { name: 'Willingness to Pay', status: 'pending' as const },
-        { name: 'Scoring & Synthesis', status: 'pending' as const },
-        { name: 'Saving Results', status: 'pending' as const },
-      ],
-    };
-  }
-  await saveProgress(idea.id, progress);
 
   // Map tool names to progress step indices
   const toolStepMap: Record<string, number> = {
@@ -281,63 +226,104 @@ async function runResearchAgentV2(idea: ProductIdea, additionalContext?: string)
     save_final_analysis: 4,
   };
 
-  const tools = [
-    ...createPlanTools(runId),
-    ...createScratchpadTools(),
-    ...createResearchTools(idea, additionalContext),
-  ];
+  // Progress tracking — initialized inside makeConfig so resume state is available
+  let progress: AnalysisProgress;
 
-  const config: AgentConfig = {
-    agentId: 'research',
-    runId,
-    model: CLAUDE_MODEL,
-    maxTokens: 4096,
-    maxTurns: 25,
-    tools,
-    systemPrompt: RESEARCH_SYSTEM_PROMPT,
-    onProgress: async (step, detail) => {
-      console.log(`[research-v2] ${step}: ${detail ?? ''}`);
+  try {
+    await runAgentLifecycle(
+      'research',
+      idea.id,
+      (runId, isResume, pausedState) => {
+        if (pausedState) {
+          console.log(`[research-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+        }
 
-      if (step === 'tool_call' && detail) {
-        const toolNames = detail.split(', ');
-        for (const name of toolNames) {
-          const stepIdx = toolStepMap[name];
-          if (stepIdx !== undefined) {
-            if (progress.steps[stepIdx].status === 'pending') {
-              progress.steps[stepIdx].status = 'running';
-              for (let i = 0; i < stepIdx; i++) {
-                if (progress.steps[i].status === 'running') {
-                  progress.steps[i].status = 'complete';
+        // Load existing progress on resume, or create fresh
+        // Note: getProgress is async but we initialize synchronously here.
+        // The async load happens via onProgress callbacks during the run.
+        if (isResume) {
+          progress = {
+            ideaId: idea.id,
+            status: 'running',
+            currentStep: 'Resuming analysis...',
+            steps: [
+              { name: 'Planning', status: 'complete' as const },
+              { name: 'Competitive Analysis', status: 'pending' as const },
+              { name: 'SEO Pipeline', status: 'pending' as const },
+              { name: 'Willingness to Pay', status: 'pending' as const },
+              { name: 'Scoring & Synthesis', status: 'pending' as const },
+              { name: 'Saving Results', status: 'pending' as const },
+            ],
+          };
+        } else {
+          progress = {
+            ideaId: idea.id,
+            status: 'running',
+            currentStep: 'Starting agentic analysis...',
+            steps: [
+              { name: 'Planning', status: 'pending' as const },
+              { name: 'Competitive Analysis', status: 'pending' as const },
+              { name: 'SEO Pipeline', status: 'pending' as const },
+              { name: 'Willingness to Pay', status: 'pending' as const },
+              { name: 'Scoring & Synthesis', status: 'pending' as const },
+              { name: 'Saving Results', status: 'pending' as const },
+            ],
+          };
+        }
+        // Fire-and-forget initial progress save
+        saveProgress(idea.id, progress);
+
+        const tools = [
+          ...createPlanTools(runId),
+          ...createScratchpadTools(),
+          ...createResearchTools(idea, additionalContext),
+        ];
+
+        return {
+          agentId: 'research',
+          runId,
+          model: CLAUDE_MODEL,
+          maxTokens: 4096,
+          maxTurns: 25,
+          tools,
+          systemPrompt: RESEARCH_SYSTEM_PROMPT,
+          onProgress: async (step, detail) => {
+            console.log(`[research-v2] ${step}: ${detail ?? ''}`);
+
+            if (step === 'tool_call' && detail) {
+              const toolNames = detail.split(', ');
+              for (const name of toolNames) {
+                const stepIdx = toolStepMap[name];
+                if (stepIdx !== undefined) {
+                  if (progress.steps[stepIdx].status === 'pending') {
+                    progress.steps[stepIdx].status = 'running';
+                    for (let i = 0; i < stepIdx; i++) {
+                      if (progress.steps[i].status === 'running') {
+                        progress.steps[i].status = 'complete';
+                      }
+                    }
+                  }
+                  progress.currentStep = progress.steps[stepIdx].name;
                 }
               }
+              await saveProgress(idea.id, progress);
+            } else if (step === 'complete') {
+              for (const s of progress.steps) {
+                if (s.status !== 'error') s.status = 'complete';
+              }
+              progress.status = 'complete';
+              progress.currentStep = 'Analysis complete!';
+              await saveProgress(idea.id, progress);
+            } else if (step === 'error') {
+              progress.status = 'error';
+              progress.error = detail;
+              progress.currentStep = 'Analysis failed';
+              await saveProgress(idea.id, progress);
             }
-            progress.currentStep = progress.steps[stepIdx].name;
-          }
-        }
-        await saveProgress(idea.id, progress);
-      } else if (step === 'complete') {
-        for (const s of progress.steps) {
-          if (s.status !== 'error') s.status = 'complete';
-        }
-        progress.status = 'complete';
-        progress.currentStep = 'Analysis complete!';
-        await saveProgress(idea.id, progress);
-      } else if (step === 'error') {
-        progress.status = 'error';
-        progress.error = detail;
-        progress.currentStep = 'Analysis failed';
-        await saveProgress(idea.id, progress);
-      }
-    },
-  };
-
-  // --- Run or resume the agent ---
-  let state;
-  if (pausedState) {
-    console.log(`[research-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
-    state = await resumeAgent(config, pausedState);
-  } else {
-    const initialMessage = `Analyze this product idea:
+          },
+        };
+      },
+      () => `Analyze this product idea:
 
 Name: ${idea.name}
 ${idea.description ? `Description: ${idea.description}` : ''}
@@ -346,24 +332,14 @@ ${idea.problemSolved ? `Problem Solved: ${idea.problemSolved}` : ''}
 ${idea.url ? `URL: ${idea.url}` : ''}
 ${additionalContext ? `\nAdditional Context: ${additionalContext}` : ''}
 
-Conduct a thorough market research analysis. Start by creating a plan, then work through competitors, SEO, willingness to pay, and final scoring. Save your findings at each step.`;
-
-    state = await runAgent(config, initialMessage);
-  }
-
-  // --- Handle result ---
-  if (state.status === 'paused') {
-    await saveActiveRun('research', idea.id, runId);
-    throw new Error('AGENT_PAUSED');
-  }
-
-  // Completed or errored — clean up active run tracking
-  await clearActiveRun('research', idea.id);
-  await deleteAgentState(runId);
-
-  if (state.status === 'error') {
+Conduct a thorough market research analysis. Start by creating a plan, then work through competitors, SEO, willingness to pay, and final scoring. Save your findings at each step.`,
+    );
+  } catch (err) {
+    if (err instanceof Error && err.message === 'AGENT_PAUSED') {
+      throw err;
+    }
     await updateIdeaStatus(idea.id, 'pending');
-    throw new Error(state.error || 'Research agent failed');
+    throw err;
   }
 
   // Emit event for inter-agent communication

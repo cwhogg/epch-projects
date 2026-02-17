@@ -16,18 +16,9 @@ import {
   GSCQueryRow,
   ContentType,
 } from '@/types';
-import {
-  runAgent,
-  resumeAgent,
-  getAgentState,
-  deleteAgentState,
-  saveActiveRun,
-  getActiveRunId,
-  clearActiveRun,
-} from '@/lib/agent-runtime';
+import { runAgentLifecycle } from '@/lib/agent-runtime';
 import { createAnalyticsTools } from '@/lib/agent-tools/analytics';
 import { createPlanTools, createScratchpadTools } from '@/lib/agent-tools/common';
-import type { AgentConfig } from '@/types';
 
 // Returns ISO week string like "2026-W05"
 export function getWeekId(date?: Date): string {
@@ -515,56 +506,33 @@ async function runAnalyticsAgentV2(): Promise<WeeklyReport> {
 
   const weekId = getWeekId();
 
-  // --- Check for a paused run to resume ---
-  const existingRunId = await getActiveRunId('analytics', weekId);
-  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
-  if (pausedState && pausedState.status !== 'paused') {
-    pausedState = null;
-  }
-
-  const runId = pausedState ? pausedState.runId : `analytics-${weekId}-${Date.now()}`;
-
-  const tools = [
-    ...createPlanTools(runId),
-    ...createAnalyticsTools(siteUrl),
-    ...createScratchpadTools(),
-  ];
-
-  const config: AgentConfig = {
-    agentId: 'analytics',
-    runId,
-    model: CLAUDE_MODEL,
-    maxTokens: 4096,
-    maxTurns: 15,
-    tools,
-    systemPrompt: ANALYTICS_SYSTEM_PROMPT,
-    onProgress: async (step, detail) => {
-      console.log(`[analytics-v2] ${step}: ${detail ?? ''}`);
+  await runAgentLifecycle(
+    'analytics',
+    weekId,
+    (runId, _isResume, pausedState) => {
+      if (pausedState) {
+        console.log(`[analytics-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
+      }
+      const tools = [
+        ...createPlanTools(runId),
+        ...createAnalyticsTools(siteUrl),
+        ...createScratchpadTools(),
+      ];
+      return {
+        agentId: 'analytics',
+        runId,
+        model: CLAUDE_MODEL,
+        maxTokens: 4096,
+        maxTurns: 15,
+        tools,
+        systemPrompt: ANALYTICS_SYSTEM_PROMPT,
+        onProgress: async (step, detail) => {
+          console.log(`[analytics-v2] ${step}: ${detail ?? ''}`);
+        },
+      };
     },
-  };
-
-  // --- Run or resume ---
-  let state;
-  if (pausedState) {
-    console.log(`[analytics-v2] Resuming paused run ${runId} (resume #${pausedState.resumeCount + 1})`);
-    state = await resumeAgent(config, pausedState);
-  } else {
-    const initialMessage = `Run the weekly analytics report for site ${siteUrl}. Current week: ${weekId}. Fetch the data, analyze performance changes, and save a report with actionable insights.`;
-    state = await runAgent(config, initialMessage);
-  }
-
-  // --- Handle result ---
-  if (state.status === 'paused') {
-    await saveActiveRun('analytics', weekId, runId);
-    throw new Error('AGENT_PAUSED');
-  }
-
-  await clearActiveRun('analytics', weekId);
-  await deleteAgentState(runId);
-
-  if (state.status === 'error') {
-    throw new Error(state.error || 'Analytics agent failed');
-  }
+    () => `Run the weekly analytics report for site ${siteUrl}. Current week: ${weekId}. Fetch the data, analyze performance changes, and save a report with actionable insights.`,
+  );
 
   // The report was saved by the save_report tool — fetch it
   const { getWeeklyReport: getReport } = await import('@/lib/analytics-db');

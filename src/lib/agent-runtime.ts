@@ -84,6 +84,62 @@ export async function clearActiveRun(agentId: string, entityId: string): Promise
   await getRedis().del(activeRunKey(agentId, entityId));
 }
 
+// ---------------------------------------------------------------------------
+// Lifecycle helper — shared pause/resume/cleanup pattern for all V2 agents
+// ---------------------------------------------------------------------------
+
+/**
+ * Manages the full run-or-resume lifecycle for an agentic run.
+ *
+ * Handles: pause detection, runId derivation, run vs resume dispatch,
+ * AGENT_PAUSED throw on pause, and cleanup (clearActiveRun + deleteAgentState).
+ *
+ * Callers provide factory functions for the config and initial message so they
+ * can keep agent-specific setup (tools, prompts, progress tracking) local.
+ */
+export async function runAgentLifecycle(
+  agentId: string,
+  entityId: string,
+  makeConfig: (runId: string, isResume: boolean, pausedState: AgentState | null) => AgentConfig,
+  makeInitialMessage: () => string,
+): Promise<AgentState> {
+  // Check for a paused run to resume
+  const existingRunId = await getActiveRunId(agentId, entityId);
+  let pausedState = existingRunId ? await getAgentState(existingRunId) : null;
+  if (pausedState && pausedState.status !== 'paused') {
+    pausedState = null;
+  }
+
+  const isResume = !!pausedState;
+  const runId = pausedState ? pausedState.runId : `${agentId}-${entityId}-${Date.now()}`;
+
+  const config = makeConfig(runId, isResume, pausedState);
+
+  // Run or resume
+  let state: AgentState;
+  if (pausedState) {
+    state = await resumeAgent(config, pausedState);
+  } else {
+    state = await runAgent(config, makeInitialMessage());
+  }
+
+  // Handle paused — save active run and signal caller
+  if (state.status === 'paused') {
+    await saveActiveRun(agentId, entityId, runId);
+    throw new Error('AGENT_PAUSED');
+  }
+
+  // Completed or errored — clean up
+  await clearActiveRun(agentId, entityId);
+  await deleteAgentState(runId);
+
+  if (state.status === 'error') {
+    throw new Error(state.error || 'Agent failed');
+  }
+
+  return state;
+}
+
 // Anthropic client: imported from ./anthropic
 
 // ---------------------------------------------------------------------------
