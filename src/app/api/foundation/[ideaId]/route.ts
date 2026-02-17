@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { isRedisConfigured, getAllFoundationDocs, getFoundationProgress } from '@/lib/db';
+import { isRedisConfigured, getAllFoundationDocs, getFoundationProgress, getFoundationDoc, saveFoundationDoc } from '@/lib/db';
 import { runFoundationGeneration } from '@/lib/foundation-agent';
-import type { StrategicInputs } from '@/types';
+import type { StrategicInputs, FoundationDocType } from '@/types';
 
 export const maxDuration = 300;
 
@@ -100,5 +100,46 @@ export async function GET(
   } catch (error) {
     console.error('Error getting foundation data:', error);
     return NextResponse.json({ error: 'Failed to get foundation data' }, { status: 500 });
+  }
+}
+
+// PATCH — save edits to a specific foundation document
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ ideaId: string }> },
+) {
+  const { ideaId } = await params;
+
+  if (!isRedisConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  let body: { docType?: FoundationDocType; content?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  if (!body.docType || typeof body.content !== 'string') {
+    return NextResponse.json({ error: 'Missing docType or content' }, { status: 400 });
+  }
+
+  try {
+    const doc = await getFoundationDoc(ideaId, body.docType);
+    if (!doc) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    doc.content = body.content;
+    doc.editedAt = new Date().toISOString();
+    doc.version += 1;
+
+    await saveFoundationDoc(ideaId, doc);
+
+    return NextResponse.json(doc);
+  } catch (error) {
+    console.error('Error saving foundation doc:', error);
+    return NextResponse.json({ error: 'Failed to save document' }, { status: 500 });
   }
 }

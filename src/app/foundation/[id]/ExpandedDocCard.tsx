@@ -1,11 +1,13 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import type { FoundationDocument, FoundationDocType } from '@/types';
 import { CheckCircleIcon, ChevronUpIcon, ChatIcon, RefreshIcon } from './FoundationIcons';
 import MarkdownContent from '@/components/MarkdownContent';
 
 interface ExpandedDocCardProps {
+  ideaId: string;
   type: FoundationDocType;
   label: string;
   advisor: string;
@@ -21,7 +23,7 @@ interface ExpandedDocCardProps {
 }
 
 export default function ExpandedDocCard({
-  type, label, advisor, doc, idx, generating, isRunning,
+  ideaId, type, label, advisor, doc, idx, generating, isRunning,
   versionBadgeStyle, editedBadgeStyle,
   onCollapse, onRegenerate, formatDate,
 }: ExpandedDocCardProps) {
@@ -98,17 +100,17 @@ export default function ExpandedDocCard({
           paddingTop: '1.25rem', marginTop: '1.25rem',
           borderTop: '1px solid var(--border-subtle)',
         }}>
-          <span
+          <Link
+            href={`/foundation/${ideaId}/edit/${type}`}
             style={{
-              fontSize: '0.875rem', color: 'var(--text-muted)',
+              fontSize: '0.875rem', color: 'var(--accent-coral)',
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              fontWeight: 500, cursor: 'not-allowed', opacity: 0.5,
+              fontWeight: 500, textDecoration: 'none',
             }}
-            title="Coming in a future update"
           >
             <ChatIcon />
             Update via conversation
-          </span>
+          </Link>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               className="btn btn-secondary btn-sm"

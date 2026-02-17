@@ -6,6 +6,8 @@ vi.mock('@/lib/db', () => ({
   isRedisConfigured: vi.fn(),
   getAllFoundationDocs: vi.fn(),
   getFoundationProgress: vi.fn(),
+  getFoundationDoc: vi.fn(),
+  saveFoundationDoc: vi.fn(),
 }));
 
 vi.mock('@/lib/foundation-agent', () => ({
@@ -21,8 +23,8 @@ vi.mock('next/server', async (importOriginal) => {
   };
 });
 
-import { GET, POST } from '@/app/api/foundation/[ideaId]/route';
-import { isRedisConfigured, getAllFoundationDocs, getFoundationProgress } from '@/lib/db';
+import { GET, POST, PATCH } from '@/app/api/foundation/[ideaId]/route';
+import { isRedisConfigured, getAllFoundationDocs, getFoundationProgress, getFoundationDoc, saveFoundationDoc } from '@/lib/db';
 import { runFoundationGeneration } from '@/lib/foundation-agent';
 
 function makeRequest(method: string, body?: Record<string, unknown>): NextRequest {
@@ -188,6 +190,121 @@ describe('Foundation API route', () => {
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toContain('ANTHROPIC_API_KEY');
+    });
+  });
+
+  describe('PATCH', () => {
+    it('saves updated content and returns updated doc', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      vi.mocked(getFoundationDoc).mockResolvedValue({
+        id: 'strategy',
+        ideaId: 'idea-123',
+        type: 'strategy',
+        content: 'Original content',
+        advisorId: 'seth-godin',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        editedAt: null,
+        version: 1,
+      });
+      vi.mocked(saveFoundationDoc).mockResolvedValue();
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy', content: 'Updated content' }),
+        { params },
+      );
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.content).toBe('Updated content');
+      expect(body.version).toBe(2);
+      expect(body.editedAt).toBeTruthy();
+      expect(saveFoundationDoc).toHaveBeenCalledWith('idea-123', expect.objectContaining({
+        content: 'Updated content',
+        version: 2,
+      }));
+    });
+
+    it('returns 404 when document does not exist', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      vi.mocked(getFoundationDoc).mockResolvedValue(null);
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy', content: 'Updated' }),
+        { params },
+      );
+
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 when docType is missing', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+
+      const res = await PATCH(
+        makeRequest('PATCH', { content: 'Updated' }),
+        { params },
+      );
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when content is missing', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy' }),
+        { params },
+      );
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 500 when Redis is not configured', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(false);
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy', content: 'Updated' }),
+        { params },
+      );
+
+      expect(res.status).toBe(500);
+    });
+
+    it('returns 500 when saveFoundationDoc throws', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      vi.mocked(getFoundationDoc).mockResolvedValue({
+        id: 'strategy',
+        ideaId: 'idea-123',
+        type: 'strategy',
+        content: 'Original',
+        advisorId: 'seth-godin',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        editedAt: null,
+        version: 1,
+      });
+      vi.mocked(saveFoundationDoc).mockRejectedValue(new Error('Connection lost'));
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy', content: 'Updated' }),
+        { params },
+      );
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.error).toBeTruthy();
+    });
+
+    it('returns 500 when getFoundationDoc throws', async () => {
+      vi.mocked(isRedisConfigured).mockReturnValue(true);
+      vi.mocked(getFoundationDoc).mockRejectedValue(new Error('Redis timeout'));
+
+      const res = await PATCH(
+        makeRequest('PATCH', { docType: 'strategy', content: 'Updated' }),
+        { params },
+      );
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.error).toBeTruthy();
     });
   });
 });

@@ -10,6 +10,7 @@ import type {
 import { ArrowLeftIcon, PlayIcon, WarningIcon } from './FoundationIcons';
 import ExpandedDocCard from './ExpandedDocCard';
 import CollapsedDocCard from './CollapsedDocCard';
+import { DOC_CONFIG } from './foundation-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,20 +24,6 @@ interface FoundationData {
   progress: FoundationProgress | { status: 'not_started' };
   docs: DocMap;
 }
-
-const DOC_CONFIG: {
-  type: FoundationDocType;
-  label: string;
-  advisor: string;
-  requires: string | null;
-}[] = [
-  { type: 'strategy', label: 'Strategy', advisor: 'Seth Godin', requires: null },
-  { type: 'positioning', label: 'Positioning Statement', advisor: 'April Dunford', requires: 'Strategy' },
-  { type: 'brand-voice', label: 'Brand Voice', advisor: 'Brand Copywriter', requires: 'Positioning' },
-  { type: 'design-principles', label: 'Design Principles', advisor: 'Derived', requires: 'Positioning + Strategy' },
-  { type: 'seo-strategy', label: 'SEO Strategy', advisor: 'SEO Expert', requires: 'Positioning' },
-  { type: 'social-media-strategy', label: 'Social Media Strategy', advisor: 'TBD', requires: 'Brand Voice' },
-];
 
 function canGenerate(docType: FoundationDocType, docs: DocMap): boolean {
   if (docType === 'strategy') return true;
@@ -257,6 +244,7 @@ export default function FoundationPage({ params }: PageProps) {
           return isExpanded && doc ? (
             <ExpandedDocCard
               key={type}
+              ideaId={ideaId}
               type={type}
               label={label}
               advisor={advisor}

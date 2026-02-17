@@ -21,6 +21,7 @@ graph TB
         TESTING["/testing<br/>SEO performance"]
         OPTIMIZATION["/optimization<br/>Optimization stage"]
         ANALYTICS["/analytics<br/>Weekly reports"]
+        FOUNDATION_EDIT["/foundation/[id]/edit/[docType]<br/>Document editor"]
     end
 
     subgraph API["API Routes"]
@@ -32,7 +33,8 @@ graph TB
         API_CONTENT_PIECES["/api/content/[ideaId]/pieces<br/>GET list pieces"]
         API_CONTENT_PIECE["/api/content/[ideaId]/pieces/[pieceId]<br/>GET, PATCH reject, DELETE"]
         API_CONTENT_PROGS["/api/content/programs<br/>Program management"]
-        API_FOUNDATION["/api/foundation/[ideaId]<br/>POST triggers, GET polls"]
+        API_FOUNDATION["/api/foundation/[ideaId]<br/>POST triggers, GET polls, PATCH saves"]
+        API_FOUNDATION_CHAT["/api/foundation/[ideaId]/chat<br/>POST streaming chat"]
         API_PD["/api/painted-door/[id]<br/>Site generation"]
         API_PD_SITES["/api/painted-door/sites<br/>List sites"]
         API_PUBLISH["/api/publish/status<br/>Publish log"]
@@ -674,6 +676,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Generate Content | `src/app/content/[id]/generate/page.tsx` | Content generation progress view |
 | View Piece | `src/app/content/[id]/[pieceId]/page.tsx` | Individual content piece view |
 | Foundation Tab | `src/app/foundation/[id]/page.tsx` | Foundation document viewer/generator |
+| Foundation Editor | `src/app/foundation/[id]/edit/[docType]/page.tsx` | Split-pane document editor with advisor chat |
 | Website Tab | `src/app/website/[id]/page.tsx` | Website generation status + regenerate |
 | Analytics Tab | `src/app/analyses/[id]/analytics/page.tsx` | Per-idea GSC analytics |
 | Content Overview | `src/app/content/page.tsx` | Cross-idea content dashboard |
@@ -695,7 +698,8 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Content Piece | `/api/content/[ideaId]/pieces/[pieceId]` | GET, PATCH, DELETE | GET single piece; PATCH rejects piece; DELETE removes from target repo |
 | Content Generate | `/api/content/[ideaId]/generate` | POST, GET | POST triggers generation; GET polls progress |
 | Content Programs | `/api/content/programs` | GET, PATCH | List/toggle content programs |
-| Foundation | `/api/foundation/[ideaId]` | POST, GET | POST triggers generation; GET returns docs + progress |
+| Foundation | `/api/foundation/[ideaId]` | POST, GET, PATCH | POST triggers generation; GET returns docs + progress; PATCH saves edits |
+| Foundation Chat | `/api/foundation/[ideaId]/chat` | POST | Streaming advisor conversation for document editing |
 | Painted Door | `/api/painted-door/[id]` | POST, GET | POST triggers site build; GET returns status |
 | Painted Door Sites | `/api/painted-door/sites` | GET | List all painted door sites |
 | Publish Targets | `/api/publish-targets` | GET | List all publish targets (static + dynamic) |
