@@ -140,11 +140,14 @@ graph TB
         S_PUBLISH["publish-pipeline,<br/>github-publish,<br/>publish-targets"]
         S_PD_DB["painted-door-db"]
         S_PD_TMPL["painted-door-templates,<br/>painted-door-prompts"]
-        S_CONTENT["content-prompts"]
+        S_CONTENT["content-prompts,<br/>content-context, content-vault"]
         S_ANALYTICS_DB["analytics-db"]
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
         S_FRAMEWORKS["frameworks/registry,<br/>frameworks/framework-loader"]
         S_EXPERTISE["expertise-profile"]
+        S_RESEARCH_SUB["research-agent-parsers,<br/>research-agent-prompts"]
+        S_GITHUB_API["github-api"]
+        S_STYLES["analysis-styles"]
         S_UTILS["utils, llm-utils, data"]
     end
 
@@ -167,6 +170,7 @@ graph TB
 
     A_RESEARCH --> S_SEO
     A_RESEARCH --> S_EXPERTISE
+    A_RESEARCH --> S_RESEARCH_SUB
     A_CONTENT --> S_CONTENT
     A_PAINTED_DOOR --> S_PD_TMPL
     A_PAINTED_DOOR --> S_PD_DB
@@ -176,6 +180,8 @@ graph TB
     A_CRITIQUE --> L_RUNTIME
     A_CRITIQUE --> S_ADVISORS
     A_CRITIQUE --> T_CRITIQUE
+
+    T_WEBSITE --> S_GITHUB_API
 
     S_SEO --> L_ANTHROPIC
     S_SEO --> L_OPENAI
@@ -720,6 +726,9 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/github-publish.ts` | GitHub Contents API: commit, frontmatter enrichment |
 | `src/lib/publish-targets.ts` | Static (secondlook, study-platform) + dynamic publish targets |
 | `src/lib/content-prompts.ts` | Prompt templates for blog-post, comparison, faq generation |
+| `src/lib/content-context.ts` | Content context builder: loads analysis, SEO data, expertise for content generation |
+| `src/lib/content-vault.ts` | Content vault: reads/writes generated content pieces to experiments/ filesystem |
+| `src/lib/content-agent-v2.ts` | V2 agentic content generation with evaluate/revise loop |
 | `src/lib/painted-door-prompts.ts` | Brand identity generation prompt |
 | `src/lib/painted-door-templates.ts` | Next.js site templates (~21 files) for painted door sites |
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets |
@@ -728,6 +737,10 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `src/lib/advisors/registry.ts` | 13-advisor virtual board registry |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
 | `src/lib/frameworks/` | Framework library: registry, loader, 3 prompt sets (content-inc-model, forever-promise, value-metric) |
+| `src/lib/research-agent-parsers.ts` | Research result parsers: competitor, SEO, WTP, scoring extraction |
+| `src/lib/research-agent-prompts.ts` | Research agent prompt templates |
+| `src/lib/github-api.ts` | Shared GitHub/Vercel API helpers for website agent tools |
+| `src/lib/analysis-styles.ts` | Shared analysis page styles: badge colors, score formatting, card utilities |
 | `src/lib/utils.ts` | slugify, fuzzyMatchPair, buildLeaderboard |
 | `src/lib/llm-utils.ts` | parseLLMJson, cleanJSONString |
 | `src/lib/data.ts` | Filesystem fallback: ideas.json, experiments/ markdown parser |
@@ -753,3 +766,5 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `ReanalyzeForm.tsx` | Re-trigger analysis with context |
 | `ProgramToggleButton.tsx` | Toggle content program active/inactive |
 | `website/SiteCardActions.tsx` | Painted door site action buttons |
+| `AppendFeedbackInput.tsx` | Reusable feedback/append input with submit handler |
+| `ScoreRing.tsx` | SVG ring score visualization |
