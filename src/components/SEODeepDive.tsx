@@ -22,6 +22,12 @@ export default function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
   const { synthesis } = seoData;
   if (!synthesis) return null;
 
+  const competitivenessStyles: Record<string, { background: string; color: string }> = {
+    Low: { background: 'rgba(52, 211, 153, 0.1)', color: 'var(--accent-emerald)' },
+    Medium: { background: 'rgba(251, 191, 36, 0.1)', color: 'var(--accent-amber)' },
+    High: { background: 'rgba(248, 113, 113, 0.1)', color: 'var(--color-danger)' },
+  };
+
   return (
     <div className="card-static p-5 sm:p-6 animate-slide-up stagger-3">
       <h2 className="font-display text-base mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
@@ -145,20 +151,7 @@ export default function SEODeepDive({ seoDataJson }: { seoDataJson?: string }) {
                     <td className="py-2 pr-3">
                       <span
                         className="px-1.5 py-0.5 rounded"
-                        style={{
-                          background:
-                            kw.estimatedCompetitiveness === 'Low'
-                              ? 'rgba(52, 211, 153, 0.1)'
-                              : kw.estimatedCompetitiveness === 'Medium'
-                              ? 'rgba(251, 191, 36, 0.1)'
-                              : 'rgba(248, 113, 113, 0.1)',
-                          color:
-                            kw.estimatedCompetitiveness === 'Low'
-                              ? 'var(--accent-emerald)'
-                              : kw.estimatedCompetitiveness === 'Medium'
-                              ? 'var(--accent-amber)'
-                              : 'var(--color-danger)',
-                        }}
+                        style={competitivenessStyles[kw.estimatedCompetitiveness ?? ''] ?? competitivenessStyles.High}
                       >
                         {kw.estimatedCompetitiveness}
                       </span>
