@@ -11,7 +11,20 @@ export interface AdvisorEntry {
 
 export const advisorRegistry: AdvisorEntry[] = [
   { id: 'richard-rumelt', name: 'Richard Rumelt', role: 'strategist' },
-  { id: 'copywriter', name: 'Brand Copywriter', role: 'author' },
+  {
+    id: 'copywriter',
+    name: 'Brand Copywriter',
+    role: 'author',
+    evaluationExpertise:
+      'Evaluates brand voice consistency. Does the content match the defined voice ' +
+      'attributes? Are tone, vocabulary, and sentence rhythm consistent with the brand ' +
+      'voice document? Do counter-examples from the voice guide appear in the copy? ' +
+      'Catches voice drift — copy that sounds generic, corporate, or inconsistent with ' +
+      'the established brand character.',
+    doesNotEvaluate:
+      'Does not evaluate SEO strategy, conversion design, behavioral science, or page structure.',
+    contextDocs: ['brand-voice'],
+  },
   {
     id: 'april-dunford',
     name: 'April Dunford',

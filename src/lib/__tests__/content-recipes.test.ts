@@ -14,7 +14,16 @@ import type { AdvisorEntry } from '@/lib/advisors/registry';
 
 const testRegistry: AdvisorEntry[] = [
   { id: 'richard-rumelt', name: 'Richard Rumelt', role: 'strategist' },
-  { id: 'copywriter', name: 'Brand Copywriter', role: 'author' },
+  {
+    id: 'copywriter',
+    name: 'Brand Copywriter',
+    role: 'author',
+    evaluationExpertise:
+      'Evaluates brand voice consistency.',
+    doesNotEvaluate:
+      'Does not evaluate SEO strategy, conversion design, behavioral science, or page structure.',
+    contextDocs: ['brand-voice'],
+  },
   {
     id: 'april-dunford',
     name: 'April Dunford',
@@ -38,6 +47,12 @@ const testRegistry: AdvisorEntry[] = [
     evaluationExpertise: 'Evaluates behavioral science.',
     doesNotEvaluate: 'Does not evaluate SEO.',
     contextDocs: [],
+  },
+  {
+    id: 'julian-shapiro',
+    name: 'Julian Shapiro',
+    role: 'author',
+    evaluationExpertise: 'Evaluates landing page copy structure.',
   },
 ];
 
@@ -67,9 +82,9 @@ describe('selectCritics', () => {
 
     const callArgs = mockCreate.mock.calls[0][0];
     const userMessage = callArgs.messages[0].content;
-    // 'copywriter' is the author — should not appear in available advisors
-    expect(userMessage).not.toContain('- copywriter:');
-    // But april-dunford should be there
+    // julian-shapiro has evaluationExpertise but is the author — should be excluded
+    expect(userMessage).not.toContain('- julian-shapiro:');
+    // april-dunford should still be there as a candidate
     expect(userMessage).toContain('- april-dunford:');
   });
 
@@ -147,12 +162,29 @@ describe('recipes', () => {
   it('website recipe has correct structure', () => {
     const r = recipes.website;
     expect(r.contentType).toBe('website');
-    expect(r.authorAdvisor).toBe('copywriter');
+    expect(r.authorAdvisor).toBe('julian-shapiro');
+    expect(r.authorFramework).toBe('landing-page-assembly');
     expect(r.authorContextDocs).toContain('positioning');
-    expect(r.evaluationNeeds).toContain('positioning accuracy');
+    expect(r.namedCritics).toEqual([
+      'oli-gardner',
+      'joanna-wiebe',
+      'shirin-oreizy',
+      'copywriter',
+    ]);
+    expect(r.evaluationNeeds).toContain('conversion-centered design');
     expect(r.evaluationEmphasis).toBeTruthy();
     expect(r.minAggregateScore).toBe(4);
     expect(r.maxRevisionRounds).toBe(3);
+  });
+
+  it('copywriter has evaluationExpertise for critic role', async () => {
+    const { advisorRegistry } = await import('@/lib/advisors/registry');
+    const copywriter = advisorRegistry.find(
+      (a: { id: string }) => a.id === 'copywriter',
+    );
+    expect(copywriter).toBeDefined();
+    expect(copywriter!.evaluationExpertise).toBeTruthy();
+    expect(copywriter!.evaluationExpertise).toContain('brand voice');
   });
 
   it('all three recipes are defined', () => {

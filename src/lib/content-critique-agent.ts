@@ -14,37 +14,45 @@ import { createFoundationTools } from './agent-tools/foundation';
 import { getRedis } from './redis';
 import { CLAUDE_MODEL } from './config';
 import { recipes, type ContentRecipe } from './content-recipes';
+import { advisorRegistry } from './advisors/registry';
 
 const PROGRESS_TTL = 7200;
 
 function buildSystemPrompt(recipe: ContentRecipe): string {
-  return `You are a content pipeline orchestrator. You execute a write-critique-revise cycle.
+  // Build critic list from registry — all advisors with evaluationExpertise
+  // (named + potential dynamic selections). The agent uses this for intelligent re-critique.
+  const criticsList = advisorRegistry
+    .filter((a) => a.evaluationExpertise && a.id !== recipe.authorAdvisor)
+    .map((a) => `- ${a.id} (${a.name}): ${a.evaluationExpertise}`)
+    .join('\n');
 
-Content type: ${recipe.contentType}
-Max revision rounds: ${recipe.maxRevisionRounds}
+  return `You are a content pipeline orchestrator. Your goal: produce ${recipe.contentType} content that passes the editor quality rubric.
 
-Your tools: generate_draft, run_critiques, editor_decision, revise_draft, summarize_round, save_content.
-You also have load_foundation_docs to load reference documents if needed.
+TOOLS AVAILABLE:
+- generate_draft: Create initial content using the assigned author advisor
+- run_critiques(advisorIds?): Get evaluations from critics (all, or a named subset)
+- editor_decision(critiques): Apply mechanical rubric -> returns 'approve' or 'revise' with brief
+- revise_draft(brief): Revise current draft addressing the editor's brief
+- summarize_round(round, critiques, decision): Record round data, returns do-not-regress list
+- save_content(quality): Persist final content
+- load_foundation_docs(docTypes?): Load reference documents if needed
 
-Procedure:
-1. Call generate_draft with content context.
-2. Call run_critiques.
-3. Read the critique results. Apply these rules:
-   - ANY high-severity issue -> editor_decision(decision='revise', brief=...)
-   - NO high-severity AND avg score >= ${recipe.minAggregateScore} -> editor_decision(decision='approve')
-   - NO high-severity BUT avg < ${recipe.minAggregateScore} -> editor_decision(decision='revise')
-   - Scores decreasing from previous round -> editor_decision(decision='approve')
-4. After editor_decision, call summarize_round with the round data.
-5. If revise: call revise_draft with the brief, then back to step 2.
-6. If approve: call save_content with quality='approved'.
-7. If you've hit ${recipe.maxRevisionRounds} rounds without approval: call save_content with quality='max-rounds-reached'.
+EDITOR RUBRIC (you do not override these rules):
+- Any high-severity issue -> must revise
+- No high issues + avg score >= ${recipe.minAggregateScore} -> approve
+- No high issues + avg < ${recipe.minAggregateScore} -> revise
+- Scores decreasing from previous round -> approve (oscillation guard)
 
-When writing revision briefs:
-- Focus on HIGH and MEDIUM issues only.
-- Include the "do not regress" list from summarize_round output.
-- Instruct: "Address only the listed issues. Do not change aspects on the do-not-regress list."
+CONSTRAINTS:
+- Maximum ${recipe.maxRevisionRounds} revision rounds
+- Always call summarize_round after each critique+decision cycle
+- Always call editor_decision with critique results -- do not self-judge quality, even if all critics errored (pass the results as-is)
+- After max rounds without approval: save_content(quality='max-rounds-reached')
 
-Do NOT narrate your reasoning. Call the tools.`;
+AVAILABLE CRITICS:
+${criticsList}
+
+You decide the sequence. Typical approaches include drafting then running all critics, or targeted re-critique of specific dimensions after revision. Use your judgment about which critics to re-run based on what you changed.`;
 }
 
 function makeInitialProgress(
@@ -59,12 +67,6 @@ function makeInitialProgress(
     maxRounds,
     quality: null,
     selectedCritics: [],
-    steps: [
-      { name: 'Generate Draft', status: 'pending' },
-      { name: 'Run Critiques', status: 'pending' },
-      { name: 'Editor Review', status: 'pending' },
-      { name: 'Save Content', status: 'pending' },
-    ],
     critiqueHistory: [],
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface ContentStep {
@@ -19,16 +19,35 @@ interface ContentGenerationProgress {
   completedPieceIds: string[];
 }
 
-export default function ContentGeneratePage() {
+interface PipelineCritiqueProgress {
+  status: 'running' | 'complete' | 'error' | 'max-rounds-reached' | 'not_started';
+  contentType: string;
+  currentStep: string;
+  round: number;
+  maxRounds: number;
+  quality: 'approved' | 'max-rounds-reached' | null;
+  selectedCritics: { advisorId: string; name: string }[];
+}
+
+function ContentGeneratePageInner() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const analysisId = params.id as string;
+  const pipelineMode = searchParams.get('pipeline') === 'critique';
 
   const [progress, setProgress] = useState<ContentGenerationProgress | null>(null);
+  const [critiqueProgress, setCritiqueProgress] = useState<PipelineCritiqueProgress | null>(null);
   const [started, setStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const startGeneration = useCallback(async () => {
+    if (pipelineMode) {
+      // Pipeline mode starts immediately — the pipeline was already triggered
+      setStarted(true);
+      return;
+    }
+
     const storedIds = sessionStorage.getItem(`content-gen-${analysisId}`);
     if (!storedIds) {
       setError('No content pieces selected. Go back to the calendar to select pieces.');
@@ -52,24 +71,37 @@ export default function ContentGeneratePage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start generation');
     }
-  }, [analysisId]);
+  }, [analysisId, pipelineMode]);
 
   const checkProgress = useCallback(async () => {
     try {
-      const res = await fetch(`/api/content/${analysisId}/generate`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setProgress(data);
+      if (pipelineMode) {
+        const res = await fetch(`/api/content-pipeline/${analysisId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setCritiqueProgress(data);
 
-      if (data.status === 'complete') {
-        setTimeout(() => {
-          router.push(`/analyses/${analysisId}/content`);
-        }, 2000);
+        if (data.status === 'complete' || data.status === 'max-rounds-reached') {
+          setTimeout(() => {
+            router.push(`/analyses/${analysisId}/content`);
+          }, 2000);
+        }
+      } else {
+        const res = await fetch(`/api/content/${analysisId}/generate`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setProgress(data);
+
+        if (data.status === 'complete') {
+          setTimeout(() => {
+            router.push(`/analyses/${analysisId}/content`);
+          }, 2000);
+        }
       }
     } catch (err) {
       console.error('Error checking progress:', err);
     }
-  }, [analysisId, router]);
+  }, [analysisId, router, pipelineMode]);
 
   useEffect(() => {
     if (!started) {
@@ -89,7 +121,22 @@ export default function ContentGeneratePage() {
   const steps = progress?.steps || [];
   const completedCount = steps.filter((s) => s.status === 'complete').length;
   const totalSteps = steps.length || 1;
-  const progressPercent = (completedCount / totalSteps) * 100;
+
+  const isComplete = pipelineMode
+    ? critiqueProgress?.status === 'complete' || critiqueProgress?.status === 'max-rounds-reached'
+    : progress?.status === 'complete';
+
+  const progressPercent = pipelineMode
+    ? critiqueProgress
+      ? isComplete
+        ? 100
+        : Math.max(10, (critiqueProgress.round / critiqueProgress.maxRounds) * 100)
+      : 0
+    : (completedCount / totalSteps) * 100;
+
+  const currentStepText = pipelineMode
+    ? critiqueProgress?.currentStep || 'Starting content pipeline...'
+    : progress?.currentStep || 'Starting content generation...';
 
   if (error) {
     return (
@@ -131,7 +178,7 @@ export default function ContentGeneratePage() {
         <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
-            background: progress?.status === 'complete'
+            background: isComplete
               ? 'radial-gradient(ellipse at top, rgba(52, 211, 153, 0.15) 0%, transparent 60%)'
               : 'radial-gradient(ellipse at top, rgba(255, 107, 91, 0.15) 0%, transparent 60%)',
           }}
@@ -141,15 +188,15 @@ export default function ContentGeneratePage() {
         <div className="text-center mb-8 animate-slide-up stagger-1 relative">
           <div
             className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-              progress?.status === 'complete' ? '' : 'animate-glow'
+              isComplete ? '' : 'animate-glow'
             }`}
             style={{
-              background: progress?.status === 'complete'
+              background: isComplete
                 ? 'rgba(52, 211, 153, 0.15)'
                 : 'var(--accent-coral-soft)',
             }}
           >
-            {progress?.status === 'complete' ? (
+            {isComplete ? (
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
@@ -170,12 +217,12 @@ export default function ContentGeneratePage() {
             )}
           </div>
           <h1 className="text-xl sm:text-2xl font-display mb-2" style={{ color: 'var(--text-primary)' }}>
-            {progress?.status === 'complete' ? 'Content Generated!' : 'Generating Content...'}
+            {isComplete ? 'Content Generated!' : 'Generating Content...'}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {progress?.status === 'complete'
+            {isComplete
               ? 'Redirecting to content options...'
-              : progress?.currentStep || 'Starting content generation...'}
+              : currentStepText}
           </p>
         </div>
 
@@ -186,96 +233,144 @@ export default function ContentGeneratePage() {
               className="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
               style={{
                 width: `${progressPercent}%`,
-                background: progress?.status === 'complete'
+                background: isComplete
                   ? 'linear-gradient(90deg, var(--accent-emerald) 0%, var(--color-green-light) 100%)'
                   : 'linear-gradient(90deg, var(--accent-coral) 0%, #ff8f6b 50%, var(--accent-coral) 100%)',
-                backgroundSize: progress?.status === 'complete' ? '100% 100%' : '200% 100%',
-                animation: progress?.status === 'complete' ? 'none' : 'shimmer 2s ease-in-out infinite',
+                backgroundSize: isComplete ? '100% 100%' : '200% 100%',
+                animation: isComplete ? 'none' : 'shimmer 2s ease-in-out infinite',
               }}
             />
           </div>
           <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span>{completedCount} of {totalSteps} pieces</span>
-            <span>{Math.round(progressPercent)}%</span>
+            {pipelineMode ? (
+              <>
+                <span>Round {critiqueProgress?.round ?? 0} of {critiqueProgress?.maxRounds ?? '...'}</span>
+                <span>{Math.round(progressPercent)}%</span>
+              </>
+            ) : (
+              <>
+                <span>{completedCount} of {totalSteps} pieces</span>
+                <span>{Math.round(progressPercent)}%</span>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Steps */}
-        <div className="space-y-3 mb-6 animate-slide-up stagger-3">
-          {steps.map((step, index) => (
+        {/* Pipeline mode: Round-based progress */}
+        {pipelineMode && critiqueProgress && (
+          <div className="space-y-4 mb-6 animate-slide-up stagger-3">
+            {/* Round indicator */}
             <div
-              key={index}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                step.status === 'running' ? 'step-active' : ''
-              }`}
-              style={{
-                background:
-                  step.status === 'running'
-                    ? 'var(--accent-coral-soft)'
-                    : step.status === 'complete'
-                    ? 'rgba(52, 211, 153, 0.1)'
-                    : step.status === 'error'
-                    ? 'rgba(248, 113, 113, 0.1)'
-                    : 'var(--bg-elevated)',
-                border: `1px solid ${
-                  step.status === 'running'
-                    ? 'rgba(255, 107, 91, 0.3)'
-                    : step.status === 'complete'
-                    ? 'rgba(52, 211, 153, 0.3)'
-                    : step.status === 'error'
-                    ? 'rgba(248, 113, 113, 0.3)'
-                    : 'var(--border-subtle)'
-                }`,
-              }}
+              className="p-4 rounded-lg text-center"
+              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
             >
-              <div className="shrink-0">
-                {step.status === 'complete' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                ) : step.status === 'running' ? (
-                  <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                ) : step.status === 'error' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
-                  </svg>
-                ) : (
-                  <div className="w-5 h-5 rounded-full" style={{ border: '2px solid var(--border-default)' }} />
-                )}
+              <div className="text-2xl font-display mb-1" style={{ color: 'var(--text-primary)' }}>
+                Round {critiqueProgress.round} of {critiqueProgress.maxRounds}
               </div>
-
-              <div className="flex-1 min-w-0">
-                <div
-                  className="text-sm font-medium truncate"
-                  style={{
-                    color:
-                      step.status === 'running'
-                        ? 'var(--accent-coral)'
-                        : step.status === 'complete'
-                        ? 'var(--accent-emerald)'
-                        : step.status === 'error'
-                        ? 'var(--color-danger)'
-                        : 'var(--text-secondary)',
-                  }}
-                >
-                  {step.name}
-                </div>
-                {step.detail && (
-                  <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                    {step.detail}
-                  </div>
-                )}
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                {critiqueProgress.currentStep}
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Selected critics */}
+            {critiqueProgress.selectedCritics.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {critiqueProgress.selectedCritics.map((c) => (
+                  <span
+                    key={c.advisorId}
+                    className="px-2 py-1 rounded text-xs"
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {c.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step-based mode: Step list */}
+        {!pipelineMode && (
+          <div className="space-y-3 mb-6 animate-slide-up stagger-3">
+            {steps.map((step, index) => (
+              <div
+                key={index}
+                className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                  step.status === 'running' ? 'step-active' : ''
+                }`}
+                style={{
+                  background:
+                    step.status === 'running'
+                      ? 'var(--accent-coral-soft)'
+                      : step.status === 'complete'
+                      ? 'rgba(52, 211, 153, 0.1)'
+                      : step.status === 'error'
+                      ? 'rgba(248, 113, 113, 0.1)'
+                      : 'var(--bg-elevated)',
+                  border: `1px solid ${
+                    step.status === 'running'
+                      ? 'rgba(255, 107, 91, 0.3)'
+                      : step.status === 'complete'
+                      ? 'rgba(52, 211, 153, 0.3)'
+                      : step.status === 'error'
+                      ? 'rgba(248, 113, 113, 0.3)'
+                      : 'var(--border-subtle)'
+                  }`,
+                }}
+              >
+                <div className="shrink-0">
+                  {step.status === 'complete' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  ) : step.status === 'running' ? (
+                    <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                  ) : step.status === 'error' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="15" y1="9" x2="9" y2="15" />
+                      <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full" style={{ border: '2px solid var(--border-default)' }} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div
+                    className="text-sm font-medium truncate"
+                    style={{
+                      color:
+                        step.status === 'running'
+                          ? 'var(--accent-coral)'
+                          : step.status === 'complete'
+                          ? 'var(--accent-emerald)'
+                          : step.status === 'error'
+                          ? 'var(--color-danger)'
+                          : 'var(--text-secondary)',
+                    }}
+                  >
+                    {step.name}
+                  </div>
+                  {step.detail && (
+                    <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                      {step.detail}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Completion */}
-        {progress?.status === 'complete' && (
+        {isComplete && (
           <div
             className="p-4 rounded-lg mb-4 animate-fade-in"
             style={{
@@ -308,5 +403,13 @@ export default function ContentGeneratePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ContentGeneratePage() {
+  return (
+    <Suspense>
+      <ContentGeneratePageInner />
+    </Suspense>
   );
 }
