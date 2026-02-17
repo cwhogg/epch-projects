@@ -95,7 +95,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 6: Extract createAlert helper in detectChanges (KB-032)
+### ✅ Task 6: Extract createAlert helper in detectChanges (KB-032)
 
 **KBs:** KB-032
 
@@ -130,7 +130,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 8: Extract runAgentLifecycle helper (KB-029)
+### ✅ Task 8: Extract runAgentLifecycle helper (KB-029)
 
 **KBs:** KB-029
 
