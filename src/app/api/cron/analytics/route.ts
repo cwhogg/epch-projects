@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runAnalyticsAgentAuto } from '@/lib/analytics-agent';
+import { evaluateAllCanvases } from '@/lib/validation-canvas';
 
 export const maxDuration = 300;
 
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const report = await runAnalyticsAgentAuto();
+    await evaluateAllCanvases().catch(err => console.error('[cron/analytics] Canvas evaluation failed:', err));
     return NextResponse.json(report);
   } catch (error) {
     if (error instanceof Error && error.message === 'AGENT_PAUSED') {
@@ -41,6 +43,7 @@ export async function POST() {
 
   try {
     const report = await runAnalyticsAgentAuto();
+    await evaluateAllCanvases().catch(err => console.error('[cron/analytics] Canvas evaluation failed:', err));
     return NextResponse.json(report);
   } catch (error) {
     if (error instanceof Error && error.message === 'AGENT_PAUSED') {

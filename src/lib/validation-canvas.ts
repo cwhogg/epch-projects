@@ -70,6 +70,24 @@ const DEFAULT_THRESHOLDS: Record<AssumptionType, { validated: string; invalidate
 };
 
 /**
+ * Evaluate assumptions for all active canvases.
+ * Called by the analytics cron after each run.
+ * Scans all ideas for active canvases with testing assumptions.
+ */
+export async function evaluateAllCanvases(): Promise<void> {
+  const { getIdeasFromDb } = await import('@/lib/db');
+  const ideas = await getIdeasFromDb();
+
+  for (const idea of ideas) {
+    try {
+      await evaluateAssumptions(idea.id);
+    } catch (error) {
+      console.error(`[evaluateAllCanvases] Failed for ${idea.id}:`, error);
+    }
+  }
+}
+
+/**
  * Generate initial assumptions for an idea from its analysis data.
  * Creates the canvas state and all five assumptions with concrete statements.
  */
