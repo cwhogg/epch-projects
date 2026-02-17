@@ -71,7 +71,7 @@ chmod +x hooks/check-cron-results.sh hooks/check-test-audit.sh
 
 **Step 2:** Generalize hardcoded paths in each hook. The hooks currently use `$HOME/.claude/` for state files. These need to stay as `$HOME/.claude/` since that's where Claude Code stores user-level state (the plugin doesn't change that). Verify:
 - `auto-approve-worktrees.js`: No hardcoded paths — checks `cwd` for `.worktrees` dynamically. No changes needed.
-- `check-cron-results.sh`: Uses `$HOME/.claude/` for cron results and `$PWD/docs/kanban/todo` for KB items. The `$HOME/.claude/` paths are correct for user-level state. Change `$PWD/docs/kanban/todo` references to match folder-based kanban structure (will be consistent with Task 5's changes). No absolute user paths like `/Users/ericpage/`.
+- `check-cron-results.sh`: Uses `$HOME/.claude/` for cron results and `$PWD/docs/kanban/todo` for KB items. The `$HOME/.claude/` paths are correct for user-level state. The `$PWD/docs/kanban/todo` reference is already in the folder-based format — no changes needed. No absolute user paths like `/Users/ericpage/`.
 - `check-test-audit.sh`: Uses `$HOME/.claude/last-test-audit.timestamp` and `$PWD/` for test config detection. These are correct — no changes needed.
 - `error-tracker.js`: Uses `process.env.HOME + '/.claude/error-tracking/'`. Correct — no changes needed.
 - `usage-tracker.js`: Uses `process.env.HOME + '/.claude/usage-tracking/'`. Correct — no changes needed.
@@ -134,9 +134,13 @@ The current hooks.json only has one UserPromptSubmit hook (eval-audit check). Up
         ]
       },
       {
-        "type": "command",
-        "command": "cat e2e/.eval-audit-last-run 2>/dev/null",
-        "description": "Check eval audit recency for daily cron trigger"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/check-eval-audit.sh",
+            "statusMessage": "Checking eval audit status..."
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -176,6 +180,8 @@ The current hooks.json only has one UserPromptSubmit hook (eval-audit check). Up
 }
 ```
 
+**Ordering note:** This task references `hooks/check-eval-audit.sh` which is created in Task 19. Create that script before writing this hooks.json, or write the hooks.json with a placeholder and update it in Task 19.
+
 **Important:** Plugin hook commands may resolve relative to the project CWD, not the plugin root. If testing shows the relative paths (`hooks/check-cron-results.sh`) don't resolve correctly, the commands will need to use a discovery mechanism. Test this after the full migration (see Manual Steps).
 
 **Step 3:** Commit:
@@ -201,11 +207,11 @@ rm scripts/sync-from-local.sh scripts/transforms.txt
 rmdir scripts 2>/dev/null || true
 ```
 
-**Step 2:** Update CLAUDE.md to remove any references to the sync script or transforms.txt.
+**Step 2:** Update CLAUDE.md to remove any references to the sync script or transforms.txt. **Note:** Task 1 already removes the sync script note from CLAUDE.md. If Task 1 is complete, verify the reference is already gone. If not, remove it now.
 
 **Step 3:** Commit:
 ```bash
-git add -A scripts/ CLAUDE.md
+git add scripts/ CLAUDE.md
 git commit -m "chore: remove sync infrastructure (plugin is now canonical source)"
 ```
 
@@ -347,7 +353,11 @@ cp ~/.claude/agents/references/test-audit-output-schema.md agents/references/
 - **Line ~52:** Remove the project-specific tech stack description ("Next.js 14 App Router project using: Supabase, Vercel AI SDK..."). Replace with: "Read the project's `CLAUDE.md` or `package.json` to understand the tech stack before analyzing coverage."
 - Replace any `~/.claude/agents/references/` references with `agents/references/`.
 
-**Step 4:** Check the other 3 worker files and 2 reference files for hardcoded paths. Replace any `~/.claude/` references with plugin-relative paths.
+**Step 4:** Check ALL other worker files explicitly for hardcoded paths (this is a behavioral change — workers currently receive an explicit project path from the orchestrator; after generalization they infer it from context):
+- `agents/workers/test-audit-business-logic.md`: Search for `/Users/ericpage/`, `va-web-app`, `~/.claude/agents/`. Replace agent-relative paths with `agents/`.
+- `agents/workers/test-audit-value.md`: Same searches and replacements.
+- `agents/workers/test-audit-isolation-antipattern.md`: Same searches and replacements.
+- `agents/references/test-audit-scoring.md` and `agents/references/test-audit-output-schema.md`: Same searches.
 
 **Step 5:** Verify with Grep that no `~/.claude/` or `/Users/ericpage/` paths remain in any of the 7 files.
 
@@ -507,12 +517,20 @@ epch-projects
 
 **Step 4:** Handle duplicates. Three advisors exist in both va-web-app and epch-projects: `april-dunford.md`, `richard-rumelt.md`, `shirin-oreizy.md`. The epch-projects versions may be newer/more specialized for that context. Keep both — the use-advisor skill shows repo grouping so the user can pick the right one.
 
-**Step 5:** Verify total count. Run: `find advisors -name "*.md" | wc -l` — should be 62 (61 advisors + 0 non-md files... actually 62 .md files since 3 are duplicated across repos).
+**Step 5:** Copy the advisor registry (contains domain metadata, selection guidelines, and per-advisor `best_for`/`not_for` annotations used by brainstorming's multi-critic selection):
+```bash
+cp ~/.claude/advisors/registry.md advisors/registry.md
+```
+Read the copied registry.md. Replace any `~/.claude/` path references with `advisors/` (plugin-relative). Verify all advisors listed in the registry have corresponding .md files in the `advisors/` subdirectories.
 
-**Step 6:** Commit:
+**Step 6:** Verify total .md file count: `find advisors -name "*.md" | wc -l` — should be 63 (42 va-web-app + 14 epch-projects + 6 .claude + registry.md). Three advisors (april-dunford, richard-rumelt, shirin-oreizy) appear in both va-web-app and epch-projects — both copies are intentionally kept.
+
+**Note:** The epch-projects symlink target may contain a `prompts` subdirectory that mirrors the parent — this is a stale artifact. The `*.md` glob in Step 2 correctly ignores it.
+
+**Step 7:** Commit:
 ```bash
 git add advisors/
-git commit -m "feat: ship all 62 advisor prompts with plugin (42 va-web-app, 14 epch-projects, 6 .claude)"
+git commit -m "feat: ship 62 advisor prompts + registry with plugin"
 ```
 
 ---
@@ -532,12 +550,12 @@ cp ~/.claude/skills/use-advisor/SKILL.md skills/use-advisor/
 
 **Step 3:** Modify the discovery logic in Step 1:
 
-Replace the "Step 1a: Read the repo manifest" section. The new logic:
-1. **Determine the plugin root.** The skill's base directory is provided in the system context (e.g., "Base directory for this skill: /path/to/skills/use-advisor"). Navigate up 2 directory levels to get the plugin root.
-2. **Read the repo manifest** at `{plugin-root}/advisors/.repos`. Each line is a repo name.
-3. **Glob each repo:** For each repo name, glob `{plugin-root}/advisors/{repo-name}/**/*.md`.
+Replace the "Step 1a: Read the repo manifest" section. The new logic uses the same plugin-root-relative path convention all other skills use (e.g., `agents/steve-jobs.md`, `skills/brainstorming/design-critique-checklist.md`):
+1. **Read the repo manifest** at `advisors/.repos` (plugin-root-relative, same convention as `agents/` and `skills/` references throughout the plugin). Each line is a repo name.
+2. **Glob each repo:** For each repo name, glob `advisors/{repo-name}/**/*.md`.
+3. If the glob returns no results for a given repo, try the absolute path `~/.claude/advisors/prompts/{repo-name}/**/*.md` as fallback (for user-added advisors not shipped with the plugin).
 
-Replace the "Step 1b: Glob each repo" section with the updated glob pattern using the plugin root.
+Replace the "Step 1b: Glob each repo" section with this updated two-stage discovery (plugin-relative first, `~/.claude/` fallback second).
 
 **Step 4:** Update the broken-symlink error message — the plugin ships files directly, not symlinks. Change error handling to: "If a repo from the manifest returns zero results, report: 'No advisor files found in advisors/{repo-name}/. The directory may be empty.'"
 
@@ -600,13 +618,13 @@ The plugin's brainstorming currently uses a single generic reviewer at sonnet qu
 - Round 2 escalation if Round 1 reveals uncovered domain
 
 **Step 3:** Replace the single-critic section in the plugin's brainstorming with the multi-critic architecture from local. Adapt:
-- The critic selection should reference the plugin's `advisors/` directory (from Task 13). Instead of `~/.claude/advisors/registry.md`, the skill selects critics by reading advisors from the plugin's advisors directory.
-- The selection logic: Read the design document → identify domains involved → glob `advisors/**/*.md` → read first lines to get advisor names and specialties → select 1-4 advisors whose domains match the design → ensure diversity of perspective.
+- The critic selection should reference the plugin's `advisors/registry.md` (shipped in Task 13). This registry contains per-advisor `domains`, `best_for`, `not_for`, and calibration metadata that enables intelligent critic selection — do NOT replace it with a glob-and-read-first-lines approach (that loses the selection metadata).
+- Change the registry path from `~/.claude/advisors/registry.md` to `advisors/registry.md` (plugin-relative).
 - Use `model=opus` for critics (not sonnet).
 - Keep the Steve Jobs persona review from the current plugin version (it's an improvement).
 - Keep the lessons-learned check from the current plugin version (it's an improvement).
 
-**Step 4:** If the local version has a `critic-registry.md` file, check its content. The research indicates it just redirects to `~/.claude/advisors/registry.md`. For the plugin, create a new `skills/brainstorming/critic-registry.md` that documents the critic selection algorithm inline (since we ship the advisors directly).
+**Step 4:** The local `skills/brainstorming/critic-registry.md` is just a redirect to the global registry. For the plugin, replace it with a one-liner: "Critic selection uses `advisors/registry.md`. See that file for per-advisor domain metadata, selection guidelines, and diversity rules."
 
 **Step 5:** Commit:
 ```bash
@@ -659,12 +677,12 @@ git commit -m "feat: upgrade writing-plans to dual-critic (Architect + Verifier,
 
 **Step 2:** Read `skills/brainstorming/SKILL.md`. Find and remove or qualify the `elements-of-style:writing-clearly-and-concisely` reference (around line 45). This is an external plugin that doesn't ship with aligned. Remove the reference entirely or change to: "If a writing-style plugin is available, use it for copy review."
 
-**Step 3:** Read `skills/mockup-generator/SKILL.md`. Find any hardcoded viewport defaults (e.g., "mobile-first" or "375px"). Replace with: "Read `docs/design/design-principles.md` for viewport guidance, breakpoints, and layout tokens. If design-principles.md does not exist, prompt the user for viewport preference before generating mockups." Remove any assumption about mobile vs desktop default.
+**Step 3:** Read `skills/mockup-generator/SKILL.md`. Verify it already reads `docs/design/design-principles.md` conditionally for viewport guidance (the Verifier confirmed this is already correct — the skill uses conditional logic: "If design-principles.md specifies mobile-first, use 375px max-width. Otherwise, use responsive layout." No changes needed unless you find a hardcoded default that isn't behind a conditional).
 
 **Step 4:** Commit:
 ```bash
-git add skills/using-git-worktrees/SKILL.md skills/brainstorming/SKILL.md skills/mockup-generator/SKILL.md
-git commit -m "fix: remove ghost references, generalize mockup-generator viewport defaults"
+git add skills/using-git-worktrees/SKILL.md skills/brainstorming/SKILL.md
+git commit -m "fix: remove ghost references (subagent-driven-development, elements-of-style)"
 ```
 
 ---
@@ -672,22 +690,20 @@ git commit -m "fix: remove ghost references, generalize mockup-generator viewpor
 ### Task 19: Fix Eval-Audit Hook Threshold Logic
 
 **Files:**
-- Modify: `hooks/hooks.json` (may need update)
-- Modify: `skills/eval-audit/SKILL.md`
+- Create: `hooks/check-eval-audit.sh`
+- Modify: `CLAUDE.md`
 
-The eval-audit hook reads `e2e/.eval-audit-last-run` but nothing tells Claude to compare the timestamp and invoke the skill. Two approaches to fix this:
+**Ordering note:** Task 3's hooks.json already references `hooks/check-eval-audit.sh`. This task creates that script.
 
-**Approach A (recommended):** Update the hook command to include threshold comparison and output a `[EVAL AUDIT]` tag when stale, similar to how `check-test-audit.sh` works:
+The eval-audit hook needs threshold comparison logic (like check-test-audit.sh) to output a `[EVAL AUDIT]` tag when stale.
 
-**Step 1:** Create a new hook script `hooks/check-eval-audit.sh` that:
-1. Checks if `e2e/.eval-audit-last-run` exists
+**Step 1:** Create `hooks/check-eval-audit.sh` that:
+1. Checks if `e2e/.eval-audit-last-run` exists in the project
 2. Compares the timestamp to current time
 3. If >1 day old (or missing), outputs `[EVAL AUDIT] Last eval audit was N day(s) ago...`
 4. If recent, outputs nothing
 
-Model this after `hooks/check-test-audit.sh` which does the same for test audits.
-
-**Step 2:** Update `hooks/hooks.json` to use the new script instead of the bare `cat` command for the eval-audit UserPromptSubmit hook.
+Model this after `hooks/check-test-audit.sh` which does the same for test audits. Make it executable: `chmod +x hooks/check-eval-audit.sh`.
 
 **Step 3:** Add instructions to `CLAUDE.md` (under Hook-Triggered Audits) for handling the `[EVAL AUDIT]` tag: "When you see `[EVAL AUDIT]`, suggest running `/aligned:eval-audit` to the user."
 
@@ -801,9 +817,9 @@ git commit -m "chore: bump version to 0.2.0 for plugin parity release"
 
 **Step 3:** If any verification fails, fix the issue before proceeding.
 
-**Step 4:** Commit any remaining fixes:
+**Step 4:** Commit any remaining fixes (stage specific files, never `git add -A`):
 ```bash
-git add -A
+git add <specific-files-that-needed-fixing>
 git commit -m "fix: final verification cleanup"
 ```
 
@@ -907,3 +923,15 @@ git commit -m "fix: final verification cleanup"
 **Why:** The references are harmless when unused and valuable when someone does use the system. Removing them from 6 skills is churn that provides no benefit. If the user later decides to use lessons-learned, the infrastructure is already in place.
 **Alternatives rejected:**
 - Remove all references: Creates churn across 6 skills for zero benefit. Would need to be re-added if lessons-learned is ever wanted.
+
+#### Decision 4: Critic architecture for writing-plans
+**Chose:** Dual-critic (The Architect + The Verifier), launched in parallel.
+**Why:** The single-reviewer approach loses the independence benefit. The Architect focuses on codebase pattern alignment while The Verifier does exhaustive fact-checking — neither duplicates the other's work. **Note:** Round 1 uses `model=sonnet`, Round 2 uses `model=haiku` (scoped to changes only). Preserve this model specification when porting.
+**Alternatives rejected:**
+- Single merged reviewer: Tries to do both architectural critique and fact-checking in one pass — depth suffers in both dimensions.
+
+#### Decision 9: Plugin version bump
+**Chose:** 0.1.0 → 0.2.0
+**Why:** Significant feature release but still pre-1.0 (skill interfaces may continue evolving). **Breaking change acknowledged:** The kanban format conversion (single-file → folder-based) changes observable output in 6 skills. Existing projects that used `docs/Kanban-board.md` from v0.1.0 will need to migrate to the folder-based `docs/kanban/` structure. The README changelog should note this as a breaking change with migration instructions.
+**Alternatives rejected:**
+- 1.0.0: Premature — skill interfaces are still being refined (this very migration proves it).
