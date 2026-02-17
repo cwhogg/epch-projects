@@ -45,6 +45,29 @@ const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
   'social-media-strategy': 'Social Media',
 };
 
+function parseSeoMetrics(seoData: string | undefined): { agreedKeywords: number; serpValidated: number } {
+  if (!seoData) return { agreedKeywords: 0, serpValidated: 0 };
+  try {
+    const seo = JSON.parse(seoData);
+    return {
+      agreedKeywords: seo.synthesis?.comparison?.agreedKeywords?.length ?? 0,
+      serpValidated: seo.synthesis?.serpValidated?.filter((v: { hasContentGap: boolean }) => v.hasContentGap)?.length ?? 0,
+    };
+  } catch {
+    return { agreedKeywords: 0, serpValidated: 0 };
+  }
+}
+
+async function fetchGscMetrics(ideaId: string): Promise<{ gscImpressions: number | null; gscClicks: number | null; gscCTR: number | null }> {
+  const gscData = await getGSCAnalytics(ideaId).catch(() => null);
+  if (!gscData?.timeSeries?.length) return { gscImpressions: null, gscClicks: null, gscCTR: null };
+  const last7 = gscData.timeSeries.slice(-7);
+  const gscImpressions = last7.reduce((sum: number, d: { impressions: number }) => sum + d.impressions, 0);
+  const gscClicks = last7.reduce((sum: number, d: { clicks: number }) => sum + d.clicks, 0);
+  const gscCTR = gscImpressions > 0 ? (gscClicks / gscImpressions) * 100 : 0;
+  return { gscImpressions, gscClicks, gscCTR };
+}
+
 async function getDashboardData(id: string): Promise<DashboardData | null> {
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
@@ -59,34 +82,13 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
       getPaintedDoorSite(id).catch(() => null),
     ]);
 
-    // Parse SEO data for analysis card summary
-    let agreedKeywords = 0;
-    let serpValidated = 0;
-    if (content?.seoData) {
-      try {
-        const seo = JSON.parse(content.seoData);
-        agreedKeywords = seo.synthesis?.comparison?.agreedKeywords?.length ?? 0;
-        serpValidated = seo.synthesis?.serpValidated?.filter((v: { hasContentGap: boolean }) => v.hasContentGap)?.length ?? 0;
-      } catch { /* ignore parse errors */ }
-    }
+    const { agreedKeywords, serpValidated } = parseSeoMetrics(content?.seoData);
 
     // Get signup count if site exists
     const websiteSignups = pdSite ? await getEmailSignupCount(pdSite.id).catch(() => 0) : 0;
 
-    // Get GSC summary metrics if linked
-    let gscImpressions: number | null = null;
-    let gscClicks: number | null = null;
-    let gscCTR: number | null = null;
-    if (gscLink) {
-      const gscData = await getGSCAnalytics(analysis.ideaId).catch(() => null);
-      if (gscData?.timeSeries?.length) {
-        // Sum last 7 days
-        const last7 = gscData.timeSeries.slice(-7);
-        gscImpressions = last7.reduce((sum, d) => sum + d.impressions, 0);
-        gscClicks = last7.reduce((sum, d) => sum + d.clicks, 0);
-        gscCTR = gscImpressions > 0 ? (gscClicks / gscImpressions) * 100 : 0;
-      }
-    }
+    const gscMetrics = gscLink ? await fetchGscMetrics(analysis.ideaId) : { gscImpressions: null, gscClicks: null, gscCTR: null };
+    const { gscImpressions, gscClicks, gscCTR } = gscMetrics;
 
     const foundationDocs: Partial<Record<FoundationDocType, boolean>> = {};
     for (const docType of FOUNDATION_DOC_TYPES) {
