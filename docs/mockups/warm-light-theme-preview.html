@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPCH — Warm Light Theme Preview</title>
+  <style>
+    /* Force light mode — ignores OS preference */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
+
+    :root {
+      --bg-primary: #FAF9F7;
+      --bg-secondary: #F3F2EF;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #FFFFFF;
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #94918C;
+      --accent-coral: #ff6b5b;
+      --accent-coral-soft: rgba(255, 107, 91, 0.12);
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+      --color-danger: #ef4444;
+      --color-info: #3b82f6;
+      --color-sky: #38bdf8;
+      --color-purple-light: #a78bfa;
+      --color-pink: #f472b6;
+      --border-subtle: rgba(28, 25, 23, 0.06);
+      --border-default: rgba(28, 25, 23, 0.10);
+      --shadow-card: 0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04);
+      --shadow-elevated: 0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.5rem;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* Nav */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 249, 247, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-link {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .nav-link.active {
+      color: var(--accent-coral);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Page header */
+    .page-header {
+      position: relative;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    .page-header h1 {
+      font-size: 1.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+    }
+
+    .header-glow {
+      position: absolute;
+      top: -40px;
+      right: -60px;
+      width: 300px;
+      height: 200px;
+      background: radial-gradient(ellipse, rgba(255, 107, 91, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card:hover {
+      border-color: var(--border-default);
+      box-shadow: var(--shadow-elevated), 0 0 0 1px rgba(255, 107, 91, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .card-static {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    /* Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Pipeline cards */
+    .pipeline-card {
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .pipeline-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.75rem;
+      font-size: 1.25rem;
+    }
+
+    .pipeline-number {
+      font-family: var(--font-display);
+      font-size: 1.875rem;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .pipeline-label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Section */
+    .section-header {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Analysis card */
+    .analysis-card {
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .score-ring {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .analysis-info h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .analysis-meta {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .analysis-scores {
+      margin-left: auto;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .score-item {
+      text-align: center;
+    }
+
+    .score-value {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-label {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.10);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.10);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.10);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .badge-neutral {
+      background: rgba(148, 145, 140, 0.10);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+    }
+
+    .badge-coral {
+      background: var(--accent-coral-soft);
+      color: #dc4a3a;
+      border: 1px solid rgba(255, 107, 91, 0.25);
+    }
+
+    .badge-info {
+      background: rgba(59, 130, 246, 0.10);
+      color: #2563eb;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b5b 0%, #ff8f6b 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(255, 107, 91, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 107, 91, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      border-color: rgba(28, 25, 23, 0.18);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--color-danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* Inputs */
+    .input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+
+    .input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent-coral);
+      box-shadow: 0 0 0 3px var(--accent-coral-soft);
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    td:first-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .td-number {
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-display);
+      font-weight: 600;
+    }
+
+    /* Separator */
+    .section-divider {
+      border: none;
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 2.5rem 0;
+    }
+
+    /* Swatches */
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .swatch-color {
+      height: 64px;
+    }
+
+    .swatch-info {
+      padding: 0.625rem 0.75rem;
+      background: var(--bg-card);
+    }
+
+    .swatch-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.125rem;
+    }
+
+    .swatch-value {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* Component showcase */
+    .showcase-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Prose */
+    .prose-editorial a {
+      color: var(--text-primary);
+      text-decoration: underline;
+      text-decoration-color: var(--accent-coral);
+      text-underline-offset: 2px;
+    }
+
+    .prose-editorial a:hover {
+      color: var(--accent-coral);
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2rem 0;
+      margin-top: 3rem;
+    }
+
+    .footer p {
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Score colors */
+    .score-good { color: #059669; }
+    .score-mid { color: #d97706; }
+    .score-bad { color: #dc2626; }
+
+    /* Tag */
+    .tag {
+      display: inline-flex;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      background: var(--accent-coral-soft);
+      color: #dc4a3a;
+    }
+
+    /* Inline code */
+    code {
+      font-size: 0.875em;
+      padding: 0.125rem 0.375rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      font-family: monospace;
+    }
+
+    @media (max-width: 768px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .analysis-scores { display: none; }
+      .swatch-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <svg width="36" height="36" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="100" fill="#F07563"/>
+          <text x="100" y="65" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-weight="800" font-size="48" fill="white" opacity="0.65">{</text>
+          <text x="100" y="118" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-weight="700" font-size="39" fill="white" letter-spacing="3">EPCH</text>
+          <text x="100" y="162" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-weight="800" font-size="48" fill="white" opacity="0.65">}</text>
+        </svg>
+        <span class="logo-text">EPCH Project Research</span>
+      </a>
+      <div class="nav-links">
+        <a href="#" class="nav-link active">Dashboard</a>
+        <a href="#" class="nav-link">Ideation</a>
+        <a href="#" class="nav-link">Foundation</a>
+        <a href="#" class="nav-link">Content</a>
+        <a href="#" class="nav-link">Analytics</a>
+        <a href="#" class="nav-link">Website</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-glow"></div>
+      <h1>Project Dashboard</h1>
+      <p>Track product ideas from inception through SEO validation</p>
+    </div>
+
+    <!-- Pipeline Overview -->
+    <h2 class="section-header">Pipeline</h2>
+    <div class="grid-3">
+      <div class="card pipeline-card">
+        <div class="pipeline-icon" style="background: rgba(255, 107, 91, 0.10);">
+          <span>💡</span>
+        </div>
+        <div class="pipeline-number" style="color: var(--accent-coral);">12</div>
+        <div class="pipeline-label">Ideation</div>
+      </div>
+      <div class="card pipeline-card">
+        <div class="pipeline-icon" style="background: rgba(139, 92, 246, 0.10);">
+          <span>🔬</span>
+        </div>
+        <div class="pipeline-number" style="color: var(--accent-violet);">7</div>
+        <div class="pipeline-label">Analysis</div>
+      </div>
+      <div class="card pipeline-card">
+        <div class="pipeline-icon" style="background: rgba(16, 185, 129, 0.10);">
+          <span>📝</span>
+        </div>
+        <div class="pipeline-number" style="color: var(--accent-emerald);">4</div>
+        <div class="pipeline-label">Content</div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Recent Analyses -->
+    <h2 class="section-header">Recent Analyses</h2>
+    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
+
+      <div class="card analysis-card">
+        <svg class="score-ring" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(28,25,23,0.06)" stroke-width="4"/>
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#059669" stroke-width="4"
+            stroke-dasharray="120.6" stroke-dashoffset="24.1"
+            stroke-linecap="round" transform="rotate(-90 28 28)"/>
+          <text x="28" y="32" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="16" fill="#059669">8.0</text>
+        </svg>
+        <div class="analysis-info">
+          <h3>Subscription Box for Dog Owners</h3>
+          <div class="analysis-meta">Analyzed 3 days ago &middot; <span class="badge-success badge" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Tier 1</span></div>
+        </div>
+        <div class="analysis-scores">
+          <div class="score-item">
+            <div class="score-value score-good">7.5</div>
+            <div class="score-label">Competition</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-good">8.2</div>
+            <div class="score-label">WTP</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-mid">6.8</div>
+            <div class="score-label">SEO</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-good">9.1</div>
+            <div class="score-label">Diff.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card analysis-card">
+        <svg class="score-ring" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(28,25,23,0.06)" stroke-width="4"/>
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#d97706" stroke-width="4"
+            stroke-dasharray="120.6" stroke-dashoffset="48.2"
+            stroke-linecap="round" transform="rotate(-90 28 28)"/>
+          <text x="28" y="32" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="16" fill="#d97706">6.0</text>
+        </svg>
+        <div class="analysis-info">
+          <h3>AI-Powered Meal Planning App</h3>
+          <div class="analysis-meta">Analyzed 1 week ago &middot; <span class="badge-warning badge" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Tier 2</span></div>
+        </div>
+        <div class="analysis-scores">
+          <div class="score-item">
+            <div class="score-value score-bad">3.2</div>
+            <div class="score-label">Competition</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-good">7.8</div>
+            <div class="score-label">WTP</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-mid">5.5</div>
+            <div class="score-label">SEO</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-good">7.4</div>
+            <div class="score-label">Diff.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card analysis-card">
+        <svg class="score-ring" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(28,25,23,0.06)" stroke-width="4"/>
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#dc2626" stroke-width="4"
+            stroke-dasharray="120.6" stroke-dashoffset="84.4"
+            stroke-linecap="round" transform="rotate(-90 28 28)"/>
+          <text x="28" y="32" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="16" fill="#dc2626">3.0</text>
+        </svg>
+        <div class="analysis-info">
+          <h3>Remote Team Wellness Platform</h3>
+          <div class="analysis-meta">Analyzed 2 weeks ago &middot; <span class="badge-danger badge" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Tier 3</span></div>
+        </div>
+        <div class="analysis-scores">
+          <div class="score-item">
+            <div class="score-value score-bad">2.1</div>
+            <div class="score-label">Competition</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-bad">3.5</div>
+            <div class="score-label">WTP</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-bad">2.8</div>
+            <div class="score-label">SEO</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value score-mid">4.1</div>
+            <div class="score-label">Diff.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Component Showcase: Badges -->
+    <h2 class="section-header">Badges</h2>
+    <div class="showcase-row">
+      <span class="badge badge-success">Success</span>
+      <span class="badge badge-warning">Warning</span>
+      <span class="badge badge-danger">Danger</span>
+      <span class="badge badge-neutral">Neutral</span>
+      <span class="badge badge-coral">Active</span>
+      <span class="badge badge-info">Published</span>
+    </div>
+
+    <!-- Inline tags -->
+    <div class="showcase-row" style="margin-bottom: 2rem;">
+      <span class="tag">Competitors</span>
+      <span class="tag">Keywords</span>
+      <span class="tag">Content</span>
+      <span class="tag">Analytics</span>
+    </div>
+
+    <!-- Component Showcase: Buttons -->
+    <h2 class="section-header">Buttons</h2>
+    <div class="showcase-row" style="margin-bottom: 2rem;">
+      <button class="btn btn-primary">Analyze Idea</button>
+      <button class="btn btn-secondary">Export Data</button>
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-danger">Delete</button>
+    </div>
+
+    <!-- Component Showcase: Input -->
+    <h2 class="section-header">Form Input</h2>
+    <div style="max-width: 480px; margin-bottom: 2rem;">
+      <label class="input-label">Product Idea</label>
+      <input class="input" type="text" placeholder="Describe your product concept..." />
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Table -->
+    <h2 class="section-header">Content Performance</h2>
+    <div class="card-static" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Impressions</th>
+              <th>Clicks</th>
+              <th>CTR</th>
+              <th>Avg. Position</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Best Subscription Boxes for Dogs in 2026</td>
+              <td><span class="badge badge-success" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Getting Clicks</span></td>
+              <td class="td-number">12,450</td>
+              <td class="td-number">847</td>
+              <td class="td-number">6.8%</td>
+              <td class="td-number">4.2</td>
+            </tr>
+            <tr>
+              <td>Dog Food Subscription vs Store-Bought: Complete Guide</td>
+              <td><span class="badge badge-warning" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Impressions Only</span></td>
+              <td class="td-number">3,210</td>
+              <td class="td-number">89</td>
+              <td class="td-number">2.8%</td>
+              <td class="td-number">18.7</td>
+            </tr>
+            <tr>
+              <td>How Much Should You Spend on Dog Treats Monthly?</td>
+              <td><span class="badge badge-info" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Published</span></td>
+              <td class="td-number">0</td>
+              <td class="td-number">0</td>
+              <td class="td-number">—</td>
+              <td class="td-number">—</td>
+            </tr>
+            <tr>
+              <td>Puppy Nutrition: What New Owners Need to Know</td>
+              <td><span class="badge badge-neutral" style="font-size: 0.625rem; padding: 0.2rem 0.5rem;">Draft</span></td>
+              <td class="td-number">—</td>
+              <td class="td-number">—</td>
+              <td class="td-number">—</td>
+              <td class="td-number">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Color Palette -->
+    <h2 class="section-header">Color Palette</h2>
+
+    <h3 style="font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; font-family: var(--font-body); font-weight: 500;">Backgrounds</h3>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #FAF9F7;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">bg-primary</div>
+          <div class="swatch-value">#FAF9F7</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #F3F2EF;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">bg-secondary</div>
+          <div class="swatch-value">#F3F2EF</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #FFFFFF; border-bottom: 1px solid rgba(28,25,23,0.06);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">bg-card</div>
+          <div class="swatch-value">#FFFFFF</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; font-family: var(--font-body); font-weight: 500;">Text</h3>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #1C1917;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">text-primary</div>
+          <div class="swatch-value">#1C1917 — stone-900</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #57534E;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">text-secondary</div>
+          <div class="swatch-value">#57534E — stone-600</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #94918C;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">text-muted</div>
+          <div class="swatch-value">#94918C — warm gray</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; font-family: var(--font-body); font-weight: 500;">Accent & Semantic</h3>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #ff6b5b;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">accent-coral</div>
+          <div class="swatch-value">#ff6b5b</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #10b981;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">accent-emerald</div>
+          <div class="swatch-value">#10b981</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #f59e0b;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">accent-amber</div>
+          <div class="swatch-value">#f59e0b</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #ef4444;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">color-danger</div>
+          <div class="swatch-value">#ef4444</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #3b82f6;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">color-info</div>
+          <div class="swatch-value">#3b82f6</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #8b5cf6;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">accent-violet</div>
+          <div class="swatch-value">#8b5cf6</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Typography -->
+    <h2 class="section-header">Typography</h2>
+    <div class="card-static" style="padding: 1.5rem; margin-bottom: 2rem;">
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Page Title — Fraunces 500, 30px</div>
+        <div style="font-family: var(--font-display); font-size: 1.875rem; font-weight: 500; letter-spacing: -0.02em;">Project Dashboard</div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Section Header — Fraunces 500, 18px</div>
+        <div style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 500; letter-spacing: -0.02em;">Recent Analyses</div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Metric Number — Fraunces 600, 30px</div>
+        <div style="font-family: var(--font-display); font-size: 1.875rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent-coral);">8.4</div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Body Text — DM Sans 400, 14px</div>
+        <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">This product concept targets dog owners who want curated monthly treat and toy deliveries. The competitive landscape shows moderate saturation in the general subscription box space but low competition for breed-specific curation.</div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Label — DM Sans 500, 13px uppercase</div>
+        <div style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Competition Score</div>
+      </div>
+      <div>
+        <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Prose Link</div>
+        <div class="prose-editorial" style="font-size: 0.875rem; color: var(--text-secondary);">
+          See the <a href="#">full analysis report</a> for detailed scoring methodology and <a href="#">competitive landscape breakdown</a>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>AI-powered product research</p>
+    </footer>
+  </div>
+
+</body>
+</html>

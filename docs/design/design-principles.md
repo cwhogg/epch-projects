@@ -5,8 +5,7 @@ EPCH Project Research is a product concept testing pipeline — a warm editorial
 ## Design Direction
 
 **Personality:** Warmth & Approachability meets Data & Analysis
-- Light-first with warm stone-tinted neutrals (not cool zinc/slate)
-- Dark mode via `prefers-color-scheme` falls back to charcoal palette
+- Warm white with stone-tinted neutrals (not cool zinc/slate). No dark mode.
 - Data-forward with comfortable spacing — density where it earns it (tables, score comparisons), breathing room where it helps (section headers, card padding)
 - Typography-driven hierarchy — Fraunces headlines bring editorial warmth that shines on the warm white foundation. The serif-meets-data tension is the personality.
 - Coral (#ff6b5b) as the primary action color. Vibrant and alive on warm white.
@@ -15,9 +14,7 @@ EPCH Project Research is a product concept testing pipeline — a warm editorial
 
 ## Color Foundation
 
-Warm off-white base with coral accent. Dark mode adapts automatically using charcoal neutrals.
-
-### Light Mode (default)
+Warm off-white base with coral accent. No dark mode — light only.
 
 | Token | Value | Usage |
 |-------|-------|-------|
@@ -30,20 +27,6 @@ Warm off-white base with coral accent. Dark mode adapts automatically using char
 | `--text-muted` | `#94918C` | Labels, placeholders, metadata — warm gray |
 | `--border-subtle` | `rgba(28, 25, 23, 0.06)` | Card borders, dividers |
 | `--border-default` | `rgba(28, 25, 23, 0.10)` | Input borders, table rules |
-
-### Dark Mode
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--bg-primary` | `#0d0d0f` | Page background |
-| `--bg-secondary` | `#16161a` | Section backgrounds |
-| `--bg-card` | `#1c1c21` | Card surfaces |
-| `--bg-elevated` | `#232329` | Elevated surfaces |
-| `--text-primary` | `#f4f4f5` | Headlines, primary content |
-| `--text-secondary` | `#a1a1aa` | Body text |
-| `--text-muted` | `#71717a` | Labels, metadata |
-| `--border-subtle` | `rgba(255, 255, 255, 0.06)` | Card borders |
-| `--border-default` | `rgba(255, 255, 255, 0.1)` | Input borders |
 
 ### Accent & Semantic Colors
 
@@ -139,13 +122,8 @@ Cards use `--radius-lg` (16px). Badges use `--radius-full`. Inputs and buttons u
 Subtle single shadows on warm white. Cards sit gently on the page — lift, not float. The warm stone-tinted page background provides natural surface contrast against white cards, so shadows can stay light.
 
 ```css
-/* Light mode (default) */
 --shadow-card: 0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04);
 --shadow-elevated: 0 4px 12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.06);
-
-/* Dark mode */
---shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
---shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
 ```
 
 ### Card Hover Behavior
@@ -188,7 +166,7 @@ Two patterns:
 
 ### Inputs
 
-`bg-elevated` background (white on light, dark surface on dark), `border-default` border. Focus state: coral border + coral soft ring (`0 0 0 3px var(--accent-coral-soft)`). Labels are uppercase, muted, 13px with tracking.
+`bg-elevated` background (white), `border-default` border. Focus state: coral border + coral soft ring (`0 0 0 3px var(--accent-coral-soft)`). Labels are uppercase, muted, 13px with tracking.
 
 ### Tables
 
@@ -246,7 +224,7 @@ No spring or bouncy effects. No page transitions.
 
 ## Texture
 
-No noise texture overlay on light mode — the warm off-white background and white card contrast provide sufficient visual interest. Dark mode retains the subtle noise overlay at 2% opacity for tactile depth.
+No noise texture overlay. The warm off-white background and white card contrast provide sufficient visual interest without synthetic texture.
 
 ## Anti-Patterns
 
