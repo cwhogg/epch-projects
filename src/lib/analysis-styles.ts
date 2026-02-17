@@ -1,3 +1,5 @@
+import type { AssumptionStatus, AssumptionType } from '@/types';
+
 export function getBadgeClass(rec: string) {
   switch (rec) {
     case 'Tier 1': return 'badge-success';
@@ -30,3 +32,21 @@ export function getWebsiteStatusStyle(status: string) {
 export function getWebsiteStatusLabel(status: string) {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
+
+export function getAssumptionStatusBackground(status: AssumptionStatus): string {
+  switch (status) {
+    case 'untested': return 'var(--border-default)';
+    case 'testing': return 'var(--accent-amber)';
+    case 'validated': return 'var(--accent-emerald)';
+    case 'invalidated': return 'var(--color-danger)';
+    case 'pivoted': return 'var(--accent-coral)';
+  }
+}
+
+export const ASSUMPTION_LABELS: Record<AssumptionType, string> = {
+  demand: 'Demand',
+  reachability: 'Reach',
+  engagement: 'Engage',
+  wtp: 'WTP',
+  differentiation: 'Differ',
+};
