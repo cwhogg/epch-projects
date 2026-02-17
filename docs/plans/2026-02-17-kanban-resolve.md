@@ -152,7 +152,7 @@ None — all 10 items are actionable.
 
 ---
 
-### Task 9: Extract validation helpers from validate_code (KB-031)
+### ✅ Task 9: Extract validation helpers from validate_code (KB-031)
 
 **KBs:** KB-031
 
