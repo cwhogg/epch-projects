@@ -3,8 +3,21 @@ import { isRedisConfigured, getFoundationDoc } from '@/lib/db';
 import { getAnthropic } from '@/lib/anthropic';
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { DOC_ADVISOR_MAP } from '@/lib/agent-tools/foundation';
+import { buildContentContext } from '@/lib/content-context';
 import { CLAUDE_MODEL } from '@/lib/config';
 import type { FoundationDocType } from '@/types';
+
+// Context docs each document type needs during interactive chat.
+// Broader than DOC_UPSTREAM (generation ordering) — every downstream doc
+// gets strategy + positioning so advisors can ground edits in the full picture.
+const CHAT_CONTEXT_DOCS: Record<FoundationDocType, FoundationDocType[]> = {
+  'strategy': [],
+  'positioning': ['strategy'],
+  'brand-voice': ['strategy', 'positioning'],
+  'design-principles': ['strategy', 'positioning'],
+  'seo-strategy': ['strategy', 'positioning'],
+  'social-media-strategy': ['strategy', 'positioning'],
+};
 
 export const maxDuration = 60;
 
@@ -46,12 +59,48 @@ export async function POST(
     const advisorId = DOC_ADVISOR_MAP[body.docType];
     const advisorPrompt = getAdvisorSystemPrompt(advisorId);
 
+    // Load context documents so the advisor can ground edits in the full picture
+    const contextTypes = CHAT_CONTEXT_DOCS[body.docType] ?? [];
+    const contextDocs: { type: string; content: string }[] = [];
+    for (const ctxType of contextTypes) {
+      const ctxDoc = await getFoundationDoc(ideaId, ctxType);
+      if (ctxDoc) {
+        contextDocs.push({ type: ctxType, content: ctxDoc.content });
+      }
+    }
+
+    let contextSection = '';
+
+    // Add analysis results (product info, competitors, keywords)
+    const analysisCtx = await buildContentContext(ideaId);
+    if (analysisCtx) {
+      contextSection += '\nANALYSIS RESULTS:\n';
+      contextSection += `Product: ${analysisCtx.ideaName}\n`;
+      contextSection += `Description: ${analysisCtx.ideaDescription}\n`;
+      contextSection += `Target User: ${analysisCtx.targetUser}\n`;
+      contextSection += `Problem: ${analysisCtx.problemSolved}\n`;
+      if (analysisCtx.competitors) {
+        contextSection += `\nCompetitors:\n${analysisCtx.competitors}\n`;
+      }
+      if (analysisCtx.topKeywords.length > 0) {
+        contextSection += `\nTop Keywords:\n${analysisCtx.topKeywords.slice(0, 10).map(k => `- ${k.keyword} (${k.intentType}, competition: ${k.estimatedCompetitiveness})`).join('\n')}\n`;
+      }
+    }
+
+    // Add related foundation documents
+    if (contextDocs.length > 0) {
+      contextSection += '\nRELATED FOUNDATION DOCUMENTS:\n';
+      for (const { type, content } of contextDocs) {
+        contextSection += `\n## ${type.replace(/-/g, ' ').toUpperCase()}\n${content}\n`;
+      }
+    }
+
     const systemPrompt = `${advisorPrompt}
 
 ---
 
 You are helping the user refine their ${body.docType} document through conversation.
-
+${contextSection}
 CURRENT DOCUMENT:
 ${body.currentContent}
 

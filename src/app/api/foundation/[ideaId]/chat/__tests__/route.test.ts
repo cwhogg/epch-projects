@@ -25,10 +25,33 @@ vi.mock('@/lib/agent-tools/foundation', () => ({
   },
 }));
 
+vi.mock('@/lib/content-context', () => ({
+  buildContentContext: vi.fn(),
+}));
+
 import { POST } from '@/app/api/foundation/[ideaId]/chat/route';
 import { isRedisConfigured, getFoundationDoc } from '@/lib/db';
 import { getAnthropic } from '@/lib/anthropic';
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
+import { buildContentContext } from '@/lib/content-context';
+
+const mockAnalysisContext = {
+  ideaName: 'TestApp',
+  ideaDescription: 'A test app for developers',
+  targetUser: 'indie developers',
+  problemSolved: 'testing workflow',
+  scores: {},
+  summary: 'Test summary',
+  risks: [],
+  topKeywords: [
+    { keyword: 'dev tools', intentType: 'informational', estimatedVolume: '1000', estimatedCompetitiveness: 'medium', contentGapHypothesis: '', relevanceToMillionARR: '' },
+  ],
+  serpValidated: [],
+  contentStrategy: { topOpportunities: [], recommendedAngle: '' },
+  difficultyAssessment: { dominantPlayers: [], roomForNewEntrant: false, reasoning: '' },
+  competitors: 'Competitor A, Competitor B',
+  expertiseProfile: '',
+};
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest('http://localhost:3000/api/foundation/idea-123/chat', {
@@ -75,6 +98,8 @@ describe('Foundation Chat API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ANTHROPIC_API_KEY = 'test-key';
+    // Default: analysis context available (most tests need this)
+    vi.mocked(buildContentContext).mockResolvedValue(mockAnalysisContext);
   });
 
   it('streams advisor response for valid request', async () => {
@@ -243,6 +268,201 @@ describe('Foundation Chat API', () => {
     }), { params });
 
     expect(res.status).toBe(500);
+  });
+
+  it('includes strategy doc in system prompt when editing positioning', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+
+    const strategyDoc = {
+      id: 'strategy', ideaId: 'idea-123', type: 'strategy' as const,
+      content: 'Our smallest viable audience is indie founders...',
+      advisorId: 'seth-godin',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    };
+    const positioningDoc = {
+      id: 'positioning', ideaId: 'idea-123', type: 'positioning' as const,
+      content: 'Current positioning', advisorId: 'april-dunford',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    };
+
+    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
+      if (type === 'positioning') return positioningDoc;
+      if (type === 'strategy') return strategyDoc;
+      return null;
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are April Dunford...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    await POST(makeRequest({
+      docType: 'positioning',
+      messages: [{ role: 'user', content: 'Rewrite based on updated strategy' }],
+      currentContent: 'Current positioning',
+    }), { params });
+
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).toContain('RELATED FOUNDATION DOCUMENTS');
+    expect(systemPrompt).toContain('STRATEGY');
+    expect(systemPrompt).toContain('Our smallest viable audience is indie founders');
+  });
+
+  it('includes strategy AND positioning when editing downstream docs like seo-strategy', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+
+    const strategyDoc = {
+      id: 'strategy', ideaId: 'idea-123', type: 'strategy' as const,
+      content: 'Strategy: target indie founders',
+      advisorId: 'seth-godin',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    };
+    const positioningDoc = {
+      id: 'positioning', ideaId: 'idea-123', type: 'positioning' as const,
+      content: 'Positioning: the fastest dev tool',
+      advisorId: 'april-dunford',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    };
+    const seoDoc = {
+      id: 'seo-strategy', ideaId: 'idea-123', type: 'seo-strategy' as const,
+      content: 'SEO strategy content', advisorId: 'seo-expert',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    };
+
+    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
+      if (type === 'seo-strategy') return seoDoc;
+      if (type === 'strategy') return strategyDoc;
+      if (type === 'positioning') return positioningDoc;
+      return null;
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are an SEO expert...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    await POST(makeRequest({
+      docType: 'seo-strategy',
+      messages: [{ role: 'user', content: 'Update based on new positioning' }],
+      currentContent: 'SEO strategy content',
+    }), { params });
+
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).toContain('STRATEGY');
+    expect(systemPrompt).toContain('Strategy: target indie founders');
+    expect(systemPrompt).toContain('POSITIONING');
+    expect(systemPrompt).toContain('Positioning: the fastest dev tool');
+  });
+
+  it('includes analysis results in system prompt', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+    vi.mocked(getFoundationDoc).mockResolvedValue({
+      id: 'strategy', ideaId: 'idea-123', type: 'strategy',
+      content: 'Original', advisorId: 'seth-godin',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are Seth Godin...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    await POST(makeRequest({
+      docType: 'strategy',
+      messages: [{ role: 'user', content: 'Test' }],
+      currentContent: 'Strategy content',
+    }), { params });
+
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).toContain('ANALYSIS RESULTS');
+    expect(systemPrompt).toContain('TestApp');
+    expect(systemPrompt).toContain('indie developers');
+    expect(systemPrompt).toContain('Competitor A, Competitor B');
+    expect(systemPrompt).toContain('dev tools');
+  });
+
+  it('does not include foundation docs section when editing strategy (no context deps)', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+    vi.mocked(getFoundationDoc).mockResolvedValue({
+      id: 'strategy', ideaId: 'idea-123', type: 'strategy',
+      content: 'Original', advisorId: 'seth-godin',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are Seth Godin...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    await POST(makeRequest({
+      docType: 'strategy',
+      messages: [{ role: 'user', content: 'Test' }],
+      currentContent: 'Strategy content',
+    }), { params });
+
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).not.toContain('RELATED FOUNDATION DOCUMENTS');
+  });
+
+  it('gracefully handles missing context doc', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+
+    // positioning doc exists, but strategy (context dep) does not
+    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
+      if (type === 'positioning') return {
+        id: 'positioning', ideaId: 'idea-123', type: 'positioning' as const,
+        content: 'Positioning content', advisorId: 'april-dunford',
+        generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+      };
+      return null;
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are April Dunford...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    const res = await POST(makeRequest({
+      docType: 'positioning',
+      messages: [{ role: 'user', content: 'Test' }],
+      currentContent: 'Positioning content',
+    }), { params });
+
+    // Should still work, just without the context doc
+    expect(res.status).toBe(200);
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).not.toContain('RELATED FOUNDATION DOCUMENTS');
+  });
+
+  it('works when analysis context is unavailable', async () => {
+    vi.mocked(isRedisConfigured).mockReturnValue(true);
+    vi.mocked(buildContentContext).mockResolvedValue(null);
+    vi.mocked(getFoundationDoc).mockResolvedValue({
+      id: 'strategy', ideaId: 'idea-123', type: 'strategy',
+      content: 'Original', advisorId: 'seth-godin',
+      generatedAt: '2026-01-01T00:00:00.000Z', editedAt: null, version: 1,
+    });
+    vi.mocked(getAdvisorSystemPrompt).mockReturnValue('You are Seth Godin...');
+
+    const mockStreamFn = vi.fn().mockReturnValue(createMockStream(['OK']));
+    vi.mocked(getAnthropic).mockReturnValue({
+      messages: { stream: mockStreamFn },
+    } as unknown as ReturnType<typeof getAnthropic>);
+
+    const res = await POST(makeRequest({
+      docType: 'strategy',
+      messages: [{ role: 'user', content: 'Test' }],
+      currentContent: 'Strategy content',
+    }), { params });
+
+    expect(res.status).toBe(200);
+    const systemPrompt = mockStreamFn.mock.calls[0][0].system;
+    expect(systemPrompt).not.toContain('ANALYSIS RESULTS');
   });
 
   it('returns 500 when stream creation fails', async () => {
