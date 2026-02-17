@@ -9,7 +9,9 @@ import {
 } from '@/lib/analytics-db';
 import {
   getWeekId,
+  getPreviousWeekId,
   buildSlugLookup,
+  buildWeeklyReport,
   createPieceSnapshots,
   detectChanges,
 } from '@/lib/analytics-agent';
@@ -189,17 +191,7 @@ export function createAnalyticsTools(siteUrl: string): ToolDefinition[] {
           return { error: 'Must call match_pages_to_pieces first' };
         }
 
-        // Parse previous week
-        const [yearStr, weekStr] = cachedWeekId.split('-W');
-        const year = parseInt(yearStr);
-        const week = parseInt(weekStr);
-        const jan4 = new Date(Date.UTC(year, 0, 4));
-        const dayOfWeek = jan4.getUTCDay() || 7;
-        const monday = new Date(jan4);
-        monday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1 + (week - 1) * 7);
-        monday.setUTCDate(monday.getUTCDate() - 7);
-        const previousWeekId = getWeekId(monday);
-
+        const previousWeekId = getPreviousWeekId(cachedWeekId);
         const previousSnapshots = await getWeeklySnapshot(previousWeekId);
         const alerts = detectChanges(cachedSnapshots, previousSnapshots);
 
@@ -306,65 +298,14 @@ Be specific — reference actual post titles, keywords, and numbers. No generic 
           : 0;
 
         // Get previous week data
-        const [yearStr, weekStr] = cachedWeekId.split('-W');
-        const year = parseInt(yearStr);
-        const week = parseInt(weekStr);
-        const jan4 = new Date(Date.UTC(year, 0, 4));
-        const dayOfWeek = jan4.getUTCDay() || 7;
-        const monday = new Date(jan4);
-        monday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1 + (week - 1) * 7);
-        monday.setUTCDate(monday.getUTCDate() - 7);
-        const previousWeekId = getWeekId(monday);
-
+        const previousWeekId = getPreviousWeekId(cachedWeekId);
         const previousSnapshots = await getWeeklySnapshot(previousWeekId);
         const prevTotalClicks = previousSnapshots.reduce((sum, s) => sum + s.clicks, 0);
         const prevTotalImpressions = previousSnapshots.reduce((sum, s) => sum + s.impressions, 0);
 
         const alerts = detectChanges(cachedSnapshots, previousSnapshots);
 
-        // Build per-piece comparison (include all published pieces)
-        const prevMap = new Map<string, PieceSnapshot>();
-        for (const snap of previousSnapshots) {
-          prevMap.set(snap.slug, snap);
-        }
-
-        const matchedSlugs = new Set(cachedSnapshots.map((s) => s.slug));
-        const allSnapshots = [...cachedSnapshots];
-        for (const [slug, info] of cachedSlugLookup) {
-          if (!matchedSlugs.has(slug)) {
-            allSnapshots.push({
-              ideaId: info.ideaId,
-              pieceId: info.pieceId,
-              slug,
-              title: info.title,
-              type: info.type,
-              weekId: cachedWeekId,
-              clicks: 0,
-              impressions: 0,
-              ctr: 0,
-              position: 0,
-              topQueries: [],
-            });
-          }
-        }
-
-        const pieces = allSnapshots
-          .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
-          .map((current) => {
-            const prev = prevMap.get(current.slug) ?? null;
-            return {
-              ideaId: current.ideaId,
-              pieceId: current.pieceId,
-              slug: current.slug,
-              title: current.title,
-              type: current.type,
-              current,
-              previous: prev,
-              clicksChange: prev ? current.clicks - prev.clicks : null,
-              impressionsChange: prev ? current.impressions - prev.impressions : null,
-              positionChange: prev ? Math.round((current.position - prev.position) * 10) / 10 : null,
-            };
-          });
+        const pieces = buildWeeklyReport(cachedSnapshots, previousSnapshots, cachedSlugLookup, cachedWeekId);
 
         const report: WeeklyReport = {
           weekId: cachedWeekId,

@@ -40,7 +40,7 @@ export function getWeekId(date?: Date): string {
 }
 
 // Get the previous week's ID
-function getPreviousWeekId(weekId: string): string {
+export function getPreviousWeekId(weekId: string): string {
   // Parse the week ID and go back 7 days
   const [yearStr, weekStr] = weekId.split('-W');
   const year = parseInt(yearStr);
@@ -60,6 +60,60 @@ interface SlugInfo {
   pieceId: string;
   title: string;
   type: ContentType;
+}
+
+// Build per-piece comparison data — include ALL published pieces, even with no GSC data.
+// Shared between V1 orchestrator (runAnalyticsAgent) and V2 agent tool (save_report).
+export function buildWeeklyReport(
+  snapshots: PieceSnapshot[],
+  previousSnapshots: PieceSnapshot[],
+  slugLookup: Map<string, SlugInfo>,
+  weekId: string,
+): WeeklyReport['pieces'] {
+  const prevMap = new Map<string, PieceSnapshot>();
+  for (const snap of previousSnapshots) {
+    prevMap.set(snap.slug, snap);
+  }
+
+  const matchedSlugs = new Set(snapshots.map((s) => s.slug));
+
+  // Create zero-data snapshots for published pieces not in GSC
+  const allSnapshots = [...snapshots];
+  for (const [slug, info] of slugLookup) {
+    if (!matchedSlugs.has(slug)) {
+      allSnapshots.push({
+        ideaId: info.ideaId,
+        pieceId: info.pieceId,
+        slug,
+        title: info.title,
+        type: info.type,
+        weekId,
+        clicks: 0,
+        impressions: 0,
+        ctr: 0,
+        position: 0,
+        topQueries: [],
+      });
+    }
+  }
+
+  return allSnapshots
+    .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
+    .map((current) => {
+      const prev = prevMap.get(current.slug) ?? null;
+      return {
+        ideaId: current.ideaId,
+        pieceId: current.pieceId,
+        slug: current.slug,
+        title: current.title,
+        type: current.type,
+        current,
+        previous: prev,
+        clicksChange: prev ? current.clicks - prev.clicks : null,
+        impressionsChange: prev ? current.impressions - prev.impressions : null,
+        positionChange: prev ? Math.round((current.position - prev.position) * 10) / 10 : null,
+      };
+    });
 }
 
 // Build slug → piece info lookup from published_pieces_meta + content_pieces
@@ -377,51 +431,7 @@ export async function runAnalyticsAgent(): Promise<WeeklyReport> {
   const prevTotalClicks = previousSnapshots.reduce((sum, s) => sum + s.clicks, 0);
   const prevTotalImpressions = previousSnapshots.reduce((sum, s) => sum + s.impressions, 0);
 
-  // Build per-piece comparison data — include ALL published pieces, even with no GSC data
-  const prevMap = new Map<string, PieceSnapshot>();
-  for (const snap of previousSnapshots) {
-    prevMap.set(snap.slug, snap);
-  }
-
-  const matchedSlugs = new Set(snapshots.map((s) => s.slug));
-
-  // Create zero-data snapshots for published pieces not in GSC
-  const allSnapshots = [...snapshots];
-  for (const [slug, info] of slugLookup) {
-    if (!matchedSlugs.has(slug)) {
-      allSnapshots.push({
-        ideaId: info.ideaId,
-        pieceId: info.pieceId,
-        slug,
-        title: info.title,
-        type: info.type,
-        weekId,
-        clicks: 0,
-        impressions: 0,
-        ctr: 0,
-        position: 0,
-        topQueries: [],
-      });
-    }
-  }
-
-  const pieces = allSnapshots
-    .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
-    .map((current) => {
-      const prev = prevMap.get(current.slug) ?? null;
-      return {
-        ideaId: current.ideaId,
-        pieceId: current.pieceId,
-        slug: current.slug,
-        title: current.title,
-        type: current.type,
-        current,
-        previous: prev,
-        clicksChange: prev ? current.clicks - prev.clicks : null,
-        impressionsChange: prev ? current.impressions - prev.impressions : null,
-        positionChange: prev ? Math.round((current.position - prev.position) * 10) / 10 : null,
-      };
-    });
+  const pieces = buildWeeklyReport(snapshots, previousSnapshots, slugLookup, weekId);
 
   // Build report
   const report: WeeklyReport = {

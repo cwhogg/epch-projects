@@ -8,6 +8,8 @@ import ScoreRing from '@/components/ScoreRing';
 import ValidationCanvas from '@/components/ValidationCanvas';
 import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES, ASSUMPTION_TYPES } from '@/types';
 import type { ValidationCanvasData } from '@/types';
+import { getBadgeClass, getConfidenceStyle, getWebsiteStatusStyle, getWebsiteStatusLabel } from '@/lib/analysis-styles';
+import { getHeaderGradient } from './utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,37 +48,27 @@ const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
   'social-media-strategy': 'Social Media',
 };
 
-function getBadgeClass(rec: string) {
-  switch (rec) {
-    case 'Tier 1': return 'badge-success';
-    case 'Tier 2': return 'badge-warning';
-    case 'Tier 3': return 'badge-danger';
-    default: return 'badge-neutral';
+function parseSeoMetrics(seoData: string | undefined): { agreedKeywords: number; serpValidated: number } {
+  if (!seoData) return { agreedKeywords: 0, serpValidated: 0 };
+  try {
+    const seo = JSON.parse(seoData);
+    return {
+      agreedKeywords: seo.synthesis?.comparison?.agreedKeywords?.length ?? 0,
+      serpValidated: seo.synthesis?.serpValidated?.filter((v: { hasContentGap: boolean }) => v.hasContentGap)?.length ?? 0,
+    };
+  } catch {
+    return { agreedKeywords: 0, serpValidated: 0 };
   }
 }
 
-function getConfidenceStyle(conf: string) {
-  switch (conf) {
-    case 'High': return { color: 'var(--accent-emerald)' };
-    case 'Medium': return { color: 'var(--accent-amber)' };
-    case 'Low': return { color: 'var(--color-danger)' };
-    default: return { color: 'var(--text-muted)' };
-  }
-}
-
-function getWebsiteStatusStyle(status: string) {
-  switch (status) {
-    case 'live': return { bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' };
-    case 'deploying':
-    case 'pushing':
-    case 'generating': return { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' };
-    case 'failed': return { bg: 'rgba(248, 113, 113, 0.15)', color: 'var(--color-danger)' };
-    default: return { bg: 'rgba(113, 113, 122, 0.1)', color: 'var(--text-muted)' };
-  }
-}
-
-function getWebsiteStatusLabel(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+async function fetchGscMetrics(ideaId: string): Promise<{ gscImpressions: number | null; gscClicks: number | null; gscCTR: number | null }> {
+  const gscData = await getGSCAnalytics(ideaId).catch(() => null);
+  if (!gscData?.timeSeries?.length) return { gscImpressions: null, gscClicks: null, gscCTR: null };
+  const last7 = gscData.timeSeries.slice(-7);
+  const gscImpressions = last7.reduce((sum: number, d: { impressions: number }) => sum + d.impressions, 0);
+  const gscClicks = last7.reduce((sum: number, d: { clicks: number }) => sum + d.clicks, 0);
+  const gscCTR = gscImpressions > 0 ? (gscClicks / gscImpressions) * 100 : 0;
+  return { gscImpressions, gscClicks, gscCTR };
 }
 
 async function getDashboardData(id: string): Promise<DashboardData | null> {
@@ -94,16 +86,7 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
       getCanvasState(id).catch(() => null),
     ]);
 
-    // Parse SEO data for analysis card summary
-    let agreedKeywords = 0;
-    let serpValidated = 0;
-    if (content?.seoData) {
-      try {
-        const seo = JSON.parse(content.seoData);
-        agreedKeywords = seo.synthesis?.comparison?.agreedKeywords?.length ?? 0;
-        serpValidated = seo.synthesis?.serpValidated?.filter((v: { hasContentGap: boolean }) => v.hasContentGap)?.length ?? 0;
-      } catch { /* ignore parse errors */ }
-    }
+    const { agreedKeywords, serpValidated } = parseSeoMetrics(content?.seoData);
 
     // Get signup count if site exists
     const websiteSignups = pdSite ? await getEmailSignupCount(pdSite.id).catch(() => 0) : 0;
@@ -134,20 +117,8 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
       } as unknown as ValidationCanvasData;
     }
 
-    // Get GSC summary metrics if linked
-    let gscImpressions: number | null = null;
-    let gscClicks: number | null = null;
-    let gscCTR: number | null = null;
-    if (gscLink) {
-      const gscData = await getGSCAnalytics(analysis.ideaId).catch(() => null);
-      if (gscData?.timeSeries?.length) {
-        // Sum last 7 days
-        const last7 = gscData.timeSeries.slice(-7);
-        gscImpressions = last7.reduce((sum, d) => sum + d.impressions, 0);
-        gscClicks = last7.reduce((sum, d) => sum + d.clicks, 0);
-        gscCTR = gscImpressions > 0 ? (gscClicks / gscImpressions) * 100 : 0;
-      }
-    }
+    const gscMetrics = gscLink ? await fetchGscMetrics(analysis.ideaId) : { gscImpressions: null, gscClicks: null, gscCTR: null };
+    const { gscImpressions, gscClicks, gscCTR } = gscMetrics;
 
     const foundationDocs: Partial<Record<FoundationDocType, boolean>> = {};
     for (const docType of FOUNDATION_DOC_TYPES) {
@@ -221,21 +192,14 @@ export default async function ProjectDashboard({ params }: PageProps) {
 
   const { analysis } = data;
 
-  const getHeaderGradient = () => {
-    switch (analysis.recommendation) {
-      case 'Tier 1': return 'radial-gradient(ellipse at top left, rgba(52, 211, 153, 0.1) 0%, transparent 50%)';
-      case 'Tier 2': return 'radial-gradient(ellipse at top left, rgba(251, 191, 36, 0.08) 0%, transparent 50%)';
-      case 'Tier 3': return 'radial-gradient(ellipse at top left, rgba(248, 113, 113, 0.08) 0%, transparent 50%)';
-      default: return 'none';
-    }
-  };
+  const headerGradient = getHeaderGradient(analysis.recommendation);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <header
         className="animate-slide-up stagger-1 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 rounded-xl"
-        style={{ background: getHeaderGradient() }}
+        style={{ background: headerGradient }}
       >
         <Link
           href="/"
@@ -394,7 +358,7 @@ export default async function ProjectDashboard({ params }: PageProps) {
             <div className="flex items-center gap-4 mt-2 flex-wrap">
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1.5"
-                style={{ background: getWebsiteStatusStyle(data.websiteStatus).bg, color: getWebsiteStatusStyle(data.websiteStatus).color }}
+                style={getWebsiteStatusStyle(data.websiteStatus)}
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />
                 {getWebsiteStatusLabel(data.websiteStatus)}

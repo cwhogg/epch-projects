@@ -22,3 +22,5 @@ Next.js app deployed on Vercel. Two collaborators (Eric, Chris) pushing directly
 - `npm run dev` — local dev server
 - `npm run build` — production build
 - `npm run lint` — eslint
+- `npm test` — run tests once (vitest)
+- `npm run test:watch` — run tests in watch mode

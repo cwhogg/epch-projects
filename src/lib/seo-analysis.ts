@@ -235,10 +235,10 @@ Use the seo_analysis_result tool to submit your analysis.`;
       return validateSEOResult(input);
     }
 
-    console.error('Claude SEO: no tool_use block in response');
+    console.error('[seo-analysis] Claude SEO: no tool_use block in response');
     return getDefaultSEOResult();
   } catch (error) {
-    console.error('Claude SEO tool use failed:', error);
+    console.error('[seo-analysis] Claude SEO tool use failed:', error);
     return getDefaultSEOResult();
   }
 }
@@ -296,7 +296,7 @@ ${SEO_OUTPUT_SCHEMA}`;
     const text = response.choices[0]?.message?.content || '';
     return parseSEOJSON(text);
   } catch (error) {
-    console.error('OpenAI SEO analysis failed:', error);
+    console.error('[seo-analysis] OpenAI SEO analysis failed:', error);
     return null;
   }
 }
@@ -826,7 +826,7 @@ export function parseSEOJSON(text: string): SEOAnalysisResult {
         }
       }
     }
-    console.error('Failed to parse SEO JSON, returning defaults. First 300 chars:', jsonStr.substring(0, 300));
+    console.error('[seo-analysis] Failed to parse SEO JSON, returning defaults. First 300 chars:', jsonStr.substring(0, 300));
     return getDefaultSEOResult();
   }
 }

@@ -2,14 +2,14 @@
 
 This document catalogs all tools available to our AI agents in the EPCH Projects platform.
 
-**Last Updated:** 2026-02-07
-**Total Tools:** 44 across 4 specialized agents
+**Last Updated:** 2026-02-16
+**Total Tools:** 53 across 6 specialized agents
 
 ---
 
 ## Overview
 
-Our platform uses four specialized agents, each with purpose-built tools:
+Our platform uses six specialized agents, each with purpose-built tools:
 
 | Agent | Purpose | Tool Count |
 |-------|---------|------------|
@@ -17,6 +17,8 @@ Our platform uses four specialized agents, each with purpose-built tools:
 | **Analytics Agent** | GSC performance tracking | 7 |
 | **Content Agent** | Blog/comparison/FAQ creation | 9 |
 | **Website Agent** | Painted door landing pages | 16 |
+| **Foundation Agent** | Strategic foundation documents | 3 |
+| **Content Critique Agent** | Multi-advisor critique cycle | 6 |
 | **Common Tools** | Shared across all agents | 4 |
 
 ---
@@ -207,7 +209,7 @@ Located in: `src/lib/agent-tools/website.ts`
 interface BrandIdentity {
   siteName: string;
   tagline: string;
-  seoDescription: string;
+  seoDescription?: string;
   targetDemographic: string;
   voice: {
     tone: string;
@@ -230,7 +232,7 @@ interface BrandIdentity {
     bodyFont: string;
     monoFont: string;
   };
-  landingPage: {
+  landingPage?: {
     heroHeadline: string;
     heroSubheadline: string;
     valueProps: Array<{
@@ -265,6 +267,89 @@ get_idea_context → design_brand → assemble_site_files
 → register_publish_target → verify_site → finalize_site
 → invoke_content_agent (optional)
 ```
+
+---
+
+## Foundation Agent
+
+Located in: `src/lib/agent-tools/foundation.ts`
+
+**Purpose:** Generates 6 strategic foundation documents using assigned advisor personas with dependency ordering.
+
+### Tools
+
+| Tool | Input | Output | Description |
+|------|-------|--------|-------------|
+| `load_foundation_docs` | docTypes (optional) | Docs map, missing list | Load one or more foundation documents from Redis. Omit docTypes to load all |
+| `generate_foundation_doc` | docType, strategicInputs (optional) | Success, version, content | Generate a foundation document using the assigned advisor. Requires upstream docs to exist |
+| `load_design_seed` | (none) | Design principles seed content | Load the existing design principles file as seed input for design-principles generation |
+
+### Document Types & Advisor Assignments
+
+| Document | Advisor | Upstream Dependencies |
+|----------|---------|----------------------|
+| `strategy` | Richard Rumelt | (none) |
+| `positioning` | April Dunford | strategy |
+| `brand-voice` | Brand Copywriter | positioning |
+| `design-principles` | Richard Rumelt | positioning, strategy |
+| `seo-strategy` | SEO Expert | positioning |
+| `social-media-strategy` | April Dunford | positioning, brand-voice |
+
+### Typical Flow
+
+```
+load_foundation_docs → generate_foundation_doc(strategy)
+→ generate_foundation_doc(positioning)
+→ generate_foundation_doc(brand-voice, design-principles, seo-strategy, social-media-strategy)
+```
+
+---
+
+## Content Critique Agent
+
+Located in: `src/lib/agent-tools/critique.ts`
+
+**Purpose:** Multi-round critique cycle with dynamically selected advisor critics, mechanical editor rubric, and do-not-regress revision guards.
+
+### Tools
+
+| Tool | Input | Output | Description |
+|------|-------|--------|-------------|
+| `generate_draft` | contentContext | Draft text, length | Generate initial content draft using the recipe author advisor |
+| `run_critiques` | (none) | Array of AdvisorCritique objects | Run critique cycle with dynamically selected advisors. Reads current draft from Redis |
+| `editor_decision` | critiques | Decision (approve/revise), brief, avgScore | Apply mechanical editor rubric to critique results |
+| `revise_draft` | brief | Revised draft text, length | Revise the current draft based on editor brief with do-not-regress guard |
+| `summarize_round` | round, critiques, editorDecision, brief | Round summary with fixed items and scores | Save full round data to Redis and return compressed summary |
+| `save_content` | quality | Success, content length | Save approved content from Redis with quality status |
+
+### Typical Flow
+
+```
+generate_draft → run_critiques → editor_decision
+→ [if revise: revise_draft → run_critiques → editor_decision]
+→ summarize_round → save_content
+```
+
+---
+
+## Advisors
+
+The platform includes 13 advisors in the Virtual Board, registered in `src/lib/advisors/registry.ts`:
+
+| ID | Name | Role |
+|----|------|------|
+| `richard-rumelt` | Richard Rumelt | strategist |
+| `copywriter` | Brand Copywriter | author |
+| `april-dunford` | April Dunford | strategist |
+| `seo-expert` | SEO Expert | critic |
+| `shirin-oreizy` | Shirin Oreizy | critic |
+| `joe-pulizzi` | Joe Pulizzi | strategist |
+| `robb-wolf` | Robb Wolf | critic |
+| `patrick-campbell` | Patrick Campbell | strategist |
+| `robbie-kellman-baxter` | Robbie Kellman Baxter | strategist |
+| `rob-walling` | Rob Walling | strategist |
+
+Advisor system prompts are `.md` files in `src/lib/advisors/prompts/`, loaded by `src/lib/advisors/prompt-loader.ts`.
 
 ---
 
@@ -306,7 +391,9 @@ src/lib/agent-tools/
 ├── research.ts    # Research Agent tools
 ├── analytics.ts   # Analytics Agent tools
 ├── content.ts     # Content Agent tools
-└── website.ts     # Website Agent tools
+├── website.ts     # Website Agent tools
+├── foundation.ts  # Foundation Agent tools
+└── critique.ts    # Content Critique Agent tools
 ```
 
 ---

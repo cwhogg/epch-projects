@@ -5,7 +5,7 @@ import {
   parseConfidence,
   parseRisks,
   parseSummary,
-} from '../research-agent';
+} from '../research-agent-parsers';
 
 // -- parseScores --
 
