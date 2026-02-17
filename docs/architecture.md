@@ -706,8 +706,10 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Cron: Analytics | `/api/cron/analytics` | GET, POST | Cron + manual analytics trigger |
 | Content Pipeline | `/api/content-pipeline/[ideaId]` | POST, GET | POST triggers critique pipeline; GET polls progress |
 | Validation Canvas | `/api/validation/[ideaId]` | GET | Full canvas state with assumptions and pivot suggestions |
+| Validation Status | `/api/validation/[ideaId]/status` | POST | Manually update assumption status (validate/invalidate) |
 | Validation Pivot | `/api/validation/[ideaId]/pivot` | POST | Approve a pivot suggestion |
 | Validation Kill | `/api/validation/[ideaId]/kill` | POST | Archive the project |
+| Validation Backfill | `/api/validation/backfill` | POST | Generate canvas data for all projects missing it |
 
 ### Agents
 
@@ -785,5 +787,6 @@ All agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` e
 | `website/SiteCardActions.tsx` | Painted door site action buttons |
 | `ValidationCanvas.tsx` | Validation canvas displaying 5 assumption cards with status |
 | `PivotActions.tsx` | Client component for pivot approval and project kill actions |
+| `AssumptionActions.tsx` | Client component for manual validate/invalidate/undo on assumption cards |
 | `AppendFeedbackInput.tsx` | Reusable feedback/append input with submit handler |
 | `ScoreRing.tsx` | SVG ring score visualization |
