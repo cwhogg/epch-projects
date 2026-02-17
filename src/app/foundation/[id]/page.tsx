@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, use, type CSSProperties } from 'react';
+import { useEffect, useState, useCallback, useRef, use, Suspense, type CSSProperties } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type {
   FoundationDocument,
   FoundationDocType,
@@ -68,8 +69,10 @@ function getCardState(
   return 'empty';
 }
 
-export default function FoundationPage({ params }: PageProps) {
+function FoundationPageInner({ params }: PageProps) {
   const { id: ideaId } = use(params);
+  const searchParams = useSearchParams();
+  const autoGenerateConsumed = useRef(false);
   const [data, setData] = useState<FoundationData | null>(null);
   const [generating, setGenerating] = useState(false);
   const [expandedDoc, setExpandedDoc] = useState<FoundationDocType | null>(null);
@@ -95,6 +98,22 @@ export default function FoundationPage({ params }: PageProps) {
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
   }, [data, fetchData]);
+
+  // Auto-trigger generation when arriving from dashboard with ?autoGenerate=true
+  useEffect(() => {
+    if (
+      searchParams.get('autoGenerate') === 'true' &&
+      data &&
+      data.progress.status !== 'running' &&
+      !generating &&
+      !autoGenerateConsumed.current
+    ) {
+      autoGenerateConsumed.current = true;
+      handleGenerate();
+      // Clean URL so refresh doesn't re-trigger
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerate = async (docType?: FoundationDocType) => {
     setGenerating(true);
@@ -280,5 +299,13 @@ export default function FoundationPage({ params }: PageProps) {
         })}
       </div>
     </div>
+  );
+}
+
+export default function FoundationPage({ params }: PageProps) {
+  return (
+    <Suspense>
+      <FoundationPageInner params={params} />
+    </Suspense>
   );
 }
