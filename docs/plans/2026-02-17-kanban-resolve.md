@@ -149,7 +149,7 @@
 
 ---
 
-### Task 6: Refactor foundation editor handleSend
+### ✅ Task 6: Refactor foundation editor handleSend
 
 **KBs:** KB-044, KB-046
 

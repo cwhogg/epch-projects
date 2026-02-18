@@ -108,18 +108,15 @@ export default function FoundationEditorPage({ params }: PageProps) {
     // Send only last N messages to API
     const messagesToSend = updatedMessages.slice(-MAX_MESSAGES_TO_SEND);
 
-    try {
-      const res = await fetch(`/api/foundation/${ideaId}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType, messages: messagesToSend, currentContent: content }),
+    function updateLastMessage(text: string) {
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'assistant', content: text };
+        return updated;
       });
+    }
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.error || 'Chat request failed');
-      }
-
+    async function streamChatResponse(res: Response) {
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       const parser = new StreamParser();
@@ -135,13 +132,7 @@ export default function FoundationEditorPage({ params }: PageProps) {
         const result = parser.processChunk(chunk);
         chatText += result.chatText;
 
-        // Update assistant message in real-time
-        const currentChatText = chatText;
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: 'assistant', content: currentChatText };
-          return updated;
-        });
+        updateLastMessage(chatText);
 
         // If document content arrived, update editor (guard against empty)
         if (result.documentContent !== null && result.documentContent.trim().length > 0) {
@@ -155,13 +146,23 @@ export default function FoundationEditorPage({ params }: PageProps) {
       const finalResult = parser.finalize();
       if (finalResult.error) {
         chatText += `\n\n_${finalResult.error}_`;
-        const finalChatText = chatText;
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: 'assistant', content: finalChatText };
-          return updated;
-        });
+        updateLastMessage(chatText);
       }
+    }
+
+    try {
+      const res = await fetch(`/api/foundation/${ideaId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType, messages: messagesToSend, currentContent: content }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Chat request failed');
+      }
+
+      await streamChatResponse(res);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to get response';
       setMessages((prev) => [
