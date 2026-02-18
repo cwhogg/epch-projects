@@ -1,12 +1,21 @@
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { advisorRegistry } from '@/lib/advisors/registry';
+import { createWebsiteTools } from '@/lib/agent-tools/website';
+import { createConsultAdvisorTool } from '@/lib/agent-tools/website-chat';
+import { getAnthropic } from '@/lib/anthropic';
+import { CLAUDE_MODEL } from '@/lib/config';
 import { buildContentContext } from '@/lib/content-context';
 import { getAllFoundationDocs, getIdeaFromDb } from '@/lib/db';
 import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 import {
+  getBuildSession,
+  getConversationHistory,
   getPaintedDoorSite,
+  saveBuildSession,
+  saveConversationHistory,
 } from '@/lib/painted-door-db';
-import type { BuildMode } from '@/types';
+import type { BuildMode, BuildSession, ChatMessage, ChatRequestBody, StreamEndSignal, ToolDefinition } from '@/types';
+import { WEBSITE_BUILD_STEPS } from '@/types';
 
 export const maxDuration = 300;
 
@@ -99,4 +108,261 @@ You have access to all website build tools (design_brand, assemble_site_files, c
 Respond conversationally — this is a chat, not a report. When you use a tool, explain what you're doing and why. When consulting an advisor, share their key insights with the user.`;
 }
 
-// POST handler will be added in Task 6
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: ideaId } = await params;
+
+  // Parse request body
+  let body: ChatRequestBody;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (!body.type) {
+    return Response.json({ error: 'Missing type field' }, { status: 400 });
+  }
+
+  // Validate idea exists
+  const idea = await getIdeaFromDb(ideaId);
+  if (!idea) {
+    return Response.json({ error: 'Idea not found' }, { status: 404 });
+  }
+
+  // Handle mode selection — initialize session
+  if (body.type === 'mode_select') {
+    if (!body.mode) {
+      return Response.json({ error: 'Missing mode for mode_select' }, { status: 400 });
+    }
+
+    const session: BuildSession = {
+      ideaId,
+      mode: body.mode,
+      currentStep: 0,
+      steps: WEBSITE_BUILD_STEPS.map((s) => ({
+        name: s.name,
+        status: 'pending' as const,
+      })),
+      artifacts: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveBuildSession(ideaId, session);
+    await saveConversationHistory(ideaId, []);
+  }
+
+  // Load or verify session exists
+  const session = await getBuildSession(ideaId);
+  if (!session) {
+    return Response.json({ error: 'No build session found. Start with mode_select.' }, { status: 400 });
+  }
+
+  // Build conversation messages
+  const history = await getConversationHistory(ideaId);
+
+  // Add new user message to history
+  if (body.type === 'user' && body.content) {
+    history.push({
+      role: 'user',
+      content: body.content,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (body.type === 'mode_select') {
+    history.push({
+      role: 'user',
+      content: `I choose "${session.mode === 'interactive' ? 'Build with me' : "You've got this"}" mode. Let's begin!`,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (body.type === 'continue') {
+    history.push({
+      role: 'user',
+      content: `Continue to the next step (step ${(body.step ?? session.currentStep) + 1}).`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Assemble system prompt
+  const systemPrompt = await assembleSystemPrompt(ideaId, session.mode);
+
+  // Convert history to Anthropic message format (last 40 messages to stay within context)
+  const anthropicMessages = history.slice(-40).map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
+
+  // Create tools array: existing website tools + consult_advisor
+  const websiteTools = createWebsiteTools(ideaId);
+  const consultTool = createConsultAdvisorTool(ideaId);
+  const allTools = [...websiteTools, consultTool];
+
+  // Stream the agent loop response
+  return new Response(
+    new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          await runAgentStream(controller, encoder, systemPrompt, anthropicMessages, allTools, session, ideaId, history);
+        } catch (error) {
+          console.error('[chat] Stream error:', error);
+          controller.error(error);
+        }
+      },
+    }),
+    {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
+    },
+  );
+}
+
+async function runAgentStream(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  systemPrompt: string,
+  messages: { role: 'user' | 'assistant'; content: string | Record<string, unknown>[] }[],
+  tools: ToolDefinition[],
+  session: BuildSession,
+  ideaId: string,
+  history: ChatMessage[],
+): Promise<void> {
+  const anthropicTools = tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: t.input_schema,
+  }));
+
+  const MAX_TOOL_ROUNDS = 15;
+  let currentMessages = [...messages];
+  let assistantText = '';
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const stream = getAnthropic().messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: currentMessages,
+      tools: anthropicTools,
+    });
+
+    // Stream text deltas to the client
+    let roundText = '';
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        controller.enqueue(encoder.encode(event.delta.text));
+        roundText += event.delta.text;
+      }
+    }
+
+    assistantText += roundText;
+
+    // Get the full message to check for tool_use blocks
+    const finalMessage = await stream.finalMessage();
+    const toolUseBlocks = finalMessage.content.filter(
+      (block): block is { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> } =>
+        block.type === 'tool_use'
+    );
+
+    if (toolUseBlocks.length === 0) {
+      break;
+    }
+
+    // Execute tool calls in parallel
+    const toolResults = await Promise.all(
+      toolUseBlocks.map(async (toolCall) => {
+        const tool = tools.find((t) => t.name === toolCall.name);
+        if (!tool) {
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: `Error: Unknown tool "${toolCall.name}"`,
+            is_error: true,
+          };
+        }
+        try {
+          const result = await tool.execute(toolCall.input);
+          const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: resultStr,
+          };
+        } catch (error) {
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            is_error: true,
+          };
+        }
+      }),
+    );
+
+    // Add assistant message + tool results to conversation for next round
+    currentMessages = [
+      ...currentMessages,
+      { role: 'assistant' as const, content: finalMessage.content as unknown as Record<string, unknown>[] },
+      { role: 'user' as const, content: toolResults as unknown as Record<string, unknown>[] },
+    ];
+  }
+
+  // Save assistant text to history
+  if (assistantText) {
+    history.push({
+      role: 'assistant',
+      content: assistantText,
+      timestamp: new Date().toISOString(),
+    });
+    await saveConversationHistory(ideaId, history);
+  }
+
+  // Determine and emit stream end signal
+  const signal = determineStreamEndSignal(session);
+  controller.enqueue(encoder.encode(`\n__SIGNAL__:${JSON.stringify(signal)}`));
+
+  session.updatedAt = new Date().toISOString();
+  await saveBuildSession(ideaId, session);
+  controller.close();
+}
+
+function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
+  const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
+
+  // Build complete
+  if (session.currentStep >= WEBSITE_BUILD_STEPS.length - 1 &&
+      session.steps[session.currentStep]?.status === 'complete') {
+    return {
+      action: 'complete',
+      result: {
+        siteUrl: session.artifacts.siteUrl || '',
+        repoUrl: '',
+      },
+    };
+  }
+
+  // Deploy step — use polling
+  if (session.currentStep === 6) {
+    return {
+      action: 'poll',
+      step: session.currentStep,
+      pollUrl: `/api/painted-door/${session.ideaId}`,
+    };
+  }
+
+  // Checkpoint in interactive mode
+  if (session.mode === 'interactive' && stepConfig?.checkpoint) {
+    return {
+      action: 'checkpoint',
+      step: session.currentStep,
+      prompt: `Step ${session.currentStep + 1} complete. Review and provide feedback, or say "continue" to proceed.`,
+    };
+  }
+
+  // Auto-continue
+  return { action: 'continue', step: session.currentStep };
+}
