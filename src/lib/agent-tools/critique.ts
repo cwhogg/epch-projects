@@ -1,7 +1,6 @@
 import type {
   ToolDefinition,
   AdvisorCritique,
-  CritiqueIssue,
   CritiqueRound,
   PipelineProgress,
   RoundSummary,
@@ -11,119 +10,16 @@ import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { getFoundationDoc } from '@/lib/db';
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
-import { parseLLMJson } from '@/lib/llm-utils';
 import { selectCritics, type ContentRecipe } from '@/lib/content-recipes';
 import { advisorRegistry, type AdvisorEntry } from '@/lib/advisors/registry';
 import { applyEditorRubric } from '@/lib/editor-decision';
+import { runSingleCritic } from '@/lib/critique-service';
 import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 import pLimit from 'p-limit';
 
 const DRAFT_TTL = 7200; // 2 hours
 const ROUND_TTL = 7200;
 const PROGRESS_TTL = 7200;
-
-// Tool for structured critique output — passed to each critic call
-const submitCritiqueTool = {
-  name: 'submit_critique',
-  description: 'Submit your structured evaluation of the content.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      score: { type: 'number' as const, minimum: 1, maximum: 10 },
-      pass: { type: 'boolean' as const },
-      issues: {
-        type: 'array' as const,
-        items: {
-          type: 'object' as const,
-          properties: {
-            severity: {
-              type: 'string' as const,
-              enum: ['high', 'medium', 'low'],
-            },
-            description: { type: 'string' as const },
-            suggestion: { type: 'string' as const },
-          },
-          required: ['severity', 'description', 'suggestion'],
-        },
-      },
-    },
-    required: ['score', 'pass', 'issues'],
-  },
-};
-
-/**
- * Run a single critic call and extract the structured critique from tool use.
- */
-async function runSingleCritic(
-  advisor: AdvisorEntry,
-  draft: string,
-  recipe: ContentRecipe,
-  ideaId: string,
-): Promise<AdvisorCritique> {
-  // Load advisor's context docs
-  const contextParts: string[] = [];
-  if (advisor.contextDocs) {
-    for (const docType of advisor.contextDocs) {
-      const doc = await getFoundationDoc(ideaId, docType);
-      if (doc) {
-        contextParts.push(
-          `## ${docType.replace(/-/g, ' ').toUpperCase()}\n${doc.content}`,
-        );
-      }
-    }
-  }
-
-  let userPrompt =
-    `You are evaluating this content as ${advisor.name}.\n\n` +
-    `Your evaluation focus:\n${advisor.evaluationExpertise}\n\n`;
-
-  if (recipe.evaluationEmphasis) {
-    userPrompt +=
-      `EMPHASIS FOR THIS CONTENT TYPE:\n${recipe.evaluationEmphasis}\n\n`;
-  }
-
-  if (contextParts.length > 0) {
-    userPrompt += `REFERENCE DOCUMENTS:\n${contextParts.join('\n\n')}\n\n`;
-  }
-
-  userPrompt +=
-    `CONTENT TO EVALUATE:\n${draft}\n\n` +
-    `Use the submit_critique tool to provide your structured evaluation.`;
-
-  const response = await getAnthropic().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: userPrompt }],
-    tools: [submitCritiqueTool],
-  });
-
-  // Extract tool use from response
-  const toolUse = response.content.find((b) => b.type === 'tool_use');
-  if (!toolUse || toolUse.type !== 'tool_use') {
-    return {
-      advisorId: advisor.id,
-      name: advisor.name,
-      score: 0,
-      pass: false,
-      issues: [],
-      error: 'Critic did not use submit_critique tool',
-    };
-  }
-
-  const input = toolUse.input as {
-    score: number;
-    pass: boolean;
-    issues: CritiqueIssue[];
-  };
-
-  return {
-    advisorId: advisor.id,
-    name: advisor.name,
-    score: input.score,
-    pass: input.pass,
-    issues: input.issues || [],
-  };
-}
 
 /**
  * Compare two rounds to find fixed items.
