@@ -419,7 +419,7 @@ git commit -m "feat(eval): add scenario loader with validation and tests"
 
 ---
 
-### Task 6: Trigger/scoping helper (TDD)
+### ✅ Task 6: Trigger/scoping helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/trigger.test.ts`
