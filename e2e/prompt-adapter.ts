@@ -53,6 +53,11 @@ export async function buildPromptForScenario(scenario: EvalScenario): Promise<Pr
       const seoContext = scenario.fixtures.seoContext ? (loadFixture(scenario, 'seoContext') as string) : '';
       return { userMessage: createPrompt(idea, 'scoring', seoContext) };
     }
+    case 'content-calendar': {
+      const { buildCalendarPrompt } = await import('@/lib/content-prompts');
+      const ctx = loadFixture(scenario, 'contentContext') as import('@/lib/content-prompts').ContentContext;
+      return { userMessage: buildCalendarPrompt(ctx) };
+    }
     default:
       throw new Error(`Unknown surface: "${scenario.surface}" in scenario "${scenario.name}"`);
   }

@@ -1680,7 +1680,7 @@ git commit -m "feat(eval): add research-scoring surface to prompt adapter"
 
 ---
 
-### Task 20: Prompt adapter -- content-calendar surface
+### ✅ Task 20: Prompt adapter -- content-calendar surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
