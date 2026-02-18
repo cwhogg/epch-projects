@@ -502,3 +502,66 @@ export interface ValidationCanvasData {
   pivotSuggestions: Partial<Record<AssumptionType, PivotSuggestion[]>>;
   pivotHistory: Partial<Record<AssumptionType, PivotRecord[]>>;
 }
+
+// Website Builder Chat Types
+
+export type BuildMode = 'interactive' | 'autonomous';
+
+export interface BuildStep {
+  name: string;
+  status: 'pending' | 'active' | 'complete' | 'error';
+  detail?: string;
+  substeps?: { name: string; status: 'pending' | 'active' | 'complete' | 'error' }[];
+}
+
+export const WEBSITE_BUILD_STEPS: { name: string; checkpoint: boolean }[] = [
+  { name: 'Extract Ingredients', checkpoint: true },
+  { name: 'Design Brand Identity', checkpoint: false },
+  { name: 'Write Hero', checkpoint: true },
+  { name: 'Assemble Page', checkpoint: true },
+  { name: 'Pressure Test', checkpoint: false },
+  { name: 'Advisor Review', checkpoint: true },
+  { name: 'Build & Deploy', checkpoint: false },
+  { name: 'Verify', checkpoint: false },
+];
+
+export interface BuildSession {
+  ideaId: string;
+  mode: BuildMode;
+  currentStep: number;
+  steps: BuildStep[];
+  artifacts: {
+    ingredients?: string;
+    brandIdentity?: string;
+    heroContent?: string;
+    pageContent?: string;
+    pressureTestResults?: string;
+    reviewResults?: string;
+    siteUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  metadata?: {
+    advisorConsultation?: { advisorId: string; advisorName: string; question: string };
+    stepTransition?: { from: number; to: number };
+  };
+}
+
+export type StreamEndSignal =
+  | { action: 'checkpoint'; step: number; prompt: string }
+  | { action: 'continue'; step: number }
+  | { action: 'poll'; step: number; pollUrl: string }
+  | { action: 'complete'; result: { siteUrl: string; repoUrl: string } };
+
+export interface ChatRequestBody {
+  type: 'mode_select' | 'user' | 'continue';
+  mode?: BuildMode;
+  content?: string;
+  step?: number;
+}
