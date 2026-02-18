@@ -41,6 +41,7 @@ export default function WebsiteBuilderPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const streamingRef = useRef(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -104,11 +105,16 @@ export default function WebsiteBuilderPage() {
   function updateStepStatus(stepIndex: number, status: BuildStep['status']) {
     setSteps((prev) => {
       const updated = [...prev];
-      if (updated[stepIndex]) {
+      if (status === 'complete') {
+        // Mark all steps from 0 through stepIndex as complete
+        for (let i = 0; i <= stepIndex; i++) {
+          if (updated[i]) updated[i] = { ...updated[i], status: 'complete' };
+        }
+      } else if (updated[stepIndex]) {
         updated[stepIndex] = { ...updated[stepIndex], status };
       }
       // Mark next step as active if we completed one
-      if (status === 'complete' && stepIndex + 1 < updated.length && updated[stepIndex + 1].status === 'pending') {
+      if (status === 'complete' && stepIndex + 1 < updated.length && updated[stepIndex + 1]?.status !== 'complete') {
         updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: 'active' };
       }
       return updated;
@@ -118,6 +124,8 @@ export default function WebsiteBuilderPage() {
   // Stream a chat API response and update messages in real-time.
   // Declared as a plain async function — the React Compiler handles memoization.
   async function streamResponse(body: ChatRequestBody) {
+    if (streamingRef.current) return; // prevent concurrent streams
+    streamingRef.current = true;
     setClientState('streaming');
     setError(null);
 
@@ -199,6 +207,8 @@ export default function WebsiteBuilderPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection failed');
       setClientState('waiting_for_user');
+    } finally {
+      streamingRef.current = false;
     }
   }
 

@@ -974,7 +974,7 @@ git commit -m "feat: add parseStreamSegments utility for advisor bubble splittin
 
 ---
 
-### Task 8: Update frontend `handleSignal` and add streaming guard
+### ✅ Task 8: Update frontend `handleSignal` and add streaming guard
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx:104-230`
