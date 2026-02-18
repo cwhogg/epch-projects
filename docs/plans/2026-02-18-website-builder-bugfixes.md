@@ -772,7 +772,7 @@ git commit -m "feat: inject advisor identity markers into stream for distinct ch
 
 ---
 
-### Task 7: Create and test `parseStreamSegments` utility
+### ✅ Task 7: Create and test `parseStreamSegments` utility
 
 **Files:**
 - Create: `src/lib/parse-advisor-segments.ts`
