@@ -1167,7 +1167,7 @@ git commit -m "feat(eval): add dimension registry with 4 starter dimensions"
 
 ---
 
-### Task 14: Prompt adapter skeleton
+### ✅ Task 14: Prompt adapter skeleton
 
 **Files:**
 - Create: `e2e/prompt-adapter.ts`
