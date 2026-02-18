@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runPaintedDoorAgentAuto } from '@/lib/painted-door-agent';
-import { getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
+import { getBuildSession, getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
 
 export const maxDuration = 300;
 
@@ -91,16 +91,52 @@ export async function GET(
       // Check if a fully deployed site already exists (progress expired)
       const site = await getPaintedDoorSite(id);
       if (site && site.siteUrl && site.status === 'live') {
+        const buildSession = await getBuildSession(id);
         return NextResponse.json({
           ideaId: id,
           status: 'complete',
           currentStep: 'Site deployed!',
           steps: [],
           result: site,
+          ...(buildSession && {
+            buildSession: {
+              mode: buildSession.mode,
+              currentStep: buildSession.currentStep,
+              steps: buildSession.steps,
+            },
+          }),
         });
       }
+
+      // Check for active build session even when no legacy progress exists
+      const buildSession = await getBuildSession(id);
+      if (buildSession) {
+        return NextResponse.json({
+          status: 'not_started',
+          buildSession: {
+            mode: buildSession.mode,
+            currentStep: buildSession.currentStep,
+            steps: buildSession.steps,
+          },
+        });
+      }
+
       return NextResponse.json({ status: 'not_started' });
     }
+
+    // Include build session in progress response if one exists
+    const buildSession = await getBuildSession(id);
+    if (buildSession) {
+      return NextResponse.json({
+        ...progress,
+        buildSession: {
+          mode: buildSession.mode,
+          currentStep: buildSession.currentStep,
+          steps: buildSession.steps,
+        },
+      });
+    }
+
     return NextResponse.json(progress);
   } catch (error) {
     console.error('Error getting painted door progress:', error);
