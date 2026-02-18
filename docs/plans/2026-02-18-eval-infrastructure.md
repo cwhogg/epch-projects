@@ -2054,7 +2054,7 @@ git commit -m "feat(eval): add 6 initial eval scenarios for all surfaces"
 
 ---
 
-### Task 24: Dry-run and integration verification
+### ✅ Task 24: Dry-run and integration verification
 
 **Step 1: Run dry-run with all scenarios**
 
