@@ -10,6 +10,14 @@
 
 **Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, Anthropic SDK (streaming), Upstash Redis, Vercel serverless
 
+**Task Dependencies:**
+- Task 5 requires Tasks 1-4 (uses types, Redis storage, and consult_advisor tool)
+- Task 6 requires Task 5 (adds POST handler to the route scaffolded in Task 5)
+- Task 7 requires Task 6 (replaces the scaffolded streaming with full agent loop)
+- Task 13 requires Task 3 (imports `getBuildSession` added in Task 3)
+- Task 15 must follow Task 13 (both modify `src/app/api/painted-door/[id]/route.ts`)
+- Tasks 9-11 require Tasks 5-7 (UI depends on the chat API being functional)
+
 ---
 
 ## Task 1: Extract Landing Page Assembly Framework into Standalone File
@@ -65,7 +73,7 @@ git commit -m "feat: extract Landing Page Assembly framework into standalone pro
 
 **Step 1: Add new types at the end of the file**
 
-Add after the existing `PaintedDoorProgress` interface (after line 224):
+Add at the end of `src/types/index.ts` (after the last existing type, around line 505 — the file is long, `PaintedDoorProgress` is in the middle, not the end):
 
 ```typescript
 // Website Builder Chat Types
@@ -382,7 +390,8 @@ vi.mock('@/lib/advisors/prompt-loader', () => ({
 
 vi.mock('@/lib/db', () => ({
   getFoundationDoc: vi.fn().mockResolvedValue(null),
-  getAllFoundationDocs: vi.fn().mockResolvedValue([]),
+  // NOTE: getAllFoundationDocs returns Partial<Record<FoundationDocType, FoundationDocument>>, not an array
+  getAllFoundationDocs: vi.fn().mockResolvedValue({}),
 }));
 
 import { createConsultAdvisorTool } from '../agent-tools/website-chat';
@@ -436,9 +445,9 @@ describe('consult_advisor tool', () => {
 
   it('includes foundation doc context when available', async () => {
     const { getAllFoundationDocs } = await import('@/lib/db');
-    (getAllFoundationDocs as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { type: 'positioning', content: 'We are positioned as...', generatedAt: '2026-02-17' },
-    ]);
+    (getAllFoundationDocs as ReturnType<typeof vi.fn>).mockResolvedValue({
+      positioning: { type: 'positioning', content: 'We are positioned as...', generatedAt: '2026-02-17' },
+    });
 
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: 'Based on your positioning...' }],
@@ -476,22 +485,14 @@ Expected: FAIL — `createConsultAdvisorTool` doesn't exist.
 
 Create `src/lib/agent-tools/website-chat.ts`:
 
+**Important:** Use the canonical `ToolDefinition` from `@/types` — do NOT define a local interface. The canonical type has `execute: (input) => Promise<unknown>` and `input_schema: Record<string, unknown>`, which is what `createWebsiteTools` also uses.
+
 ```typescript
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { getAllFoundationDocs } from '@/lib/db';
-
-interface ToolDefinition {
-  name: string;
-  description: string;
-  input_schema: {
-    type: 'object';
-    properties: Record<string, unknown>;
-    required: string[];
-  };
-  execute: (input: Record<string, unknown>) => Promise<string>;
-}
+import type { ToolDefinition } from '@/types';
 
 export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
   return {
@@ -527,9 +528,10 @@ export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
         const advisorPrompt = getAdvisorSystemPrompt(advisorId);
 
         // Load foundation docs for context
-        const foundationDocs = await getAllFoundationDocs(ideaId);
-        const foundationContext = foundationDocs
-          .filter((doc) => doc !== null)
+        // NOTE: getAllFoundationDocs returns Partial<Record<FoundationDocType, FoundationDocument>>, not an array
+        const foundationDocsRecord = await getAllFoundationDocs(ideaId);
+        const foundationContext = Object.values(foundationDocsRecord)
+          .filter((doc): doc is NonNullable<typeof doc> => doc !== null && doc !== undefined)
           .map((doc) => `## ${doc.type} (updated ${doc.editedAt || doc.generatedAt})\n${doc.content}`)
           .join('\n\n---\n\n');
 
@@ -624,13 +626,14 @@ vi.mock('@/lib/db', () => ({
     targetUser: 'developers',
     problemSolved: 'testing',
   }),
-  getAllFoundationDocs: vi.fn().mockResolvedValue([
-    { type: 'strategy', content: 'Strategy content', generatedAt: '2026-02-17' },
-    { type: 'positioning', content: 'Positioning content', generatedAt: '2026-02-17' },
-    { type: 'brand-voice', content: 'Brand voice content', generatedAt: '2026-02-17' },
-    { type: 'design-principles', content: 'Design principles content', generatedAt: '2026-02-17' },
-    { type: 'seo-strategy', content: 'SEO strategy content', generatedAt: '2026-02-17' },
-  ]),
+  // NOTE: getAllFoundationDocs returns Partial<Record<FoundationDocType, FoundationDocument>>, not an array
+  getAllFoundationDocs: vi.fn().mockResolvedValue({
+    strategy: { type: 'strategy', content: 'Strategy content', generatedAt: '2026-02-17' },
+    positioning: { type: 'positioning', content: 'Positioning content', generatedAt: '2026-02-17' },
+    'brand-voice': { type: 'brand-voice', content: 'Brand voice content', generatedAt: '2026-02-17' },
+    'design-principles': { type: 'design-principles', content: 'Design principles content', generatedAt: '2026-02-17' },
+    'seo-strategy': { type: 'seo-strategy', content: 'SEO strategy content', generatedAt: '2026-02-17' },
+  }),
 }));
 
 vi.mock('@/lib/content-context', () => ({
@@ -711,7 +714,7 @@ describe('assembleSystemPrompt', () => {
 
   it('degrades gracefully when foundation docs are missing', async () => {
     const { getAllFoundationDocs } = await import('@/lib/db');
-    (getAllFoundationDocs as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getAllFoundationDocs as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
     const prompt = await assembleSystemPrompt('idea-1', 'interactive');
     expect(prompt).toContain('Julian Shapiro');
@@ -746,7 +749,8 @@ import {
   saveBuildSession,
   saveConversationHistory,
 } from '@/lib/painted-door-db';
-import type { BuildMode, BuildSession, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal, WEBSITE_BUILD_STEPS } from '@/types';
+import type { BuildMode, BuildSession, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
+import { WEBSITE_BUILD_STEPS } from '@/types'; // runtime value, NOT a type — must use value import
 
 export const maxDuration = 300;
 
@@ -761,8 +765,11 @@ export async function assembleSystemPrompt(
   const framework = getFrameworkPrompt('landing-page-assembly');
 
   // 3. Foundation documents
-  const foundationDocs = await getAllFoundationDocs(ideaId);
-  const nonNullDocs = foundationDocs.filter((d) => d !== null);
+  // NOTE: getAllFoundationDocs returns Partial<Record<FoundationDocType, FoundationDocument>>, not an array
+  const foundationDocsRecord = await getAllFoundationDocs(ideaId);
+  const nonNullDocs = Object.values(foundationDocsRecord).filter(
+    (d): d is NonNullable<typeof d> => d !== null && d !== undefined
+  );
 
   let foundationSection: string;
   if (nonNullDocs.length === 0) {
@@ -1219,24 +1226,168 @@ Run: `npm test -- --run src/app/api/painted-door/[id]/chat/__tests__/route.test.
 
 **Step 3: Refactor the streaming response to include agent loop**
 
-Replace the `ReadableStream` section of the POST handler with the full agent loop. The key changes:
+Replace the `ReadableStream` section of the POST handler with the full agent loop. The agent loop alternates between streaming text responses and non-streaming tool execution rounds.
 
-1. After streaming text content, check if the response includes tool_use blocks
-2. If tool calls exist: execute them server-side, feed results back, continue the loop
-3. When the loop ends (no more tool calls), determine the stream end signal based on current step and mode
-4. Append the signal as `\n__SIGNAL__:{json}` at the end of the stream
+Extract a helper function `runAgentStream` that encapsulates the loop:
 
-The implementation should:
-- Use `getAnthropic().messages.create()` (non-streaming) for tool call rounds after the initial stream
-- Stream only the final text response to the client
-- Execute tools via the tool's `execute()` method (matching the pattern in `agent-runtime.ts`)
-- Map tool execution to step updates in the build session
-- Emit `checkpoint` signals at steps 0, 2, 3, 5 (the 1-indexed steps 1, 3, 4, 6) in interactive mode
-- Emit `continue` signals for non-checkpoint steps
-- Emit `poll` signals for step 6 (Build & Deploy) when waiting for deploy
-- Emit `complete` when all steps are done
+```typescript
+async function runAgentStream(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  systemPrompt: string,
+  messages: { role: 'user' | 'assistant'; content: string | Anthropic.ContentBlock[] }[],
+  tools: ToolDefinition[],
+  session: BuildSession,
+  ideaId: string,
+  history: ChatMessage[],
+): Promise<void> {
+  const anthropicTools = tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: t.input_schema,
+  }));
 
-Reference `src/lib/agent-runtime.ts` for the tool execution pattern (Promise.all over tool calls, error wrapping).
+  const MAX_TOOL_ROUNDS = 15;
+  let currentMessages = [...messages];
+  let assistantText = '';
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    // Stream the text response to the client
+    const stream = getAnthropic().messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: currentMessages,
+      tools: anthropicTools,
+    });
+
+    // Collect full response (text + tool_use blocks)
+    const contentBlocks: Anthropic.ContentBlock[] = [];
+    let roundText = '';
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        controller.enqueue(encoder.encode(event.delta.text));
+        roundText += event.delta.text;
+      }
+      // Collect content blocks from the message event
+      if (event.type === 'message_delta') {
+        // stop_reason available here
+      }
+    }
+
+    // Get the full message to check for tool_use blocks
+    const finalMessage = await stream.finalMessage();
+    assistantText += roundText;
+
+    // Check for tool calls
+    const toolUseBlocks = finalMessage.content.filter(
+      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+    );
+
+    if (toolUseBlocks.length === 0) {
+      // No tool calls — agent is done for this request
+      break;
+    }
+
+    // Execute tool calls in parallel (matching agent-runtime.ts pattern)
+    const toolResults = await Promise.all(
+      toolUseBlocks.map(async (toolCall) => {
+        const tool = tools.find((t) => t.name === toolCall.name);
+        if (!tool) {
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: `Error: Unknown tool "${toolCall.name}"`,
+            is_error: true,
+          };
+        }
+        try {
+          const result = await tool.execute(toolCall.input as Record<string, unknown>);
+          // All tool results must be stringified for Anthropic's tool_result content
+          const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: resultStr,
+          };
+        } catch (error) {
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            is_error: true,
+          };
+        }
+      }),
+    );
+
+    // Add assistant message + tool results to conversation for next round
+    currentMessages = [
+      ...currentMessages,
+      { role: 'assistant' as const, content: finalMessage.content },
+      { role: 'user' as const, content: toolResults },
+    ];
+  }
+
+  // Save assistant text to history
+  if (assistantText) {
+    history.push({
+      role: 'assistant',
+      content: assistantText,
+      timestamp: new Date().toISOString(),
+    });
+    await saveConversationHistory(ideaId, history);
+  }
+
+  // Determine and emit stream end signal
+  const signal = determineStreamEndSignal(session);
+  controller.enqueue(encoder.encode(`\n__SIGNAL__:${JSON.stringify(signal)}`));
+
+  session.updatedAt = new Date().toISOString();
+  await saveBuildSession(ideaId, session);
+  controller.close();
+}
+
+function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
+  const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
+
+  // Build complete
+  if (session.currentStep >= WEBSITE_BUILD_STEPS.length - 1 &&
+      session.steps[session.currentStep]?.status === 'complete') {
+    return {
+      action: 'complete',
+      result: {
+        siteUrl: session.artifacts.siteUrl || '',
+        repoUrl: '',
+      },
+    };
+  }
+
+  // Deploy step — use polling
+  if (session.currentStep === 6) { // Build & Deploy
+    return {
+      action: 'poll',
+      step: session.currentStep,
+      pollUrl: `/api/painted-door/${session.ideaId}`,
+    };
+  }
+
+  // Checkpoint in interactive mode
+  if (session.mode === 'interactive' && stepConfig?.checkpoint) {
+    return {
+      action: 'checkpoint',
+      step: session.currentStep,
+      prompt: `Step ${session.currentStep + 1} complete. Review and provide feedback, or say "continue" to proceed.`,
+    };
+  }
+
+  // Auto-continue
+  return { action: 'continue', step: session.currentStep };
+}
+```
+
+Then update the POST handler's streaming section to call `runAgentStream`.
 
 **Step 4: Run tests to verify they pass**
 
@@ -1262,19 +1413,28 @@ git commit -m "feat: implement agent loop with tool execution and stream end sig
 - Create: `src/lib/critique-service.ts`
 - Modify: `src/lib/__tests__/critique-tools.test.ts`
 
-The design doc says to extract critique tools (`run_critiques`, `editor_decision`, `revise_draft`) into a shared service so both `content-critique-agent.ts` and the website builder can use them. The current implementation has these tools tightly coupled to the critique agent's closure state.
+The design doc says to extract critique tools into a shared service so both `content-critique-agent.ts` and the website builder can use them. The current implementation has these tools tightly coupled to the closure state of `createCritiqueTools` in `src/lib/agent-tools/critique.ts`.
+
+**Note — design doc drift:** The design doc names `content-critique-agent.ts` as the file to modify. The actual implementation to extract is in `agent-tools/critique.ts`, which holds the tool definitions and `runSingleCritic`. The agent file (`content-critique-agent.ts`) orchestrates the agent loop but doesn't own the critique logic.
 
 **Step 1: Identify the shared interface**
 
-Read `src/lib/agent-tools/critique.ts` to understand what state the tools need. The key shared pieces are:
-- `runSingleCritic(advisor, draft, recipe, ideaId)` — runs one critic LLM call
-- `applyEditorRubric(critiques, minAggregateScore, previousAvgScore)` — from `editor-decision.ts`
-- The recipe's `namedCritics` and `evaluationEmphasis`
+Read `src/lib/agent-tools/critique.ts` to understand what state the tools need. Key shared pieces:
+- `runSingleCritic(advisor, draft, recipe, ideaId)` (line 57) — runs one critic LLM call, stateless
+- `applyEditorRubric(critiques, minAggregateScore, previousAvgScore)` — from `editor-decision.ts`, stateless
 
-The website builder needs to be able to:
-1. Invoke the critique pipeline with the website recipe's 4 named critics
-2. Get back structured results (per-critic scores, issues, verdicts)
-3. Decide whether to revise based on editor rubric
+**Closure state that MUST stay in `createCritiqueTools`** (not extracted):
+- `previousAvgScore` — used by oscillation guard, per-agent-run state
+- `previousRoundCritiques` — used by `findFixedItems` for do-not-regress list
+- `accumulatedFixedItems`, `accumulatedWellScored` — accumulate across rounds
+- `selectedCritics` — cached after first selection
+
+The shared service extracts only the stateless functions. The critique tools continue to manage their closure state internally but delegate the actual LLM calls and rubric application to the shared service.
+
+The website builder needs to:
+1. Invoke critique with the website recipe's 4 named critics
+2. Get structured results (per-critic scores, issues, verdicts)
+3. Apply editor rubric for approve/revise decision
 
 **Step 2: Create the shared service**
 
@@ -1563,6 +1723,8 @@ Read `src/app/website/[id]/page.tsx` to understand the current auto-trigger beha
 
 **Step 2: Remove auto-trigger behavior**
 
+> **Behavior change:** `/website/[id]` no longer auto-starts site generation on page load. Users must explicitly click "Build Site" to begin. Any bookmarked flows or external links that relied on auto-trigger will now show a static page with a button instead.
+
 The current `useEffect` (lines 77-114) automatically POSTs to trigger generation when `status === 'not_started'`. Remove this auto-trigger logic. The page should just display status without auto-starting anything.
 
 **Step 3: Add Build/Rebuild buttons**
@@ -1744,48 +1906,30 @@ git commit -m "refactor: remove dead V2 agent code and auto-switcher from painte
 
 ---
 
-## Task 16: Integration Testing — Full Chat Flow
+## Task 16: Integration Testing — Full Chat Flow and API Route Tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/__tests__/route.test.ts`
+- Create: `src/app/api/painted-door/[id]/__tests__/route.test.ts`
 
-**Step 1: Add integration-level tests**
+**Step 1: Add integration-level tests for the chat route**
 
-Add tests that verify the full flow:
+Add tests that verify the full flow. **These are skeleton descriptions — implement full test bodies with mocks, assertions, and error paths for each:**
 
-```typescript
-describe('Full chat flow integration', () => {
-  it('mode_select creates session and streams Julian intro', async () => {
-    // Verify: session created in Redis, first message streamed, history saved
-  });
+- `mode_select creates session and streams Julian intro` — POST with `{ type: 'mode_select', mode: 'interactive' }`, verify session created in Redis, first message streamed, history saved
+- `user message appends to history and streams response` — setup existing session + history, send user message, verify message added to history, response streamed
+- `continue message resumes agent at correct step` — setup session at step 1, send continue, verify step advances
+- `conversation history persists across requests` — verify messages accumulate correctly across multiple requests
+- `handles Redis failure during stream gracefully` — mock Redis to fail on `saveConversationHistory`, verify stream completes but error is logged (error path test — MANDATORY per mock testing rules)
+- `handles Anthropic API failure gracefully` — mock stream to throw, verify response includes error information (error path test — MANDATORY per mock testing rules)
 
-  it('user message appends to history and streams response', async () => {
-    // Setup: existing session + history
-    // Send: user message
-    // Verify: message added to history, response streamed
-  });
+**Step 2: Add tests for the modified `/api/painted-door/[id]` route**
 
-  it('continue message resumes agent at correct step', async () => {
-    // Setup: session at step 1
-    // Send: continue
-    // Verify: step advances, response includes next step content
-  });
-
-  it('conversation history persists across requests', async () => {
-    // Verify: messages accumulate correctly across multiple requests
-  });
-
-  it('handles Redis failure during stream gracefully', async () => {
-    // Mock Redis to fail on saveConversationHistory
-    // Verify: stream completes but error is logged
-  });
-
-  it('handles Anthropic API failure gracefully', async () => {
-    // Mock stream to throw
-    // Verify: response includes error information
-  });
-});
-```
+Create `src/app/api/painted-door/[id]/__tests__/route.test.ts` covering:
+- GET returns `buildSession` data when a session exists in Redis
+- GET returns normal progress data when no session exists
+- POST still calls `runPaintedDoorAgent` (V1, not V2 or auto-switcher) — verify the import was updated
+- Error paths: Redis failure on `getBuildSession` (MANDATORY mock error test)
 
 **Step 2: Run tests**
 
@@ -1886,6 +2030,8 @@ git commit -m "docs: update architecture reference with interactive website buil
 | 5 | Critique pipeline integration | Extract shared service, both agents call it | Duplicate critique logic, use agent-to-agent events |
 | 6 | V1 pipeline preservation | Keep V1 as fallback, remove V2 and auto-switcher | Remove all old code immediately, keep all three |
 | 7 | Task ordering | UI last (after all backend) | UI first with mock API, parallel frontend/backend |
+| 8 | `consult_advisor` input schema | `context: string` (simplified) | `artifacts: string[]` (design doc spec) |
+| 9 | V1 pipeline retention | Keep V1, contradicts design doc "Removed" list | Remove V1 as design doc specifies |
 
 ### Appendix: Decision Details
 
@@ -1937,3 +2083,15 @@ git commit -m "docs: update architecture reference with interactive website buil
 **Alternatives rejected:**
 - UI first with mock: Requires building mocks that may not match the real API, double work
 - Parallel: More complex coordination, harder to test incrementally
+
+#### Decision 8: `consult_advisor` input schema simplified
+**Chose:** `{ advisorId: string, question: string, context?: string }` — single optional context string
+**Why:** The design doc specifies `artifacts: string[]` as the third parameter, intended to select which build artifacts to include. In practice, the agent (Julian) already has full context of the build and can include relevant excerpts in the `context` string. A structured `artifacts` array would require a registry of named artifacts and lookup logic — unnecessary complexity when a free-form context string achieves the same result. **This contradicts the design doc interface.**
+**Alternatives rejected:**
+- `artifacts: string[]` (design doc spec): Requires building artifact registry and lookup. Over-engineered for an LLM that already has context in its conversation history.
+
+#### Decision 9: V1 pipeline retained (contradicts design doc)
+**Chose:** Keep `runPaintedDoorAgent` (V1), only remove V2 and auto-switcher
+**Why:** The design doc's "Removed" section lists V1 for removal. We retain it as a production fallback — the existing POST route (`/api/painted-door/[id]`) continues to call V1 for any non-chat builds. If the chat flow encounters issues in production, V1 provides a working path. Once the chat flow is verified, V1 can be removed in a follow-up. **This explicitly contradicts the design doc.**
+**Alternatives rejected:**
+- Remove V1 as design doc specifies: No fallback if chat flow has issues in production. The chat flow is a fundamentally different architecture (streaming agent loop vs. sequential pipeline), and shipping without a fallback is unnecessarily risky.
