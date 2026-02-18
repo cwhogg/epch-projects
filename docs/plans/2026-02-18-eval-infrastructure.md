@@ -1708,7 +1708,7 @@ git commit -m "feat(eval): add content-calendar surface to prompt adapter"
 
 ---
 
-### Task 21: Prompt adapter -- framework-assembly surface
+### ✅ Task 21: Prompt adapter -- framework-assembly surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`

@@ -53,6 +53,15 @@ export async function buildPromptForScenario(scenario: EvalScenario): Promise<Pr
       const seoContext = scenario.fixtures.seoContext ? (loadFixture(scenario, 'seoContext') as string) : '';
       return { userMessage: createPrompt(idea, 'scoring', seoContext) };
     }
+    case 'framework-assembly': {
+      const { getAdvisorSystemPrompt } = await import('@/lib/advisors/prompt-loader');
+      const { getFrameworkPrompt } = await import('@/lib/frameworks/framework-loader');
+      const frameworkId = scenario.config.framework as string;
+      const advisorId = scenario.config.advisor as string;
+      const frameworkPrompt = getFrameworkPrompt(frameworkId);
+      if (!frameworkPrompt) throw new Error(`Framework not found: ${frameworkId}`);
+      return { systemPrompt: `${getAdvisorSystemPrompt(advisorId)}\n\n---\n\n${frameworkPrompt}` };
+    }
     case 'content-calendar': {
       const { buildCalendarPrompt } = await import('@/lib/content-prompts');
       const ctx = loadFixture(scenario, 'contentContext') as import('@/lib/content-prompts').ContentContext;
