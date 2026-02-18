@@ -5,6 +5,11 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { PaintedDoorProgress } from '@/types';
 
+function hasBuildSession(progress: PaintedDoorProgress | null): boolean {
+  if (!progress) return false;
+  return 'buildSession' in progress && Boolean((progress as Record<string, unknown>).buildSession);
+}
+
 export default function PaintedDoorProgressPage() {
   const params = useParams();
   const analysisId = params.id as string;
@@ -86,8 +91,6 @@ export default function PaintedDoorProgressPage() {
         const data = await res.json();
         if (data.status === 'not_started') {
           setLoading(false);
-          // Auto-trigger
-          triggerGeneration();
           return;
         }
         setProgress(data as PaintedDoorProgress);
@@ -201,16 +204,16 @@ export default function PaintedDoorProgressPage() {
                 </svg>
                 See Site
               </a>
-              <button
-                onClick={handleRegenerate}
+              <Link
+                href={`/website/${analysisId}/build`}
                 className="btn btn-ghost text-sm"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10" />
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                 </svg>
-                Regenerate Site
-              </button>
+                Rebuild Site
+              </Link>
               <Link
                 href={`/content/${analysisId}`}
                 className="btn btn-ghost text-sm"
@@ -227,12 +230,52 @@ export default function PaintedDoorProgressPage() {
       </div>
 
       {/* Error */}
-      {error && (
+      {error ? (
         <div
           className="p-4 rounded-lg text-sm animate-fade-in"
           style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--color-danger)', border: '1px solid rgba(248, 113, 113, 0.2)' }}
         >
           {error}
+        </div>
+      ) : null}
+
+      {/* Build Site button for not-started state */}
+      {!progress && !triggered && (
+        <div className="card-static p-8 text-center animate-slide-up stagger-2">
+          <h2 className="font-display text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+            Ready to Build
+          </h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+            Launch the interactive site builder to create your landing page with AI-powered guidance.
+          </p>
+          <Link
+            href={`/website/${analysisId}/build`}
+            className="btn btn-primary"
+          >
+            Build Site
+          </Link>
+        </div>
+      )}
+
+      {/* Continue Building button when a build session is active */}
+      {hasBuildSession(progress) && (
+        <div className="card-static p-5 animate-slide-up stagger-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-base" style={{ color: 'var(--text-primary)' }}>
+                Build in Progress
+              </h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                You have an active build session. Pick up where you left off.
+              </p>
+            </div>
+            <Link
+              href={`/website/${analysisId}/build`}
+              className="btn btn-primary text-sm"
+            >
+              Continue Building
+            </Link>
+          </div>
         </div>
       )}
 
