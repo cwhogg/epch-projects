@@ -82,6 +82,7 @@ vi.mock('@/lib/agent-tools/website-chat', () => ({
 
 // Import after mocks
 import { assembleSystemPrompt } from '../route';
+import type { BuildSession } from '@/types';
 
 describe('assembleSystemPrompt', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -774,5 +775,68 @@ describe('Integration: full chat flow', () => {
     } catch {
       // Expected — API failure propagates through stream
     }
+  });
+});
+
+import { determineStreamEndSignal } from '../route';
+import { WEBSITE_BUILD_STEPS } from '@/types';
+
+function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
+  return {
+    ideaId: 'idea-1',
+    mode: 'interactive',
+    currentStep: 0,
+    steps: WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const })),
+    artifacts: {},
+    createdAt: '2026-02-17T00:00:00Z',
+    updatedAt: '2026-02-17T00:00:00Z',
+    ...overrides,
+  };
+}
+
+describe('determineStreamEndSignal', () => {
+  it('returns checkpoint for interactive mode at checkpoint step', () => {
+    const session = makeBuildSession({ currentStep: 0 }); // step 0 IS a checkpoint
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('checkpoint');
+    expect(signal).toHaveProperty('step', 0);
+  });
+
+  it('returns continue for interactive mode at non-checkpoint step', () => {
+    const session = makeBuildSession({ currentStep: 1 }); // step 1 is NOT a checkpoint
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('continue');
+    expect(signal).toHaveProperty('step', 1);
+  });
+
+  it('returns continue for autonomous mode even at checkpoint step', () => {
+    const session = makeBuildSession({ mode: 'autonomous', currentStep: 0 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('continue');
+  });
+
+  it('returns poll for deploy step (step 6)', () => {
+    const session = makeBuildSession({ currentStep: 6 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('poll');
+    expect(signal).toHaveProperty('pollUrl', '/api/painted-door/idea-1');
+  });
+
+  it('returns complete when last step is complete', () => {
+    const session = makeBuildSession({ currentStep: 7 });
+    session.steps[7].status = 'complete';
+    session.artifacts.siteUrl = 'https://example.vercel.app';
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('complete');
+    if (signal.action === 'complete') {
+      expect(signal.result.siteUrl).toBe('https://example.vercel.app');
+    }
+  });
+
+  it('does not return complete when last step is NOT complete', () => {
+    const session = makeBuildSession({ currentStep: 7 });
+    // step 7 status is still 'pending'
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).not.toBe('complete');
   });
 });

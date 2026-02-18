@@ -336,7 +336,7 @@ async function runAgentStream(
   controller.close();
 }
 
-function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
+export function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
   const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
 
   // Build complete

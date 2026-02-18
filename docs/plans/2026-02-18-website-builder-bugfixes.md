@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Export `determineStreamEndSignal` and add unit tests
+### ✅ Task 1: Export `determineStreamEndSignal` and add unit tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:339` (add export)
