@@ -1058,7 +1058,7 @@ git commit -m "fix: mark all intermediate steps complete and add streaming guard
 
 ---
 
-### Task 9: Add post-stream advisor bubble parsing and ChatBubble rendering
+### ✅ Task 9: Add post-stream advisor bubble parsing and ChatBubble rendering
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx` (import parser, add post-stream split, update ChatBubble)

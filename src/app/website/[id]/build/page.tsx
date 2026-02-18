@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
 import { WEBSITE_BUILD_STEPS } from '@/types';
+import { parseStreamSegments } from '@/lib/parse-advisor-segments';
 
 type ClientState = 'loading' | 'mode_select' | 'streaming' | 'waiting_for_user' | 'polling' | 'done';
 
@@ -186,14 +187,36 @@ export default function WebsiteBuilderPage() {
       const signalMatch = fullText.match(/\n__SIGNAL__:(.+)$/);
       if (signalMatch) {
         const cleanText = fullText.replace(/\n__SIGNAL__:.+$/, '');
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (last && last.role === 'assistant') {
-            updated[updated.length - 1] = { ...last, content: cleanText };
-          }
-          return updated;
-        });
+
+        // Split into advisor segments for distinct bubbles
+        const segments = parseStreamSegments(cleanText);
+        if (segments.length > 1) {
+          // Replace the single assistant message with multiple messages
+          setMessages((prev) => {
+            const withoutLast = prev.slice(0, -1); // remove placeholder
+            const newMessages = segments.map((seg) => ({
+              role: 'assistant' as const,
+              content: seg.content,
+              timestamp: new Date().toISOString(),
+              ...(seg.type === 'advisor' ? {
+                metadata: {
+                  advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName },
+                },
+              } : {}),
+            }));
+            return [...withoutLast, ...newMessages];
+          });
+        } else {
+          // No advisor markers — just set clean text
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === 'assistant') {
+              updated[updated.length - 1] = { ...last, content: cleanText };
+            }
+            return updated;
+          });
+        }
 
         try {
           const signal: StreamEndSignal = JSON.parse(signalMatch[1]);
@@ -753,17 +776,35 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   }
 
   // Assistant message
+  const isAdvisor = !!message.metadata?.advisorConsultation;
+  const advisorName = message.metadata?.advisorConsultation?.advisorName || '';
+  const initials = isAdvisor
+    ? advisorName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'JS';
+  const displayName = isAdvisor ? advisorName : 'Julian Shapiro';
+  const avatarGradient = isAdvisor
+    ? 'linear-gradient(135deg, #38bdf8, #2dd4bf)'
+    : 'linear-gradient(135deg, #ff6b5b, #ff8f6b)';
+
   return (
     <div className="animate-slide-up flex gap-3">
       <div
         className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-        style={{ background: 'linear-gradient(135deg, #ff6b5b, #ff8f6b)' }}
+        style={{ background: avatarGradient }}
       >
-        JS
+        {initials}
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Julian Shapiro</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
+          {isAdvisor && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+              style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}
+            >
+              Advisor
+            </span>
+          )}
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
           </span>
@@ -771,8 +812,8 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         <div
           className="border p-4 text-sm leading-relaxed"
           style={{
-            background: 'var(--bg-card)',
-            borderColor: 'var(--border-subtle)',
+            background: isAdvisor ? 'rgba(56, 189, 248, 0.03)' : 'var(--bg-card)',
+            borderColor: isAdvisor ? 'rgba(56, 189, 248, 0.15)' : 'var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
             borderTopLeftRadius: '0.25rem',
             boxShadow: 'var(--shadow-card)',
