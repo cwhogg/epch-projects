@@ -585,6 +585,32 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
       execute: async () => {
         if (!brand) return { error: 'Call design_brand first' };
 
+        // Reuse existing repo if preloaded or found in DB
+        if (repo) {
+          return {
+            success: true,
+            reused: true,
+            owner: repo.owner,
+            name: repo.name,
+            url: repo.url,
+          };
+        }
+
+        // Check DB as fallback (in case preload missed it)
+        try {
+          const existingSite = await getPaintedDoorSite(ideaId);
+          if (existingSite?.repoOwner && existingSite?.repoName) {
+            repo = { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl };
+            return {
+              success: true,
+              reused: true,
+              owner: repo.owner,
+              name: repo.name,
+              url: repo.url,
+            };
+          }
+        } catch { /* fall through to create new */ }
+
         repo = await createGitHubRepo(siteSlug, `${brand.siteName} — ${brand.tagline}`);
 
         return {
@@ -658,6 +684,15 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
       },
       execute: async () => {
         if (!repo) return { error: 'Call create_repo first' };
+
+        // Reuse existing Vercel project if preloaded
+        if (vercelProjectId) {
+          return {
+            success: true,
+            reused: true,
+            projectId: vercelProjectId,
+          };
+        }
 
         const result = await createVercelProject(repo.owner, repo.name, siteId);
         vercelProjectId = result.projectId;

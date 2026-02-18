@@ -525,7 +525,7 @@ git commit -m "feat: make createWebsiteTools async with database preloading"
 
 ---
 
-### Task 5: Add repo and Vercel project reuse
+### ✅ Task 5: Add repo and Vercel project reuse
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts:554-575` (create_repo) and `website.ts:629-656` (create_vercel_project)
