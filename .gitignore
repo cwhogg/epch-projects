@@ -16,5 +16,11 @@ node_modules/
 .env.*
 .env.local
 
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Playwright MCP
+.playwright-mcp/
+
 # Worktrees
 .worktrees/
