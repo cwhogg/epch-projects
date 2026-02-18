@@ -332,7 +332,7 @@
 
 ---
 
-### Task 15: Extract buildSession projection helper
+### ✅ Task 15: Extract buildSession projection helper
 
 **KBs:** KB-058
 
