@@ -1,0 +1,24 @@
+{
+  "ideaName": "SecondLook",
+  "ideaDescription": "AI-powered inventory analysis tool for thrift store owners. Uses computer vision to identify, price, and categorize donations in real-time.",
+  "targetUser": "Independent thrift store owners and managers processing 100+ donation items daily",
+  "problemSolved": "Manual sorting and pricing of donated items is slow, inconsistent, and requires deep product knowledge.",
+  "url": "https://secondlook.example.com",
+  "scores": { "seoOpportunity": 7, "competitiveLandscape": 6, "willingnessToPay": 8, "differentiationPotential": 7, "expertiseAlignment": 6, "overall": 7 },
+  "summary": "SecondLook addresses a genuine pain point in thrift retail operations.",
+  "risks": ["CV accuracy may require extensive training data", "Low-tech adopter base", "Regional pricing volatility"],
+  "topKeywords": [
+    { "keyword": "thrift store inventory management", "intentType": "informational", "estimatedVolume": "Medium", "estimatedCompetitiveness": "Low", "contentGapHypothesis": "No authoritative guides", "relevanceToMillionARR": "Direct buyer intent" },
+    { "keyword": "AI pricing secondhand items", "intentType": "commercial", "estimatedVolume": "Low", "estimatedCompetitiveness": "Very Low", "contentGapHypothesis": "Emerging topic", "relevanceToMillionARR": "Core capability" }
+  ],
+  "serpValidated": [
+    { "keyword": "thrift store inventory management", "hasContentGap": true, "serpInsight": "Generic inventory articles dominate", "peopleAlsoAsk": ["How do thrift stores organize inventory?"], "relatedSearches": ["thrift store software"] }
+  ],
+  "contentStrategy": { "topOpportunities": ["Thrift store inventory guide", "AI pricing comparison"], "recommendedAngle": "Authority on modern thrift store operations." },
+  "difficultyAssessment": { "dominantPlayers": ["Shopify Blog", "Square Guides"], "roomForNewEntrant": true, "reasoning": "Neither covers thrift-specific workflows." },
+  "competitors": "**GoodSort** -- Manual sorting SaaS ($49/mo).\n**ThriftTech** -- POS with basic categorization.",
+  "expertiseProfile": "Domain: Retail technology, inventory management\nDepth: 7/10\nCredentials: Built 3 production CV systems",
+  "existingPieces": [],
+  "publishedPieces": [],
+  "rejectedPieces": []
+}
