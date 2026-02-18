@@ -40,15 +40,14 @@ Run: `npm i -D tsx minimatch @types/minimatch dotenv`
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "noEmit": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "noEmit": true
   },
   "include": ["**/*.ts", "../src/**/*.ts"],
   "exclude": ["node_modules"]
 }
 ```
+
+> **Note:** Do NOT add a `paths` override here. The parent `tsconfig.json` already maps `@/*` to `./src/*` relative to the repo root. Adding `paths` in this child config would override it to resolve relative to `e2e/`, pointing `@/*` to `e2e/src/` which doesn't exist.
 
 **Step 3: Create `e2e/.gitignore`**
 
@@ -101,8 +100,8 @@ export interface DimensionDefinition {
   description: string;
   heuristic: (response: string, scenario: EvalScenario) => HeuristicResult;
   judgeRubric: string;
-  skipJudge?: (scenario: EvalScenario, turnIndex: number) => boolean;
   skipHeuristic?: (scenario: EvalScenario, turnIndex: number) => boolean;
+  // Note: No skipJudge — the runner already skips judge when heuristic result is 'fail'
 }
 
 export interface HeuristicResult {
@@ -878,7 +877,7 @@ export const outputLength: DimensionDefinition = {
 **Step 4: Run test to verify it passes**
 
 Run: `npm test -- e2e/dimensions/__tests__/output-length.test.ts`
-Expected: PASS (5 tests)
+Expected: PASS (6 tests)
 
 **Step 5: Commit**
 
@@ -1071,25 +1070,22 @@ function extractJson(response: string): string | null {
   return null;
 }
 
-const lastFailed = new WeakMap<EvalScenario, boolean>();
-
 export const structuredOutput: DimensionDefinition = {
   name: 'structured-output',
   description: 'Whether LLM output is valid parseable JSON with expected fields.',
   judgeRubric: 'Are all required fields present with sensible values? Is the JSON structure well-formed and complete? Score 1-5.',
   heuristic(response: string, scenario: EvalScenario): HeuristicResult {
     const json = extractJson(response);
-    if (!json) { lastFailed.set(scenario, true); return { result: 'fail', details: ['Failed to parse JSON from response'] }; }
+    if (!json) return { result: 'fail', details: ['Failed to parse JSON from response'] };
     const config = scenario.dimensionConfig?.['structured-output'] as { requiredFields?: string[] } | undefined;
     if (config?.requiredFields?.length) {
       const parsed = JSON.parse(json);
       const missing = config.requiredFields.filter(f => !(f in parsed));
-      if (missing.length > 0) { lastFailed.set(scenario, true); return { result: 'fail', details: missing.map(f => `Missing required field: "${f}"`) }; }
+      if (missing.length > 0) return { result: 'fail', details: missing.map(f => `Missing required field: "${f}"`) };
     }
-    lastFailed.set(scenario, false);
     return { result: 'pass' };
   },
-  skipJudge(scenario: EvalScenario): boolean { return lastFailed.get(scenario) === true; },
+  // No skipJudge needed — the runner already skips judge calls when heuristic.result === 'fail'
 };
 ```
 
@@ -1341,7 +1337,7 @@ async function runScenario(scenario: EvalScenario): Promise<ScenarioResult> {
       if (!dim.skipHeuristic?.(scenario, turnIdx)) heuristic = dim.heuristic(text, scenario);
 
       let judge: JudgeResult | undefined;
-      if (!dim.skipJudge?.(scenario, turnIdx) && heuristic.result !== 'fail') {
+      if (heuristic.result !== 'fail') {
         judge = await runJudge({ rubric: dim.judgeRubric, systemPrompt: promptResult.systemPrompt || promptResult.userMessage || '', response: text, model: EVAL_CONFIG.judgeModel });
         apiCalls += 3;
       }
@@ -1602,7 +1598,11 @@ git commit -m "feat(eval): add fixture data for all eval surfaces"
 
 **Dependency:** Task 17 (fixtures). Tasks 18-21 all modify `e2e/prompt-adapter.ts` — execute sequentially.
 
+> **TDD exception (Decision 5):** Tasks 18-21 do not include unit tests. The prompt adapter calls real production functions that read from disk. Testing is deferred to integration via `npm run eval -- --scenario <name>`. Error paths (e.g., unknown advisor ID) are exercised by the dry-run verification in Task 24.
+
 This surface replicates system prompt assembly from `src/app/api/foundation/[ideaId]/chat/route.ts:59-119`. Read that file before implementing.
+
+> **Note:** Production includes `last updated` timestamps in the foundation document headers. The fixture's `lastUpdated` field in `sample-foundation-docs.json` provides this data — use it in the header line when formatting foundation docs.
 
 **Step 1: Add advisor-chat case before `default`**
 
@@ -1748,6 +1748,8 @@ git commit -m "feat(eval): add framework-assembly surface to prompt adapter"
 - Modify: `e2e/dimensions/index.ts`
 - Modify: `e2e/dimensions/__tests__/registry.test.ts`
 
+**Dependency:** Task 13 must be complete (registry + registry tests exist to modify).
+
 The heuristic parses research agent scoring output (format at `src/lib/research-agent-prompts.ts:148-194`). Checks 5 dimensions, score range 1-10, recommendation tier, and confidence level.
 
 **Step 1: Write the failing tests**
@@ -1880,11 +1882,170 @@ Key surface-specific notes:
 
 Write all 6 scenario JSON files per the design doc specification. For voice dimension config, include `antiPatterns` (generic phrases the advisor should NOT use) and `signaturePhrases` (characteristic terms for the judge context).
 
-**Step 1: Write all 6 files**
+> **Design doc errata:** The scenario table (line 285) lists `structured-output` as a dimension for `research-scoring-full`. The adapter notes (line 311) correctly say NOT to include it because the scoring response is markdown, not JSON. **Exclude `structured-output` from `research-scoring-full`** — the adapter notes take precedence.
 
-(Write each scenario as a separate JSON file matching the format in the example scenario. Reference the design doc's scenario table for the exact surface/dimensions/config per scenario.)
+**Step 1: Write `e2e/scenarios/richard-rumelt-foundation-chat.json`**
 
-**Step 2: Commit**
+```json
+{
+  "name": "richard-rumelt-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "richard-rumelt",
+    "docType": "design-principles",
+    "currentContent": "# SecondLook Design Principles\n\n## Core Principles\n1. Speed over perfection — fast intake matters more than perfect categorization\n2. Learn from corrections — every manual override trains the model\n3. Regional intelligence — pricing must reflect local market conditions"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "I think principle #1 is too dismissive of quality. Can you help me reframe it to balance speed AND accuracy?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["synergy", "leverage", "best-in-class", "game-changer", "revolutionary"],
+      "signaturePhrases": ["diagnosis", "guiding policy", "coherent action", "kernel", "proximate objectives", "bad strategy"]
+    }
+  }
+}
+```
+
+**Step 2: Write `e2e/scenarios/april-dunford-foundation-chat.json`**
+
+```json
+{
+  "name": "april-dunford-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "april-dunford",
+    "docType": "positioning",
+    "currentContent": "# SecondLook Positioning\n\n## Category\nAI-powered inventory management for thrift retail\n\n## Competitive Alternatives\n- Manual sorting (status quo)\n- GoodSort (workflow optimization without AI)\n- Generic POS systems"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Our competitive alternatives section feels incomplete. What are we missing and how should we think about framing our category?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["disrupt", "innovative solution", "cutting-edge", "world-class"],
+      "signaturePhrases": ["competitive alternatives", "market category", "differentiated value", "best customer", "positioning"]
+    }
+  }
+}
+```
+
+**Step 3: Write `e2e/scenarios/seo-expert-foundation-chat.json`**
+
+```json
+{
+  "name": "seo-expert-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "seo-expert",
+    "docType": "seo-strategy",
+    "currentContent": "# SecondLook SEO Strategy\n\n## Target Keywords\n- thrift store inventory management\n- AI pricing secondhand items\n\n## Content Pillars\n1. Thrift store operations guides\n2. Pricing intelligence articles"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Should we be targeting broader inventory management keywords or stay focused on thrift-specific terms?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["amazing results", "skyrocket your traffic", "guaranteed rankings", "secret trick"],
+      "signaturePhrases": ["search intent", "content gap", "SERP", "topical authority", "long-tail", "domain authority"]
+    }
+  }
+}
+```
+
+**Step 4: Write `e2e/scenarios/research-scoring-full.json`**
+
+```json
+{
+  "name": "research-scoring-full",
+  "surface": "research-scoring",
+  "tags": ["research"],
+  "config": {},
+  "fixtures": {
+    "idea": "sample-idea.json",
+    "seoContext": "sample-seo-context-string.txt"
+  },
+  "conversation": [
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["scoring-accuracy"],
+  "dimensionConfig": {}
+}
+```
+
+> Note: `structured-output` is excluded — research scoring output is markdown, not JSON.
+
+**Step 5: Write `e2e/scenarios/content-calendar-generation.json`**
+
+```json
+{
+  "name": "content-calendar-generation",
+  "surface": "content-calendar",
+  "tags": ["content"],
+  "config": {},
+  "fixtures": {
+    "contentContext": "sample-content-context.json"
+  },
+  "conversation": [
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["structured-output"],
+  "dimensionConfig": {
+    "structured-output": {
+      "requiredFields": ["strategySummary", "pieces"]
+    }
+  }
+}
+```
+
+**Step 6: Write `e2e/scenarios/value-metric-framework-assembly.json`**
+
+```json
+{
+  "name": "value-metric-framework-assembly",
+  "surface": "framework-assembly",
+  "tags": ["framework", "advisor"],
+  "config": {
+    "advisor": "patrick-campbell",
+    "framework": "value-metric"
+  },
+  "fixtures": {},
+  "conversation": [
+    { "role": "user", "content": "Help me identify the right value metric for SecondLook, our AI-powered thrift store inventory tool." },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "instruction-following"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["game-changer", "revolutionary", "best-in-class", "synergy"],
+      "signaturePhrases": ["value metric", "willingness to pay", "price sensitivity", "monetization", "feature differentiation"]
+    }
+  }
+}
+```
+
+**Step 7: Commit**
 
 ```
 git add e2e/scenarios/
@@ -1922,7 +2083,7 @@ Run: `git status` — `e2e/eval-log.jsonl` should NOT appear.
 **Step 6: Commit if fixes needed**
 
 ```
-git add -A e2e/
+git add e2e/
 git commit -m "fix(eval): address integration verification issues"
 ```
 
@@ -1933,7 +2094,6 @@ git commit -m "fix(eval): address integration verification issues"
 > Complete these after all automated tasks finish.
 
 - [ ] Run full eval suite: `npm run eval -- --all`. The example scenario should pass. Project-specific scenarios may need tuning — use `/aligned:eval-failure-triage` to classify failures.
-- [ ] For `research-scoring-full`: if `structured-output` fails because scoring output is markdown not JSON, remove that dimension from the scenario.
 - [ ] Run `/aligned:eval-audit` to record the first eval coverage baseline.
 
 ---
@@ -1976,8 +2136,8 @@ git commit -m "fix(eval): address integration verification issues"
 **Alternatives rejected:**
 - Redis export: Couples to live data, harder to reproduce, includes noise.
 
-#### Decision 5: No unit tests for prompt adapter
+#### Decision 5: No unit tests for prompt adapter (explicit TDD exception)
 **Chose:** Test via running eval scenarios end-to-end.
-**Why:** The adapter calls real production functions that read from disk. Unit tests would require mocking the filesystem (defeating the purpose) or having real files (making them integration tests anyway).
+**Why:** The adapter is a thin integration layer that calls real production functions (`getAdvisorSystemPrompt`, `createPrompt`, `buildCalendarPrompt`, `getFrameworkPrompt`). These functions read from disk at runtime. Unit tests would either mock the disk reads (defeating the purpose of testing real prompt assembly) or require the real filesystem (making them integration tests). The eval scenario dry-run and live-run in Task 24 serves as the integration test. This is a deliberate exception to the TDD-first pattern documented in CLAUDE.md.
 **Alternatives rejected:**
-- Dedicated unit tests: Would duplicate coverage for minimal additional confidence.
+- Dedicated unit tests with mocked imports: Adds test code without testing what matters (real prompt assembly). The existing production functions already have no unit tests themselves (they're filesystem-dependent loaders), so adapter unit tests would mock-on-mock.
