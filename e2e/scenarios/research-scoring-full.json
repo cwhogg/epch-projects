@@ -1,0 +1,15 @@
+{
+  "name": "research-scoring-full",
+  "surface": "research-scoring",
+  "tags": ["research"],
+  "config": {},
+  "fixtures": {
+    "idea": "sample-idea.json",
+    "seoContext": "sample-seo-context-string.txt"
+  },
+  "conversation": [
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["scoring-accuracy"],
+  "dimensionConfig": {}
+}

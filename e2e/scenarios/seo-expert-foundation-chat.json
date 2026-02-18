@@ -1,0 +1,25 @@
+{
+  "name": "seo-expert-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "seo-expert",
+    "docType": "seo-strategy",
+    "currentContent": "# SecondLook SEO Strategy\n\n## Target Keywords\n- thrift store inventory management\n- AI pricing secondhand items\n\n## Content Pillars\n1. Thrift store operations guides\n2. Pricing intelligence articles"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Should we be targeting broader inventory management keywords or stay focused on thrift-specific terms?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["amazing results", "skyrocket your traffic", "guaranteed rankings", "secret trick"],
+      "signaturePhrases": ["search intent", "content gap", "SERP", "topical authority", "long-tail", "domain authority"]
+    }
+  }
+}

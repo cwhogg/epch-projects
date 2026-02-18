@@ -1,0 +1,21 @@
+{
+  "name": "value-metric-framework-assembly",
+  "surface": "framework-assembly",
+  "tags": ["framework", "advisor"],
+  "config": {
+    "advisor": "patrick-campbell",
+    "framework": "value-metric"
+  },
+  "fixtures": {},
+  "conversation": [
+    { "role": "user", "content": "Help me identify the right value metric for SecondLook, our AI-powered thrift store inventory tool." },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "instruction-following"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["game-changer", "revolutionary", "best-in-class", "synergy"],
+      "signaturePhrases": ["value metric", "willingness to pay", "price sensitivity", "monetization", "feature differentiation"]
+    }
+  }
+}
