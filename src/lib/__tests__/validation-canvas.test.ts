@@ -35,6 +35,7 @@ const mockSavePivotSuggestions = vi.fn();
 const mockGetPivotSuggestions = vi.fn();
 const mockClearPivotSuggestions = vi.fn();
 const mockAppendPivotHistory = vi.fn();
+const mockGetPivotHistory = vi.fn();
 const mockDeleteFoundationDoc = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/lib/db', () => ({
@@ -47,6 +48,7 @@ vi.mock('@/lib/db', () => ({
   getAllAssumptions: (...args: unknown[]) => mockGetAllAssumptions(...args),
   savePivotSuggestions: (...args: unknown[]) => mockSavePivotSuggestions(...args),
   getPivotSuggestions: (...args: unknown[]) => mockGetPivotSuggestions(...args),
+  getPivotHistory: (...args: unknown[]) => mockGetPivotHistory(...args),
   clearPivotSuggestions: (...args: unknown[]) => mockClearPivotSuggestions(...args),
   appendPivotHistory: (...args: unknown[]) => mockAppendPivotHistory(...args),
   deleteFoundationDoc: (...args: unknown[]) => mockDeleteFoundationDoc(...args),
@@ -57,6 +59,8 @@ import {
   evaluateAssumptions,
   generatePivotSuggestions,
   applyPivot,
+  tryGenerateCanvas,
+  buildPivotData,
 } from '@/lib/validation-canvas';
 import type { Assumption } from '@/types';
 
@@ -318,5 +322,73 @@ describe('applyPivot', () => {
     mockGetPivotSuggestions.mockResolvedValue([]);
 
     await expect(applyPivot('idea-1', 'demand', 5)).rejects.toThrow();
+  });
+});
+
+describe('tryGenerateCanvas', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls generateAssumptions on success', async () => {
+    mockGetAnalysisFromDb.mockResolvedValue({ id: 'a1', ideaId: 'idea-1', ideaName: 'Test', scores: {}, summary: '', risks: [], completedAt: '', hasCompetitorAnalysis: false, hasKeywordAnalysis: false, recommendation: 'Tier 1', confidence: 'High' });
+    mockGetAnalysisContent.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: JSON.stringify({ demand: { statement: 's', evidence: [] }, reachability: { statement: 's', evidence: [] }, engagement: { statement: 's', evidence: [] }, wtp: { statement: 's', evidence: [] }, differentiation: { statement: 's', evidence: [] } }) }] });
+
+    await tryGenerateCanvas('idea-1', 'test');
+
+    expect(mockSaveCanvasState).toHaveBeenCalled();
+  });
+
+  it('suppresses errors and logs to console.error', async () => {
+    mockGetAnalysisFromDb.mockRejectedValue(new Error('Redis down'));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await tryGenerateCanvas('idea-1', 'test');
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('[test]'),
+      expect.any(Error),
+    );
+    spy.mockRestore();
+  });
+});
+
+describe('buildPivotData', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns empty records when all types have no data', async () => {
+    mockGetPivotSuggestions.mockResolvedValue([]);
+    mockGetPivotHistory.mockResolvedValue([]);
+
+    const result = await buildPivotData('idea-1');
+
+    expect(result.pivotSuggestions).toEqual({});
+    expect(result.pivotHistory).toEqual({});
+  });
+
+  it('includes only types with non-empty data', async () => {
+    const suggestion = { statement: 'Pivot', evidence: [], impact: 'None', experiment: 'Test' };
+    const historyRecord = { fromStatement: 'A', toStatement: 'B', reason: 'R', suggestedBy: 'system', approvedBy: 'curator', timestamp: 1 };
+
+    mockGetPivotSuggestions.mockImplementation(async (_id: string, type: string) => {
+      return type === 'demand' ? [suggestion] : [];
+    });
+    mockGetPivotHistory.mockImplementation(async (_id: string, type: string) => {
+      return type === 'wtp' ? [historyRecord] : [];
+    });
+
+    const result = await buildPivotData('idea-1');
+
+    expect(Object.keys(result.pivotSuggestions)).toEqual(['demand']);
+    expect(Object.keys(result.pivotHistory)).toEqual(['wtp']);
+  });
+
+  it('handles individual fetch failures gracefully', async () => {
+    mockGetPivotSuggestions.mockRejectedValue(new Error('Redis error'));
+    mockGetPivotHistory.mockResolvedValue([]);
+
+    const result = await buildPivotData('idea-1');
+
+    expect(result.pivotSuggestions).toEqual({});
+    expect(result.pivotHistory).toEqual({});
   });
 });

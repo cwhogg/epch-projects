@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAnalysisFromDb, getAnalysisContent, getContentCalendar, getContentPieces, getGSCLink, getGSCAnalytics, isRedisConfigured } from '@/lib/db';
-import { getAllFoundationDocs, getCanvasState, getAllAssumptions, getPivotSuggestions, getPivotHistory } from '@/lib/db';
+import { getAllFoundationDocs, getCanvasState, getAllAssumptions } from '@/lib/db';
+import { buildPivotData } from '@/lib/validation-canvas';
 import { getPaintedDoorSite, getEmailSignupCount } from '@/lib/painted-door-db';
 import { getAnalysis } from '@/lib/data';
 import ScoreRing from '@/components/ScoreRing';
 import ValidationCanvas from '@/components/ValidationCanvas';
-import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES, ASSUMPTION_TYPES } from '@/types';
+import { Analysis, FoundationDocType, FOUNDATION_DOC_TYPES } from '@/types';
 import type { ValidationCanvasData } from '@/types';
 import { getBadgeClass, getConfidenceStyle, getWebsiteStatusStyle, getWebsiteStatusLabel } from '@/lib/analysis-styles';
 import { getHeaderGradient } from './utils';
@@ -94,25 +95,15 @@ async function getDashboardData(id: string): Promise<DashboardData | null> {
     // Fetch validation canvas data
     let validationCanvas: ValidationCanvasData | null = null;
     if (canvasState) {
-      const [canvasAssumptions, ...pivotResults] = await Promise.all([
+      const [canvasAssumptions, pivotData] = await Promise.all([
         getAllAssumptions(id).catch(() => ({})),
-        ...ASSUMPTION_TYPES.map(async (aType) => ({
-          type: aType,
-          suggestions: await getPivotSuggestions(id, aType).catch(() => []),
-          history: await getPivotHistory(id, aType).catch(() => []),
-        })),
+        buildPivotData(id),
       ]);
-      const canvasPivotSuggestions: Record<string, unknown[]> = {};
-      const canvasPivotHistory: Record<string, unknown[]> = {};
-      for (const { type, suggestions, history } of pivotResults) {
-        if (suggestions.length > 0) canvasPivotSuggestions[type] = suggestions;
-        if (history.length > 0) canvasPivotHistory[type] = history;
-      }
       validationCanvas = {
         canvas: canvasState,
         assumptions: canvasAssumptions as Record<string, unknown>,
-        pivotSuggestions: canvasPivotSuggestions,
-        pivotHistory: canvasPivotHistory,
+        pivotSuggestions: pivotData.pivotSuggestions,
+        pivotHistory: pivotData.pivotHistory,
       } as unknown as ValidationCanvasData;
     }
 

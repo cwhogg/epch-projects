@@ -117,7 +117,7 @@
 
 ---
 
-### Task 5: Extract validation canvas helpers
+### ✅ Task 5: Extract validation canvas helpers
 
 **KBs:** KB-034, KB-056, KB-039
 

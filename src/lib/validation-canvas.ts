@@ -8,6 +8,7 @@ import {
   getAllAssumptions,
   savePivotSuggestions,
   getPivotSuggestions,
+  getPivotHistory,
   clearPivotSuggestions,
   appendPivotHistory,
 } from '@/lib/db';
@@ -68,6 +69,44 @@ const DEFAULT_THRESHOLDS: Record<AssumptionType, { validated: string; invalidate
     windowDays: 90,
   },
 };
+
+/**
+ * Best-effort canvas generation wrapper.
+ * Logs errors without re-throwing so callers aren't blocked.
+ */
+export async function tryGenerateCanvas(ideaId: string, logPrefix: string): Promise<void> {
+  try {
+    await generateAssumptions(ideaId);
+  } catch (err) {
+    console.error(`[${logPrefix}] Canvas generation failed for ${ideaId}:`, err);
+  }
+}
+
+/**
+ * Gather pivot suggestions and history for all assumption types.
+ * Individual fetch failures degrade gracefully to empty arrays.
+ */
+export async function buildPivotData(ideaId: string): Promise<{
+  pivotSuggestions: Record<string, unknown[]>;
+  pivotHistory: Record<string, unknown[]>;
+}> {
+  const results = await Promise.all(
+    ASSUMPTION_TYPES.map(async (type) => ({
+      type,
+      suggestions: await getPivotSuggestions(ideaId, type).catch(() => []),
+      history: await getPivotHistory(ideaId, type).catch(() => []),
+    })),
+  );
+
+  const pivotSuggestions: Record<string, unknown[]> = {};
+  const pivotHistory: Record<string, unknown[]> = {};
+  for (const { type, suggestions, history } of results) {
+    if (suggestions.length > 0) pivotSuggestions[type] = suggestions;
+    if (history.length > 0) pivotHistory[type] = history;
+  }
+
+  return { pivotSuggestions, pivotHistory };
+}
 
 /**
  * Evaluate assumptions for all active canvases.

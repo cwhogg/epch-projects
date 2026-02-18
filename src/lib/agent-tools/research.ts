@@ -349,12 +349,8 @@ ${scoringAnalysis || 'Not available'}
         await updateIdeaStatus(idea.id, 'complete');
 
         // Generate validation canvas assumptions (best-effort, don't block analysis completion)
-        try {
-          const { generateAssumptions } = await import('@/lib/validation-canvas');
-          await generateAssumptions(idea.id);
-        } catch (err) {
-          console.error(`[research-tools] Canvas generation failed for ${idea.id}:`, err);
-        }
+        const { tryGenerateCanvas } = await import('@/lib/validation-canvas');
+        await tryGenerateCanvas(idea.id, 'research-tools');
 
         return {
           success: true,

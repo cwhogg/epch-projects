@@ -190,12 +190,8 @@ ${content.scoring || 'Not available'}
     await updateIdeaStatus(idea.id, 'complete');
 
     // Generate validation canvas assumptions (best-effort, don't block analysis completion)
-    try {
-      const { generateAssumptions } = await import('./validation-canvas');
-      await generateAssumptions(idea.id);
-    } catch (err) {
-      console.error(`[research-agent] Canvas generation failed for ${idea.id}:`, err);
-    }
+    const { tryGenerateCanvas } = await import('./validation-canvas');
+    await tryGenerateCanvas(idea.id, 'research-agent');
 
     // Update progress
     progress.status = 'complete';
