@@ -8,6 +8,7 @@ import type {
   FoundationDocType,
   FoundationProgress,
 } from '@/types';
+import { DOC_DEPENDENCIES } from '@/lib/foundation-deps';
 import { ArrowLeftIcon, PlayIcon, WarningIcon } from './FoundationIcons';
 import ExpandedDocCard from './ExpandedDocCard';
 import CollapsedDocCard from './CollapsedDocCard';
@@ -24,16 +25,6 @@ type DocMap = Partial<Record<FoundationDocType, FoundationDocument>>;
 interface FoundationData {
   progress: FoundationProgress | { status: 'not_started' };
   docs: DocMap;
-}
-
-function canGenerate(docType: FoundationDocType, docs: DocMap): boolean {
-  if (docType === 'strategy') return true;
-  if (docType === 'positioning') return !!docs['strategy'];
-  if (docType === 'brand-voice') return !!docs['positioning'];
-  if (docType === 'design-principles') return !!docs['positioning'] && !!docs['strategy'];
-  if (docType === 'seo-strategy') return !!docs['positioning'];
-  if (docType === 'social-media-strategy') return !!docs['positioning'] && !!docs['brand-voice'];
-  return false;
 }
 
 function getPreview(content: string): string {
@@ -255,7 +246,7 @@ function FoundationPageInner({ params }: PageProps) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginTop: '0.5rem' }}>
         {DOC_CONFIG.map(({ type, label, advisor, requires }, idx) => {
           const doc = docs[type];
-          const canGen = canGenerate(type, docs);
+          const canGen = DOC_DEPENDENCIES[type].every(dep => !!docs[dep]);
           const docProgress = progress?.docs?.[type];
           const state = getCardState(type, doc, canGen, docProgress);
           const isExpanded = expandedDoc === type;

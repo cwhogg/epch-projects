@@ -9,6 +9,7 @@ import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { designPrinciplesSeed } from '@/lib/advisors/design-seed';
+import { DOC_DEPENDENCIES } from '@/lib/foundation-deps';
 
 // Advisor assignments per doc type
 export const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
@@ -18,16 +19,6 @@ export const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
   'design-principles': 'richard-rumelt',
   'seo-strategy': 'seo-expert',
   'social-media-strategy': 'april-dunford',
-};
-
-// Upstream dependency: which doc types must exist before generating this one
-const DOC_UPSTREAM: Record<FoundationDocType, FoundationDocType[]> = {
-  'strategy': [],
-  'positioning': ['strategy'],
-  'brand-voice': ['positioning'],
-  'design-principles': ['positioning', 'strategy'],
-  'seo-strategy': ['positioning'],
-  'social-media-strategy': ['positioning', 'brand-voice'],
 };
 
 function buildGenerationPrompt(
@@ -201,7 +192,7 @@ export function createFoundationTools(
         const strategicInputs = input.strategicInputs as { differentiation?: string; deliberateTradeoffs?: string; antiTarget?: string } | undefined;
 
         // Check upstream dependencies BEFORE signaling 'running'
-        const upstreamTypes = DOC_UPSTREAM[docType];
+        const upstreamTypes = DOC_DEPENDENCIES[docType];
         const upstreamDocs: Record<string, string> = {};
 
         for (const upType of upstreamTypes) {

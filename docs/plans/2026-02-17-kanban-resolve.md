@@ -240,7 +240,7 @@
 
 ---
 
-### Task 11: Create shared foundation dependency graph
+### ✅ Task 11: Create shared foundation dependency graph
 
 **KBs:** KB-043
 
