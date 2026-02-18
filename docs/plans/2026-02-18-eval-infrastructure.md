@@ -761,7 +761,7 @@ git commit -m "feat(eval): add LLM-as-judge with median voting and tests"
 
 ---
 
-### Task 8: Helpers barrel export
+### ✅ Task 8: Helpers barrel export
 
 **Files:**
 - Create: `e2e/eval-helpers/index.ts`
