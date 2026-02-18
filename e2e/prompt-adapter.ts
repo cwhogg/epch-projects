@@ -47,6 +47,12 @@ export async function buildPromptForScenario(scenario: EvalScenario): Promise<Pr
 
       return { systemPrompt };
     }
+    case 'research-scoring': {
+      const { createPrompt } = await import('@/lib/research-agent-prompts');
+      const idea = loadFixture(scenario, 'idea') as import('@/types').ProductIdea;
+      const seoContext = scenario.fixtures.seoContext ? (loadFixture(scenario, 'seoContext') as string) : '';
+      return { userMessage: createPrompt(idea, 'scoring', seoContext) };
+    }
     default:
       throw new Error(`Unknown surface: "${scenario.surface}" in scenario "${scenario.name}"`);
   }
