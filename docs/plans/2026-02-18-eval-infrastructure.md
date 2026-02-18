@@ -1206,7 +1206,7 @@ git commit -m "feat(eval): add prompt adapter skeleton with example surface"
 
 ---
 
-### Task 15: Eval runner CLI
+### ✅ Task 15: Eval runner CLI
 
 **Files:**
 - Create: `e2e/eval-runner.ts`
