@@ -223,7 +223,7 @@
 
 ---
 
-### Task 10: Split checkProgress dual polling
+### ✅ Task 10: Split checkProgress dual polling
 
 **KBs:** KB-038
 
