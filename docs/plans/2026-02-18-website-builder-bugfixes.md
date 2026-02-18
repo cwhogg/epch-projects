@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Export `determineStreamEndSignal` and add unit tests
+### ✅ Task 1: Export `determineStreamEndSignal` and add unit tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:339` (add export)
@@ -117,7 +117,7 @@ git commit -m "test: add unit tests for determineStreamEndSignal"
 
 ---
 
-### Task 2: Create `advanceSessionStep` helper with tests
+### ✅ Task 2: Create `advanceSessionStep` helper with tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts` (add new exported function)
@@ -270,7 +270,7 @@ git commit -m "feat: add advanceSessionStep helper with tool-to-step mapping"
 
 ---
 
-### Task 3: Wire step advancement into `runAgentStream` and handle `body.step`
+### ✅ Task 3: Wire step advancement into `runAgentStream` and handle `body.step`
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:112-187` (POST handler) and `route.ts:245-318` (runAgentStream)
@@ -422,7 +422,7 @@ git commit -m "feat: wire step advancement into agent loop and body.step handler
 
 ---
 
-### Task 4: Make `createWebsiteTools` async with preloading
+### ✅ Task 4: Make `createWebsiteTools` async with preloading
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts:265` (change signature, add preload)
@@ -525,7 +525,7 @@ git commit -m "feat: make createWebsiteTools async with database preloading"
 
 ---
 
-### Task 5: Add repo and Vercel project reuse
+### ✅ Task 5: Add repo and Vercel project reuse
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts:554-575` (create_repo) and `website.ts:629-656` (create_vercel_project)
@@ -624,7 +624,7 @@ git commit -m "feat: reuse existing GitHub repo and Vercel project on rebuild"
 
 ---
 
-### Task 6: Update ChatMessage type and inject advisor markers in stream
+### ✅ Task 6: Update ChatMessage type and inject advisor markers in stream
 
 **Files:**
 - Modify: `src/types/index.ts:551` (simplify advisorConsultation type)
@@ -772,7 +772,7 @@ git commit -m "feat: inject advisor identity markers into stream for distinct ch
 
 ---
 
-### Task 7: Create and test `parseStreamSegments` utility
+### ✅ Task 7: Create and test `parseStreamSegments` utility
 
 **Files:**
 - Create: `src/lib/parse-advisor-segments.ts`
@@ -974,7 +974,7 @@ git commit -m "feat: add parseStreamSegments utility for advisor bubble splittin
 
 ---
 
-### Task 8: Update frontend `handleSignal` and add streaming guard
+### ✅ Task 8: Update frontend `handleSignal` and add streaming guard
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx:104-230`
@@ -1058,7 +1058,7 @@ git commit -m "fix: mark all intermediate steps complete and add streaming guard
 
 ---
 
-### Task 9: Add post-stream advisor bubble parsing and ChatBubble rendering
+### ✅ Task 9: Add post-stream advisor bubble parsing and ChatBubble rendering
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx` (import parser, add post-stream split, update ChatBubble)
@@ -1185,7 +1185,7 @@ git commit -m "feat: render advisor responses as distinct chat bubbles with uniq
 
 ---
 
-### Task 10: Final verification
+### ✅ Task 10: Final verification
 
 **Step 1: Run full test suite**
 

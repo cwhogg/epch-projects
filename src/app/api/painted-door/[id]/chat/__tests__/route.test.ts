@@ -68,7 +68,7 @@ vi.mock('@/lib/advisors/registry', () => ({
 }));
 
 vi.mock('@/lib/agent-tools/website', () => ({
-  createWebsiteTools: vi.fn().mockReturnValue([]),
+  createWebsiteTools: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/agent-tools/website-chat', () => ({
@@ -82,6 +82,7 @@ vi.mock('@/lib/agent-tools/website-chat', () => ({
 
 // Import after mocks
 import { assembleSystemPrompt } from '../route';
+import type { BuildSession } from '@/types';
 
 describe('assembleSystemPrompt', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -774,5 +775,300 @@ describe('Integration: full chat flow', () => {
     } catch {
       // Expected — API failure propagates through stream
     }
+  });
+});
+
+import { advanceSessionStep, determineStreamEndSignal } from '../route';
+import { WEBSITE_BUILD_STEPS } from '@/types';
+
+function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
+  return {
+    ideaId: 'idea-1',
+    mode: 'interactive',
+    currentStep: 0,
+    steps: WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const })),
+    artifacts: {},
+    createdAt: '2026-02-17T00:00:00Z',
+    updatedAt: '2026-02-17T00:00:00Z',
+    ...overrides,
+  };
+}
+
+describe('determineStreamEndSignal', () => {
+  it('returns checkpoint for interactive mode at checkpoint step', () => {
+    const session = makeBuildSession({ currentStep: 0 }); // step 0 IS a checkpoint
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('checkpoint');
+    expect(signal).toHaveProperty('step', 0);
+  });
+
+  it('returns continue for interactive mode at non-checkpoint step', () => {
+    const session = makeBuildSession({ currentStep: 1 }); // step 1 is NOT a checkpoint
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('continue');
+    expect(signal).toHaveProperty('step', 1);
+  });
+
+  it('returns continue for autonomous mode even at checkpoint step', () => {
+    const session = makeBuildSession({ mode: 'autonomous', currentStep: 0 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('continue');
+  });
+
+  it('returns poll for deploy step (step 6)', () => {
+    const session = makeBuildSession({ currentStep: 6 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('poll');
+    expect(signal).toHaveProperty('pollUrl', '/api/painted-door/idea-1');
+  });
+
+  it('returns complete when last step is complete', () => {
+    const session = makeBuildSession({ currentStep: 7 });
+    session.steps[7].status = 'complete';
+    session.artifacts.siteUrl = 'https://example.vercel.app';
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('complete');
+    if (signal.action === 'complete') {
+      expect(signal.result.siteUrl).toBe('https://example.vercel.app');
+    }
+  });
+
+  it('does not return complete when last step is NOT complete', () => {
+    const session = makeBuildSession({ currentStep: 7 });
+    // step 7 status is still 'pending'
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).not.toBe('complete');
+  });
+});
+
+describe('step advancement via tool calls', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function setupForToolTest(currentStep: number) {
+    const { getIdeaFromDb } = await import('@/lib/db');
+    (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+
+    const { getBuildSession, saveBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    const steps = WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const }));
+    for (let i = 0; i < currentStep; i++) steps[i].status = 'complete';
+    if (steps[currentStep]) steps[currentStep].status = 'active';
+
+    const session = {
+      ideaId: 'idea-1',
+      mode: 'interactive' as const,
+      currentStep,
+      steps,
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    };
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue(session);
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    return { session, saveBuildSession: saveBuildSession as ReturnType<typeof vi.fn> };
+  }
+
+  it('advances session when design_brand tool is called', async () => {
+    const { saveBuildSession } = await setupForToolTest(0);
+
+    // Mock tool that returns design_brand
+    const { createWebsiteTools } = await import('@/lib/agent-tools/website');
+    (createWebsiteTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        name: 'design_brand',
+        description: 'mock',
+        input_schema: { type: 'object', properties: {}, required: [] },
+        execute: vi.fn().mockResolvedValue({ success: true }),
+      },
+    ]);
+
+    // First round: tool call; Second round: text only
+    let callCount = 0;
+    mockMessagesStream.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        const events = (async function* () {
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Designing brand...' } };
+        })();
+        return {
+          [Symbol.asyncIterator]: () => events,
+          finalMessage: () => Promise.resolve({
+            content: [
+              { type: 'text', text: 'Designing brand...' },
+              { type: 'tool_use', id: 'tool-1', name: 'design_brand', input: {} },
+            ],
+          }),
+        };
+      }
+      const events = (async function* () {
+        yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Done.' } };
+      })();
+      return {
+        [Symbol.asyncIterator]: () => events,
+        finalMessage: () => Promise.resolve({
+          content: [{ type: 'text', text: 'Done.' }],
+        }),
+      };
+    });
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'user', content: 'Start' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    await readStream(response);
+
+    // Session should have been saved with currentStep = 1 (design_brand advances past step 0)
+    const savedCalls = saveBuildSession.mock.calls;
+    const lastSaved = savedCalls[savedCalls.length - 1][1];
+    expect(lastSaved.currentStep).toBe(1);
+    expect(lastSaved.steps[0].status).toBe('complete');
+    expect(lastSaved.steps[1].status).toBe('complete');
+    expect(lastSaved.steps[2].status).toBe('active');
+  });
+});
+
+describe('advanceSessionStep', () => {
+  it('advances step when tool maps to higher step', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['design_brand']);
+    expect(session.currentStep).toBe(1);
+    expect(session.steps[0].status).toBe('complete');
+    expect(session.steps[1].status).toBe('complete');
+    expect(session.steps[2].status).toBe('active');
+  });
+
+  it('skips intermediate steps when tool maps to much higher step', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['assemble_site_files']);
+    expect(session.currentStep).toBe(3);
+    for (let i = 0; i <= 3; i++) {
+      expect(session.steps[i].status).toBe('complete');
+    }
+    expect(session.steps[4].status).toBe('active');
+  });
+
+  it('does not move backward', () => {
+    const session = makeBuildSession({ currentStep: 3 });
+    advanceSessionStep(session, ['get_idea_context']); // step 0
+    expect(session.currentStep).toBe(3); // unchanged
+  });
+
+  it('ignores unknown tools', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['update_file', 'some_unknown_tool']);
+    expect(session.currentStep).toBe(0); // unchanged
+  });
+
+  it('uses highest step when multiple tools called in one round', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['get_idea_context', 'design_brand']);
+    expect(session.currentStep).toBe(1); // design_brand is higher
+  });
+
+  it('consult_advisor only advances when currentStep >= 4', () => {
+    const session = makeBuildSession({ currentStep: 2 });
+    advanceSessionStep(session, ['consult_advisor']);
+    expect(session.currentStep).toBe(2); // unchanged — too early
+
+    const session2 = makeBuildSession({ currentStep: 4 });
+    advanceSessionStep(session2, ['consult_advisor']);
+    expect(session2.currentStep).toBe(5); // advances past Pressure Test
+  });
+
+  it('marks last step active when advancing to second-to-last', () => {
+    const session = makeBuildSession({ currentStep: 5 });
+    advanceSessionStep(session, ['push_files']);
+    expect(session.currentStep).toBe(6);
+    expect(session.steps[7].status).toBe('active');
+  });
+
+  it('does not set active beyond steps array bounds', () => {
+    const session = makeBuildSession({ currentStep: 6 });
+    advanceSessionStep(session, ['finalize_site']);
+    expect(session.currentStep).toBe(7);
+    expect(session.steps[7].status).toBe('complete');
+    // No step 8 to mark active — should not throw
+  });
+});
+
+describe('advisor marker injection', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('injects advisor markers for consult_advisor tool calls', async () => {
+    const { getIdeaFromDb } = await import('@/lib/db');
+    (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    const steps = WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const }));
+    steps[0].status = 'complete';
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'autonomous',
+      currentStep: 4, // Past Pressure Test so consult_advisor can advance
+      steps,
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const { createConsultAdvisorTool } = await import('@/lib/agent-tools/website-chat');
+    (createConsultAdvisorTool as ReturnType<typeof vi.fn>).mockReturnValue({
+      name: 'consult_advisor',
+      description: 'mock',
+      input_schema: { type: 'object', properties: {}, required: [] },
+      execute: vi.fn().mockResolvedValue('Shirin says: reduce cognitive load on the CTA.'),
+    });
+
+    let callCount = 0;
+    mockMessagesStream.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        const events = (async function* () {
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Consulting Shirin...' } };
+        })();
+        return {
+          [Symbol.asyncIterator]: () => events,
+          finalMessage: () => Promise.resolve({
+            content: [
+              { type: 'text', text: 'Consulting Shirin...' },
+              { type: 'tool_use', id: 'tool-1', name: 'consult_advisor', input: { advisorId: 'shirin-oreizy', question: 'Review CTA' } },
+            ],
+          }),
+        };
+      }
+      const events = (async function* () {
+        yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Based on her advice...' } };
+      })();
+      return {
+        [Symbol.asyncIterator]: () => events,
+        finalMessage: () => Promise.resolve({
+          content: [{ type: 'text', text: 'Based on her advice...' }],
+        }),
+      };
+    });
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'user', content: 'Review the CTA' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    const text = await readStream(response);
+
+    expect(text).toContain('<<<ADVISOR_START>>>');
+    expect(text).toContain('shirin-oreizy');
+    expect(text).toContain('Shirin Oreizy');
+    expect(text).toContain('reduce cognitive load');
+    expect(text).toContain('<<<ADVISOR_END>>>');
   });
 });

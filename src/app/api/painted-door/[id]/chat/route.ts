@@ -162,6 +162,18 @@ export async function POST(
     return Response.json({ error: 'No build session found. Start with mode_select.' }, { status: 400 });
   }
 
+  // Advance session from frontend continue signal
+  if (body.type === 'continue' && body.step !== undefined && body.step > session.currentStep) {
+    for (let i = 0; i <= body.step; i++) {
+      if (session.steps[i]) session.steps[i].status = 'complete';
+    }
+    session.currentStep = body.step;
+    if (body.step + 1 < session.steps.length && session.steps[body.step + 1]) {
+      session.steps[body.step + 1].status = 'active';
+    }
+    await saveBuildSession(ideaId, session);
+  }
+
   // Build conversation messages
   const history = await getConversationHistory(ideaId);
 
@@ -196,7 +208,7 @@ export async function POST(
   }));
 
   // Create tools array: existing website tools + consult_advisor
-  const websiteTools = createWebsiteTools(ideaId);
+  const websiteTools = await createWebsiteTools(ideaId);
   const consultTool = createConsultAdvisorTool(ideaId);
   const allTools = [...websiteTools, consultTool];
 
@@ -304,6 +316,28 @@ async function runAgentStream(
       }),
     );
 
+    // Advance session step based on tools called this round
+    const toolNamesCalled = toolUseBlocks.map((t) => t.name);
+    advanceSessionStep(session, toolNamesCalled);
+
+    // Inject advisor markers for consult_advisor tool results
+    for (let i = 0; i < toolUseBlocks.length; i++) {
+      if (toolUseBlocks[i].name === 'consult_advisor' && !toolResults[i].is_error) {
+        const advisorId = toolUseBlocks[i].input.advisorId as string;
+        const advisor = advisorRegistry.find((a) => a.id === advisorId);
+        const advisorName = advisor?.name || advisorId;
+        const marker = `\n<<<ADVISOR_START>>>:${JSON.stringify({ advisorId, advisorName })}\n${toolResults[i].content}\n<<<ADVISOR_END>>>\n`;
+        controller.enqueue(encoder.encode(marker));
+        assistantText += marker;
+      }
+    }
+
+    // Add paragraph break between tool rounds for readability
+    if (assistantText.length > 0 && !assistantText.endsWith('\n\n')) {
+      controller.enqueue(encoder.encode('\n\n'));
+      assistantText += '\n\n';
+    }
+
     // Add assistant message + tool results to conversation for next round
     currentMessages = [
       ...currentMessages,
@@ -336,7 +370,51 @@ async function runAgentStream(
   controller.close();
 }
 
-function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
+const TOOL_COMPLETES_STEP: Record<string, number> = {
+  get_idea_context: 0,        // Extract Ingredients
+  design_brand: 1,            // Design Brand Identity
+  // Step 2 (Write Hero) has no tool — advances via frontend continue
+  assemble_site_files: 3,     // Assemble Page
+  evaluate_brand: 4,          // Pressure Test
+  validate_code: 4,           // Pressure Test
+  consult_advisor: 5,         // Advisor Review (gated: currentStep >= 4)
+  create_repo: 6,             // Build & Deploy
+  push_files: 6,              // Build & Deploy
+  create_vercel_project: 6,   // Build & Deploy
+  trigger_deploy: 6,          // Build & Deploy
+  check_deploy_status: 6,     // Build & Deploy
+  verify_site: 7,             // Verify
+  finalize_site: 7,           // Verify
+};
+
+/**
+ * Advance session step based on which tools were called this round.
+ * Mutates session in place. Only moves forward, never backward.
+ */
+export function advanceSessionStep(
+  session: BuildSession,
+  toolNames: string[],
+): void {
+  let maxStep = session.currentStep;
+  for (const name of toolNames) {
+    const step = TOOL_COMPLETES_STEP[name];
+    if (step === undefined) continue;
+    if (name === 'consult_advisor' && session.currentStep < 4) continue;
+    if (step > maxStep) maxStep = step;
+  }
+
+  if (maxStep > session.currentStep) {
+    for (let i = 0; i <= maxStep; i++) {
+      if (session.steps[i]) session.steps[i].status = 'complete';
+    }
+    session.currentStep = maxStep;
+    if (maxStep + 1 < session.steps.length && session.steps[maxStep + 1]) {
+      session.steps[maxStep + 1].status = 'active';
+    }
+  }
+}
+
+export function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
   const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
 
   // Build complete

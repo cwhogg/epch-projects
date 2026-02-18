@@ -548,7 +548,7 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   metadata?: {
-    advisorConsultation?: { advisorId: string; advisorName: string; question: string };
+    advisorConsultation?: { advisorId: string; advisorName: string };
     stepTransition?: { from: number; to: number };
   };
 }

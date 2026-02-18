@@ -262,7 +262,7 @@ export function checkBrokenLinks(allFiles: Record<string, string>): ValidationRe
 // Create all tools for the website (painted door) agent
 // ---------------------------------------------------------------------------
 
-export function createWebsiteTools(ideaId: string): ToolDefinition[] {
+export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition[]> {
   // Shared mutable state across tool calls within a single run
   let idea: ProductIdea | null = null;
   let ctx: ContentContext | null = null;
@@ -275,6 +275,28 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
   let siteUrl = '';
   let lastDeploymentId: string | null = null;
   let pushCount = 0;
+
+  // Best-effort preload from database — errors leave state as null
+  try {
+    idea = await getIdeaFromDb(ideaId);
+    if (idea) {
+      ctx = await buildContentContext(ideaId);
+      siteSlug = slugify(idea.name);
+      siteId = `pd-${siteSlug}`;
+    }
+  } catch { /* continue with null — tools will fetch on demand */ }
+
+  try {
+    const existingSite = await getPaintedDoorSite(ideaId);
+    if (existingSite) {
+      brand = existingSite.brand || null;
+      if (existingSite.repoOwner && existingSite.repoName) {
+        repo = { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl };
+      }
+      vercelProjectId = existingSite.vercelProjectId || '';
+      siteUrl = existingSite.siteUrl || '';
+    }
+  } catch { /* continue with null — tools will create fresh */ }
 
   return [
     // -----------------------------------------------------------------------
@@ -563,6 +585,32 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
       execute: async () => {
         if (!brand) return { error: 'Call design_brand first' };
 
+        // Reuse existing repo if preloaded or found in DB
+        if (repo) {
+          return {
+            success: true,
+            reused: true,
+            owner: repo.owner,
+            name: repo.name,
+            url: repo.url,
+          };
+        }
+
+        // Check DB as fallback (in case preload missed it)
+        try {
+          const existingSite = await getPaintedDoorSite(ideaId);
+          if (existingSite?.repoOwner && existingSite?.repoName) {
+            repo = { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl };
+            return {
+              success: true,
+              reused: true,
+              owner: repo.owner,
+              name: repo.name,
+              url: repo.url,
+            };
+          }
+        } catch { /* fall through to create new */ }
+
         repo = await createGitHubRepo(siteSlug, `${brand.siteName} — ${brand.tagline}`);
 
         return {
@@ -636,6 +684,15 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
       },
       execute: async () => {
         if (!repo) return { error: 'Call create_repo first' };
+
+        // Reuse existing Vercel project if preloaded
+        if (vercelProjectId) {
+          return {
+            success: true,
+            reused: true,
+            projectId: vercelProjectId,
+          };
+        }
 
         const result = await createVercelProject(repo.owner, repo.name, siteId);
         vercelProjectId = result.projectId;
