@@ -1103,7 +1103,7 @@ git commit -m "feat(eval): add structured-output dimension with JSON parsing and
 
 ---
 
-### Task 13: Dimension registry (TDD)
+### ✅ Task 13: Dimension registry (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/registry.test.ts`
