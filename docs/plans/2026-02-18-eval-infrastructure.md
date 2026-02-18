@@ -888,7 +888,7 @@ git commit -m "feat(eval): add output-length dimension with tests"
 
 ---
 
-### Task 10: instruction-following dimension (TDD)
+### ✅ Task 10: instruction-following dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/instruction-following.test.ts`
