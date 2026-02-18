@@ -185,7 +185,7 @@
 
 ---
 
-### Task 8: Refactor status timestamp logic
+### ✅ Task 8: Refactor status timestamp logic
 
 **KBs:** KB-035
 

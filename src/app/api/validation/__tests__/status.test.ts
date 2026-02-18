@@ -102,6 +102,35 @@ describe('POST /api/validation/[ideaId]/status', () => {
     }));
   });
 
+  it('clears timestamps when setting to testing', async () => {
+    const validated = { ...mockAssumption, status: 'validated' as const, validatedAt: 123 };
+    vi.mocked(getAssumption).mockResolvedValue(validated);
+    vi.mocked(saveAssumption).mockResolvedValue(undefined);
+
+    const res = await POST(makeRequest({ type: 'demand', status: 'testing' }), context);
+    expect(res.status).toBe(200);
+
+    expect(saveAssumption).toHaveBeenCalledWith('idea-1', expect.objectContaining({
+      status: 'testing',
+      validatedAt: undefined,
+      invalidatedAt: undefined,
+    }));
+  });
+
+  it('sets invalidatedAt when pivoting', async () => {
+    vi.mocked(getAssumption).mockResolvedValue(mockAssumption);
+    vi.mocked(saveAssumption).mockResolvedValue(undefined);
+
+    const res = await POST(makeRequest({ type: 'demand', status: 'pivoted' }), context);
+    expect(res.status).toBe(200);
+
+    expect(saveAssumption).toHaveBeenCalledWith('idea-1', expect.objectContaining({
+      status: 'pivoted',
+      invalidatedAt: expect.any(Number),
+      validatedAt: undefined,
+    }));
+  });
+
   it('returns 400 for invalid assumption type', async () => {
     const res = await POST(makeRequest({ type: 'bogus', status: 'validated' }), context);
     expect(res.status).toBe(400);
