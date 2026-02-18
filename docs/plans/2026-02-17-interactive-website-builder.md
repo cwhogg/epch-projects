@@ -20,7 +20,7 @@
 
 ---
 
-## Task 1: Extract Landing Page Assembly Framework into Standalone File
+## ✅ Task 1: Extract Landing Page Assembly Framework into Standalone File
 
 **Files:**
 - Create: `src/lib/frameworks/prompts/landing-page-assembly/prompt.md`
@@ -66,7 +66,7 @@ git commit -m "feat: extract Landing Page Assembly framework into standalone pro
 
 ---
 
-## Task 2: Add Types for Chat Session, Conversation, and Stream Signals
+## ✅ Task 2: Add Types for Chat Session, Conversation, and Stream Signals
 
 **Files:**
 - Modify: `src/types/index.ts`
@@ -155,7 +155,7 @@ git commit -m "feat: add types for website builder chat session, messages, and s
 
 ---
 
-## Task 3: Add Redis Storage for Build Sessions and Conversation History
+## ✅ Task 3: Add Redis Storage for Build Sessions and Conversation History
 
 **Files:**
 - Modify: `src/lib/painted-door-db.ts`
@@ -358,7 +358,7 @@ git commit -m "feat: add Redis storage for build sessions and conversation histo
 
 ---
 
-## Task 4: Build the `consult_advisor` Tool
+## ✅ Task 4: Build the `consult_advisor` Tool
 
 **Files:**
 - Create: `src/lib/agent-tools/website-chat.ts`
@@ -580,7 +580,7 @@ git commit -m "feat: add consult_advisor tool for website builder chat agent"
 
 ---
 
-## Task 5: Build the Chat API Route — System Prompt Assembly
+## ✅ Task 5: Build the Chat API Route — System Prompt Assembly
 
 **Files:**
 - Create: `src/app/api/painted-door/[id]/chat/route.ts`
@@ -862,7 +862,7 @@ git commit -m "feat: implement system prompt assembly for website builder chat A
 
 ---
 
-## Task 6: Build the Chat API Route — Streaming Agent Loop
+## ✅ Task 6: Build the Chat API Route — Streaming Agent Loop
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts`
@@ -1159,7 +1159,7 @@ git commit -m "feat: add POST handler with streaming for website builder chat AP
 
 ---
 
-## Task 7: Implement Agent Loop with Tool Execution and Stream End Signals
+## ✅ Task 7: Implement Agent Loop with Tool Execution and Stream End Signals
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts`
@@ -1406,7 +1406,7 @@ git commit -m "feat: implement agent loop with tool execution and stream end sig
 
 ---
 
-## Task 8: Extract Shared Critique Service
+## ✅ Task 8: Extract Shared Critique Service
 
 **Files:**
 - Modify: `src/lib/agent-tools/critique.ts`
@@ -1507,7 +1507,7 @@ git commit -m "refactor: extract shared critique service for use by website buil
 
 ---
 
-## Task 9: Build the Chat UI Page — Mode Selection
+## ✅ Task 9: Build the Chat UI Page — Mode Selection
 
 **Files:**
 - Create: `src/app/website/[id]/build/page.tsx`
@@ -1567,7 +1567,7 @@ git commit -m "feat: add website builder build page with mode selection"
 
 ---
 
-## Task 10: Build the Chat UI Page — Chat Panel and Progress Sidebar
+## ✅ Task 10: Build the Chat UI Page — Chat Panel and Progress Sidebar
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx`
@@ -1639,7 +1639,7 @@ git commit -m "feat: implement chat panel with streaming and progress sidebar"
 
 ---
 
-## Task 11: Build the Chat UI Page — Auto-Continuation and Polling
+## ✅ Task 11: Build the Chat UI Page — Auto-Continuation and Polling
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx`
@@ -1712,7 +1712,7 @@ git commit -m "feat: implement auto-continuation, polling, and session resumabil
 
 ---
 
-## Task 12: Update Website Detail Page with Build/Rebuild Buttons
+## ✅ Task 12: Update Website Detail Page with Build/Rebuild Buttons
 
 **Files:**
 - Modify: `src/app/website/[id]/page.tsx`
@@ -1758,7 +1758,7 @@ git commit -m "feat: replace auto-trigger with Build/Rebuild navigation buttons"
 
 ---
 
-## Task 13: Update Painted Door API Route for Chat Integration
+## ✅ Task 13: Update Painted Door API Route for Chat Integration
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/route.ts`
@@ -1814,7 +1814,7 @@ git commit -m "feat: update painted-door API route with build session status"
 
 ---
 
-## Task 14: Update `buildBrandIdentityPrompt` to Use Foundation Docs
+## ✅ Task 14: Update `buildBrandIdentityPrompt` to Use Foundation Docs
 
 **Files:**
 - Modify: `src/lib/painted-door-prompts.ts`
@@ -1871,7 +1871,7 @@ git commit -m "feat: update buildBrandIdentityPrompt to accept and use foundatio
 
 ---
 
-## Task 15: Remove Dead Code — V2 Agent and Auto-Switcher
+## ✅ Task 15: Remove Dead Code — V2 Agent and Auto-Switcher
 
 **Files:**
 - Modify: `src/lib/painted-door-agent.ts`
@@ -1906,7 +1906,7 @@ git commit -m "refactor: remove dead V2 agent code and auto-switcher from painte
 
 ---
 
-## Task 16: Integration Testing — Full Chat Flow and API Route Tests
+## ✅ Task 16: Integration Testing — Full Chat Flow and API Route Tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/__tests__/route.test.ts`
