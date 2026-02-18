@@ -2,7 +2,6 @@ import type { AdvisorCritique, CritiqueIssue } from '@/types';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { getFoundationDoc } from '@/lib/db';
-import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { recipes, type ContentRecipe } from '@/lib/content-recipes';
 import { advisorRegistry, type AdvisorEntry } from '@/lib/advisors/registry';
 import { applyEditorRubric } from '@/lib/editor-decision';

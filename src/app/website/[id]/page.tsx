@@ -74,11 +74,6 @@ export default function PaintedDoorProgressPage() {
     }
   }, [analysisId]);
 
-  const handleRegenerate = useCallback(async () => {
-    await resetProgress();
-    triggerGeneration();
-  }, [resetProgress, triggerGeneration]);
-
   useEffect(() => {
     // Check if already in progress or completed
     const checkExisting = async () => {

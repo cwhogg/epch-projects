@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
@@ -77,8 +77,16 @@ export default function WebsiteBuilderPage() {
             setMode(data.buildSession.mode);
             setCurrentStep(data.buildSession.currentStep);
             setSteps(data.buildSession.steps);
-            // Load existing conversation
-            await loadConversationHistory();
+            // Trigger continuation to resume the conversation
+            try {
+              await fetch(`/api/painted-door/${ideaId}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'continue' }),
+              });
+            } catch {
+              // Non-critical
+            }
             setClientState('waiting_for_user');
             return;
           }
@@ -91,24 +99,25 @@ export default function WebsiteBuilderPage() {
     }
 
     loadIdea();
-  }, [ideaId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ideaId]);
 
-  async function loadConversationHistory() {
-    try {
-      const res = await fetch(`/api/painted-door/${ideaId}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'continue' }),
-      });
-      // History will come from the next streaming response
-      // For now just set empty - the user can continue the conversation
-    } catch {
-      // Non-critical
-    }
+  function updateStepStatus(stepIndex: number, status: BuildStep['status']) {
+    setSteps((prev) => {
+      const updated = [...prev];
+      if (updated[stepIndex]) {
+        updated[stepIndex] = { ...updated[stepIndex], status };
+      }
+      // Mark next step as active if we completed one
+      if (status === 'complete' && stepIndex + 1 < updated.length && updated[stepIndex + 1].status === 'pending') {
+        updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: 'active' };
+      }
+      return updated;
+    });
   }
 
-  // Stream a chat API response and update messages in real-time
-  const streamResponse = useCallback(async (body: ChatRequestBody) => {
+  // Stream a chat API response and update messages in real-time.
+  // Declared as a plain async function — the React Compiler handles memoization.
+  async function streamResponse(body: ChatRequestBody) {
     setClientState('streaming');
     setError(null);
 
@@ -142,25 +151,28 @@ export default function WebsiteBuilderPage() {
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let fullText = '';
+      const chunks: string[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        fullText += chunk;
+        chunks.push(chunk);
+        const accumulated = chunks.join('');
 
         // Update the last assistant message with accumulated text
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last && last.role === 'assistant') {
-            updated[updated.length - 1] = { ...last, content: fullText };
+            updated[updated.length - 1] = { ...last, content: accumulated };
           }
           return updated;
         });
       }
+
+      const fullText = chunks.join('');
 
       // Check for signal at the end of the stream
       const signalMatch = fullText.match(/\n__SIGNAL__:(.+)$/);
@@ -188,7 +200,7 @@ export default function WebsiteBuilderPage() {
       setError(err instanceof Error ? err.message : 'Connection failed');
       setClientState('waiting_for_user');
     }
-  }, [ideaId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   function handleSignal(signal: StreamEndSignal) {
     switch (signal.action) {
@@ -217,20 +229,6 @@ export default function WebsiteBuilderPage() {
     }
   }
 
-  function updateStepStatus(stepIndex: number, status: BuildStep['status']) {
-    setSteps((prev) => {
-      const updated = [...prev];
-      if (updated[stepIndex]) {
-        updated[stepIndex] = { ...updated[stepIndex], status };
-      }
-      // Mark next step as active if we completed one
-      if (status === 'complete' && stepIndex + 1 < updated.length && updated[stepIndex + 1].status === 'pending') {
-        updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: 'active' };
-      }
-      return updated;
-    });
-  }
-
   function startPolling() {
     pollRef.current = setInterval(async () => {
       try {
@@ -253,7 +251,7 @@ export default function WebsiteBuilderPage() {
     }, 3000);
   }
 
-  const handleModeSelect = useCallback(async (selectedMode: BuildMode) => {
+  async function handleModeSelect(selectedMode: BuildMode) {
     setSelectingMode(selectedMode);
     setError(null);
     setMode(selectedMode);
@@ -277,9 +275,9 @@ export default function WebsiteBuilderPage() {
 
     await streamResponse({ type: 'mode_select', mode: selectedMode });
     setSelectingMode(null);
-  }, [streamResponse]);
+  }
 
-  const handleSendMessage = useCallback(async () => {
+  async function handleSendMessage() {
     const content = inputValue.trim();
     if (!content || clientState !== 'waiting_for_user') return;
 
@@ -295,22 +293,22 @@ export default function WebsiteBuilderPage() {
     setMessages((prev) => [...prev, userMsg]);
 
     await streamResponse({ type: 'user', content });
-  }, [inputValue, clientState, streamResponse]);
+  }
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  }, [handleSendMessage]);
+  }
 
   // Auto-resize textarea
-  const handleTextareaInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  function handleTextareaInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInputValue(e.target.value);
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, []);
+  }
 
   // Calculate progress
   const completedSteps = steps.filter((s) => s.status === 'complete').length;
