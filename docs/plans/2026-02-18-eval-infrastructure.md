@@ -589,7 +589,7 @@ git commit -m "feat(eval): add trigger/scoping helper with git diff and tag matc
 
 ---
 
-### Task 7: Judge helper (TDD)
+### ✅ Task 7: Judge helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/judge.test.ts`
