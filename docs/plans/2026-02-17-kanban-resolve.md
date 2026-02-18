@@ -93,7 +93,7 @@
 
 ---
 
-### Task 4: Eliminate duplicate function and intermediate type
+### ✅ Task 4: Eliminate duplicate function and intermediate type
 
 **KBs:** KB-047, KB-060
 

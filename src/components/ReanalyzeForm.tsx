@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FoundationDocument } from '@/types';
+import { capitalize } from '@/lib/utils';
 
 interface ReanalyzeFormProps {
   ideaId: string;
@@ -12,10 +13,6 @@ interface ReanalyzeFormProps {
 function formatDocDate(doc: FoundationDocument): string {
   const iso = doc.editedAt || doc.generatedAt;
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export default function ReanalyzeForm({ ideaId, foundationDocs = [] }: ReanalyzeFormProps) {

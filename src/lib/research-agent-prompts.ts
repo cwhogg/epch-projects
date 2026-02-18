@@ -1,5 +1,6 @@
 import { ProductIdea, FoundationDocument } from '@/types';
 import { buildExpertiseContext } from './expertise-profile';
+import { capitalize } from './utils';
 
 const RELEVANT_TYPES = ['strategy', 'positioning'] as const;
 const MAX_CONTENT_LENGTH = 4000;
@@ -7,10 +8,6 @@ const MAX_CONTENT_LENGTH = 4000;
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function buildFoundationContext(docs: FoundationDocument[]): string {

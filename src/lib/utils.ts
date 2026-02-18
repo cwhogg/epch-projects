@@ -22,6 +22,10 @@ export function fuzzyMatchPair(a: string, b: string): boolean {
   return minSize > 0 && intersection.length / minSize >= 0.6;
 }
 
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function formatScoreName(key: string): string {
   const names: Record<string, string> = {
     seoOpportunity: 'SEO',
