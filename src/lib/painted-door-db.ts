@@ -1,5 +1,5 @@
 import { getRedis, parseValue } from './redis';
-import { PaintedDoorSite, PaintedDoorProgress } from '@/types';
+import { PaintedDoorSite, PaintedDoorProgress, BuildSession, ChatMessage } from '@/types';
 import { PublishTarget } from './publish-targets';
 
 // ---------- Painted Door Sites ----------
@@ -83,5 +83,43 @@ export async function getEmailSignups(siteId: string, limit: number = 100): Prom
 export async function deleteEmailSignups(siteId: string): Promise<void> {
   await getRedis().del(`email_signups:${siteId}`);
   await getRedis().del(`email_signups_count:${siteId}`);
+}
+
+// ---------- Build Session Storage (4-hour TTL) ----------
+
+const BUILD_SESSION_TTL = 14400;
+
+export async function saveBuildSession(ideaId: string, session: BuildSession): Promise<void> {
+  const r = getRedis();
+  await r.set(`build_session:${ideaId}`, JSON.stringify(session), { ex: BUILD_SESSION_TTL });
+}
+
+export async function getBuildSession(ideaId: string): Promise<BuildSession | null> {
+  const r = getRedis();
+  const raw = await r.get(`build_session:${ideaId}`);
+  return raw ? parseValue<BuildSession>(raw) : null;
+}
+
+export async function deleteBuildSession(ideaId: string): Promise<void> {
+  const r = getRedis();
+  await r.del(`build_session:${ideaId}`);
+}
+
+// ---------- Conversation History Storage (4-hour TTL) ----------
+
+export async function saveConversationHistory(ideaId: string, messages: ChatMessage[]): Promise<void> {
+  const r = getRedis();
+  await r.set(`chat_history:${ideaId}`, JSON.stringify(messages), { ex: BUILD_SESSION_TTL });
+}
+
+export async function getConversationHistory(ideaId: string): Promise<ChatMessage[]> {
+  const r = getRedis();
+  const raw = await r.get(`chat_history:${ideaId}`);
+  return raw ? parseValue<ChatMessage[]>(raw) : [];
+}
+
+export async function deleteConversationHistory(ideaId: string): Promise<void> {
+  const r = getRedis();
+  await r.del(`chat_history:${ideaId}`);
 }
 
