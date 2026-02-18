@@ -1651,7 +1651,7 @@ git commit -m "feat(eval): add advisor-chat surface to prompt adapter"
 
 ---
 
-### Task 19: Prompt adapter -- research-scoring surface
+### ✅ Task 19: Prompt adapter -- research-scoring surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
