@@ -117,7 +117,7 @@ git commit -m "test: add unit tests for determineStreamEndSignal"
 
 ---
 
-### Task 2: Create `advanceSessionStep` helper with tests
+### ✅ Task 2: Create `advanceSessionStep` helper with tests
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts` (add new exported function)

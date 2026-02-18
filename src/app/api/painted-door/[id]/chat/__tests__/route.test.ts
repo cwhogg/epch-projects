@@ -778,7 +778,7 @@ describe('Integration: full chat flow', () => {
   });
 });
 
-import { determineStreamEndSignal } from '../route';
+import { advanceSessionStep, determineStreamEndSignal } from '../route';
 import { WEBSITE_BUILD_STEPS } from '@/types';
 
 function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
@@ -838,5 +838,69 @@ describe('determineStreamEndSignal', () => {
     // step 7 status is still 'pending'
     const signal = determineStreamEndSignal(session);
     expect(signal.action).not.toBe('complete');
+  });
+});
+
+describe('advanceSessionStep', () => {
+  it('advances step when tool maps to higher step', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['design_brand']);
+    expect(session.currentStep).toBe(1);
+    expect(session.steps[0].status).toBe('complete');
+    expect(session.steps[1].status).toBe('complete');
+    expect(session.steps[2].status).toBe('active');
+  });
+
+  it('skips intermediate steps when tool maps to much higher step', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['assemble_site_files']);
+    expect(session.currentStep).toBe(3);
+    for (let i = 0; i <= 3; i++) {
+      expect(session.steps[i].status).toBe('complete');
+    }
+    expect(session.steps[4].status).toBe('active');
+  });
+
+  it('does not move backward', () => {
+    const session = makeBuildSession({ currentStep: 3 });
+    advanceSessionStep(session, ['get_idea_context']); // step 0
+    expect(session.currentStep).toBe(3); // unchanged
+  });
+
+  it('ignores unknown tools', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['update_file', 'some_unknown_tool']);
+    expect(session.currentStep).toBe(0); // unchanged
+  });
+
+  it('uses highest step when multiple tools called in one round', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['get_idea_context', 'design_brand']);
+    expect(session.currentStep).toBe(1); // design_brand is higher
+  });
+
+  it('consult_advisor only advances when currentStep >= 4', () => {
+    const session = makeBuildSession({ currentStep: 2 });
+    advanceSessionStep(session, ['consult_advisor']);
+    expect(session.currentStep).toBe(2); // unchanged — too early
+
+    const session2 = makeBuildSession({ currentStep: 4 });
+    advanceSessionStep(session2, ['consult_advisor']);
+    expect(session2.currentStep).toBe(5); // advances past Pressure Test
+  });
+
+  it('marks last step active when advancing to second-to-last', () => {
+    const session = makeBuildSession({ currentStep: 5 });
+    advanceSessionStep(session, ['push_files']);
+    expect(session.currentStep).toBe(6);
+    expect(session.steps[7].status).toBe('active');
+  });
+
+  it('does not set active beyond steps array bounds', () => {
+    const session = makeBuildSession({ currentStep: 6 });
+    advanceSessionStep(session, ['finalize_site']);
+    expect(session.currentStep).toBe(7);
+    expect(session.steps[7].status).toBe('complete');
+    // No step 8 to mark active — should not throw
   });
 });

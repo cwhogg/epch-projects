@@ -336,6 +336,50 @@ async function runAgentStream(
   controller.close();
 }
 
+const TOOL_COMPLETES_STEP: Record<string, number> = {
+  get_idea_context: 0,        // Extract Ingredients
+  design_brand: 1,            // Design Brand Identity
+  // Step 2 (Write Hero) has no tool — advances via frontend continue
+  assemble_site_files: 3,     // Assemble Page
+  evaluate_brand: 4,          // Pressure Test
+  validate_code: 4,           // Pressure Test
+  consult_advisor: 5,         // Advisor Review (gated: currentStep >= 4)
+  create_repo: 6,             // Build & Deploy
+  push_files: 6,              // Build & Deploy
+  create_vercel_project: 6,   // Build & Deploy
+  trigger_deploy: 6,          // Build & Deploy
+  check_deploy_status: 6,     // Build & Deploy
+  verify_site: 7,             // Verify
+  finalize_site: 7,           // Verify
+};
+
+/**
+ * Advance session step based on which tools were called this round.
+ * Mutates session in place. Only moves forward, never backward.
+ */
+export function advanceSessionStep(
+  session: BuildSession,
+  toolNames: string[],
+): void {
+  let maxStep = session.currentStep;
+  for (const name of toolNames) {
+    const step = TOOL_COMPLETES_STEP[name];
+    if (step === undefined) continue;
+    if (name === 'consult_advisor' && session.currentStep < 4) continue;
+    if (step > maxStep) maxStep = step;
+  }
+
+  if (maxStep > session.currentStep) {
+    for (let i = 0; i <= maxStep; i++) {
+      if (session.steps[i]) session.steps[i].status = 'complete';
+    }
+    session.currentStep = maxStep;
+    if (maxStep + 1 < session.steps.length && session.steps[maxStep + 1]) {
+      session.steps[maxStep + 1].status = 'active';
+    }
+  }
+}
+
 export function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
   const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
 
