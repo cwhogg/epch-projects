@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Install dev dependencies and scaffold config files
+### ✅ Task 1: Install dev dependencies and scaffold config files
 
 **Files:**
 - Modify: `package.json`
@@ -70,7 +70,7 @@ git commit -m "chore: add eval dev dependencies and e2e scaffold"
 
 ---
 
-### Task 2: Create shared types
+### ✅ Task 2: Create shared types
 
 **Files:**
 - Create: `e2e/types.ts`
@@ -166,7 +166,7 @@ git commit -m "feat(eval): add shared type definitions"
 
 ---
 
-### Task 3: Create eval configuration
+### ✅ Task 3: Create eval configuration
 
 **Files:**
 - Create: `e2e/eval-config.ts`
@@ -214,7 +214,7 @@ git commit -m "feat(eval): add eval configuration with epch-projects surface pat
 
 ---
 
-### Task 4: Logger helper (TDD)
+### ✅ Task 4: Logger helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/logger.test.ts`
@@ -304,7 +304,7 @@ git commit -m "feat(eval): add JSONL logger with tests"
 
 ---
 
-### Task 5: Scenario loader helper (TDD)
+### ✅ Task 5: Scenario loader helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/scenario-loader.test.ts`
@@ -789,7 +789,7 @@ git commit -m "feat(eval): add helpers barrel export"
 
 ---
 
-### Task 9: output-length dimension (TDD)
+### ✅ Task 9: output-length dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/output-length.test.ts`
@@ -1018,7 +1018,7 @@ git commit -m "feat(eval): add voice dimension with anti-pattern detection and t
 
 ---
 
-### Task 12: structured-output dimension (TDD)
+### ✅ Task 12: structured-output dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/structured-output.test.ts`
