@@ -59,8 +59,8 @@ export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
         });
 
         const text = response.content
-          .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
-          .map((block) => block.text)
+          .filter((block) => block.type === 'text')
+          .map((block) => (block as { type: 'text'; text: string }).text)
           .join('\n');
 
         return text || '(No response from advisor)';

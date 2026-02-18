@@ -195,7 +195,7 @@ export async function runCritiqueRound(
     name: c.advisorName,
     score: c.score,
     pass: c.pass,
-    issues: c.issues.map((i) => ({ severity: i.severity, description: i.description, suggestion: '' })),
+    issues: c.issues.map((i) => ({ severity: i.severity as 'high' | 'medium' | 'low', description: i.description, suggestion: '' })),
     error: c.error,
   }));
 

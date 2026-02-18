@@ -2,6 +2,7 @@ import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { advisorRegistry } from '@/lib/advisors/registry';
 import { createWebsiteTools } from '@/lib/agent-tools/website';
 import { createConsultAdvisorTool } from '@/lib/agent-tools/website-chat';
+import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { buildContentContext } from '@/lib/content-context';
@@ -225,7 +226,7 @@ async function runAgentStream(
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
   systemPrompt: string,
-  messages: { role: 'user' | 'assistant'; content: string | Record<string, unknown>[] }[],
+  messages: Anthropic.MessageParam[],
   tools: ToolDefinition[],
   session: BuildSession,
   ideaId: string,
@@ -234,11 +235,11 @@ async function runAgentStream(
   const anthropicTools = tools.map((t) => ({
     name: t.name,
     description: t.description,
-    input_schema: t.input_schema,
+    input_schema: t.input_schema as Anthropic.Tool.InputSchema,
   }));
 
   const MAX_TOOL_ROUNDS = 15;
-  let currentMessages = [...messages];
+  let currentMessages: Anthropic.MessageParam[] = [...messages];
   let assistantText = '';
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -306,8 +307,13 @@ async function runAgentStream(
     // Add assistant message + tool results to conversation for next round
     currentMessages = [
       ...currentMessages,
-      { role: 'assistant' as const, content: finalMessage.content as unknown as Record<string, unknown>[] },
-      { role: 'user' as const, content: toolResults as unknown as Record<string, unknown>[] },
+      { role: 'assistant' as const, content: finalMessage.content },
+      { role: 'user' as const, content: toolResults.map((r) => ({
+        type: 'tool_result' as const,
+        tool_use_id: r.tool_use_id,
+        content: r.content,
+        ...(r.is_error ? { is_error: r.is_error } : {}),
+      })) },
     ];
   }
 
