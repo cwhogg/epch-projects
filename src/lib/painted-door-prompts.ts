@@ -56,9 +56,18 @@ export function buildBrandIdentityPrompt(
   idea: ProductIdea,
   ctx: ContentContext,
   visualOnly = false,
+  foundationDocs?: { type: string; content: string }[],
 ): string {
   const vertical = detectVertical(idea);
   const seoContext = buildSEOContext(ctx, vertical);
+
+  const foundationSection = foundationDocs && foundationDocs.length > 0
+    ? `\n\n## FOUNDATION DOCUMENTS (Source of Truth)
+These strategic documents have already been finalized. Derive the brand identity from them.
+Do not contradict any decisions made in these documents.
+
+${foundationDocs.map((d) => `### ${d.type}\n${d.content}`).join('\n\n')}\n`
+    : '';
 
   return `You are a brand strategist specializing in ${vertical === 'b2b-saas' ? 'B2B SaaS products' : vertical === 'healthcare-consumer' ? 'healthcare consumer products' : 'niche digital products'}. Design a brand for a painted door test targeting "${ctx.targetUser}".
 
@@ -73,7 +82,7 @@ export function buildBrandIdentityPrompt(
 ${ctx.competitors}
 
 ${seoContext}
-
+${foundationSection}
 ## INSTRUCTIONS
 
 Design a complete brand identity for a painted door test website. This is a real product landing page — it should look professional, trustworthy, and distinct (not like a generic AI template).
