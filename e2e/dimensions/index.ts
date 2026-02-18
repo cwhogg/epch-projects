@@ -3,12 +3,14 @@ import { outputLength } from './output-length';
 import { instructionFollowing } from './instruction-following';
 import { voice } from './voice';
 import { structuredOutput } from './structured-output';
+import { scoringAccuracy } from './scoring-accuracy';
 
 const dimensions = new Map<string, DimensionDefinition>([
   [outputLength.name, outputLength],
   [instructionFollowing.name, instructionFollowing],
   [voice.name, voice],
   [structuredOutput.name, structuredOutput],
+  [scoringAccuracy.name, scoringAccuracy],
 ]);
 
 export function getDimension(name: string): DimensionDefinition | undefined { return dimensions.get(name); }

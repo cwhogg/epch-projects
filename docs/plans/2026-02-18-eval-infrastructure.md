@@ -1740,7 +1740,7 @@ git commit -m "feat(eval): add framework-assembly surface to prompt adapter"
 
 ---
 
-### Task 22: scoring-accuracy dimension + add to registry (TDD)
+### ✅ Task 22: scoring-accuracy dimension + add to registry (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/scoring-accuracy.test.ts`
