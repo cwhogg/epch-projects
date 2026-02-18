@@ -937,7 +937,7 @@ git commit -m "feat(eval): add instruction-following dimension with tests"
 
 ---
 
-### Task 11: voice dimension (TDD)
+### ✅ Task 11: voice dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/voice.test.ts`
