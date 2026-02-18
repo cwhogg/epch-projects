@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Install dev dependencies and scaffold config files
+### ✅ Task 1: Install dev dependencies and scaffold config files
 
 **Files:**
 - Modify: `package.json`
@@ -70,7 +70,7 @@ git commit -m "chore: add eval dev dependencies and e2e scaffold"
 
 ---
 
-### Task 2: Create shared types
+### ✅ Task 2: Create shared types
 
 **Files:**
 - Create: `e2e/types.ts`
@@ -166,7 +166,7 @@ git commit -m "feat(eval): add shared type definitions"
 
 ---
 
-### Task 3: Create eval configuration
+### ✅ Task 3: Create eval configuration
 
 **Files:**
 - Create: `e2e/eval-config.ts`
@@ -214,7 +214,7 @@ git commit -m "feat(eval): add eval configuration with epch-projects surface pat
 
 ---
 
-### Task 4: Logger helper (TDD)
+### ✅ Task 4: Logger helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/logger.test.ts`
@@ -304,7 +304,7 @@ git commit -m "feat(eval): add JSONL logger with tests"
 
 ---
 
-### Task 5: Scenario loader helper (TDD)
+### ✅ Task 5: Scenario loader helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/scenario-loader.test.ts`
@@ -419,7 +419,7 @@ git commit -m "feat(eval): add scenario loader with validation and tests"
 
 ---
 
-### Task 6: Trigger/scoping helper (TDD)
+### ✅ Task 6: Trigger/scoping helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/trigger.test.ts`
@@ -589,7 +589,7 @@ git commit -m "feat(eval): add trigger/scoping helper with git diff and tag matc
 
 ---
 
-### Task 7: Judge helper (TDD)
+### ✅ Task 7: Judge helper (TDD)
 
 **Files:**
 - Create: `e2e/eval-helpers/__tests__/judge.test.ts`
@@ -761,7 +761,7 @@ git commit -m "feat(eval): add LLM-as-judge with median voting and tests"
 
 ---
 
-### Task 8: Helpers barrel export
+### ✅ Task 8: Helpers barrel export
 
 **Files:**
 - Create: `e2e/eval-helpers/index.ts`
@@ -789,7 +789,7 @@ git commit -m "feat(eval): add helpers barrel export"
 
 ---
 
-### Task 9: output-length dimension (TDD)
+### ✅ Task 9: output-length dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/output-length.test.ts`
@@ -888,7 +888,7 @@ git commit -m "feat(eval): add output-length dimension with tests"
 
 ---
 
-### Task 10: instruction-following dimension (TDD)
+### ✅ Task 10: instruction-following dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/instruction-following.test.ts`
@@ -937,7 +937,7 @@ git commit -m "feat(eval): add instruction-following dimension with tests"
 
 ---
 
-### Task 11: voice dimension (TDD)
+### ✅ Task 11: voice dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/voice.test.ts`
@@ -1018,7 +1018,7 @@ git commit -m "feat(eval): add voice dimension with anti-pattern detection and t
 
 ---
 
-### Task 12: structured-output dimension (TDD)
+### ✅ Task 12: structured-output dimension (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/structured-output.test.ts`
@@ -1103,7 +1103,7 @@ git commit -m "feat(eval): add structured-output dimension with JSON parsing and
 
 ---
 
-### Task 13: Dimension registry (TDD)
+### ✅ Task 13: Dimension registry (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/registry.test.ts`
@@ -1167,7 +1167,7 @@ git commit -m "feat(eval): add dimension registry with 4 starter dimensions"
 
 ---
 
-### Task 14: Prompt adapter skeleton
+### ✅ Task 14: Prompt adapter skeleton
 
 **Files:**
 - Create: `e2e/prompt-adapter.ts`
@@ -1206,7 +1206,7 @@ git commit -m "feat(eval): add prompt adapter skeleton with example surface"
 
 ---
 
-### Task 15: Eval runner CLI
+### ✅ Task 15: Eval runner CLI
 
 **Files:**
 - Create: `e2e/eval-runner.ts`
@@ -1381,7 +1381,7 @@ git commit -m "feat(eval): add eval runner CLI with all modes"
 
 ---
 
-### Task 16: npm script, example scenario, and sample fixture
+### ✅ Task 16: npm script, example scenario, and sample fixture
 
 **Files:**
 - Modify: `package.json` (add `"eval": "tsx e2e/eval-runner.ts"` to scripts)
@@ -1441,7 +1441,7 @@ git commit -m "feat(eval): add npm eval script, example scenario, and sample fix
 
 ---
 
-### Task 17: Build all fixture data files
+### ✅ Task 17: Build all fixture data files
 
 **Files:**
 - Create: `e2e/fixtures/sample-idea.json`
@@ -1591,7 +1591,7 @@ git commit -m "feat(eval): add fixture data for all eval surfaces"
 
 ---
 
-### Task 18: Prompt adapter -- advisor-chat surface
+### ✅ Task 18: Prompt adapter -- advisor-chat surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
@@ -1651,7 +1651,7 @@ git commit -m "feat(eval): add advisor-chat surface to prompt adapter"
 
 ---
 
-### Task 19: Prompt adapter -- research-scoring surface
+### ✅ Task 19: Prompt adapter -- research-scoring surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
@@ -1680,7 +1680,7 @@ git commit -m "feat(eval): add research-scoring surface to prompt adapter"
 
 ---
 
-### Task 20: Prompt adapter -- content-calendar surface
+### ✅ Task 20: Prompt adapter -- content-calendar surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
@@ -1708,7 +1708,7 @@ git commit -m "feat(eval): add content-calendar surface to prompt adapter"
 
 ---
 
-### Task 21: Prompt adapter -- framework-assembly surface
+### ✅ Task 21: Prompt adapter -- framework-assembly surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
@@ -1740,7 +1740,7 @@ git commit -m "feat(eval): add framework-assembly surface to prompt adapter"
 
 ---
 
-### Task 22: scoring-accuracy dimension + add to registry (TDD)
+### ✅ Task 22: scoring-accuracy dimension + add to registry (TDD)
 
 **Files:**
 - Create: `e2e/dimensions/__tests__/scoring-accuracy.test.ts`
@@ -1862,7 +1862,7 @@ git commit -m "feat(eval): add scoring-accuracy dimension for research agent val
 
 ---
 
-### Task 23: Write all 6 scenario files
+### ✅ Task 23: Write all 6 scenario files
 
 **Files:**
 - Create: `e2e/scenarios/richard-rumelt-foundation-chat.json`
@@ -2054,7 +2054,7 @@ git commit -m "feat(eval): add 6 initial eval scenarios for all surfaces"
 
 ---
 
-### Task 24: Dry-run and integration verification
+### ✅ Task 24: Dry-run and integration verification
 
 **Step 1: Run dry-run with all scenarios**
 

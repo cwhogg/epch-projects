@@ -1,0 +1,17 @@
+{
+  "scores": { "seoOpportunity": 7, "competitiveLandscape": 6, "willingnessToPay": 8, "differentiationPotential": 7, "expertiseAlignment": 6, "overall": 7 },
+  "summary": "SecondLook addresses a genuine pain point in thrift retail operations. AI-powered intake could significantly reduce labor costs while improving pricing accuracy.",
+  "risks": ["CV accuracy for diverse thrift inventory may require extensive training data", "Thrift store owners are traditionally low-tech adopters", "Pricing data for secondhand items is highly regional and volatile", "Existing POS systems may add inventory AI features", "Customer acquisition cost may be high relative to subscription price"],
+  "competitors": "**GoodSort** -- Manual sorting optimization SaaS ($49/mo), 200+ stores. No AI.\n**ThriftTech** -- POS with basic categorization. Checkout-focused.\n**Sortly** -- General inventory app. Not thrift-specific.\n**PoshAI** -- Reseller pricing tool for individuals, not retail ops.",
+  "topKeywords": [
+    { "keyword": "thrift store inventory management", "intentType": "informational", "estimatedVolume": "Medium", "estimatedCompetitiveness": "Low", "contentGapHypothesis": "No authoritative guides on modern thrift inventory workflows", "relevanceToMillionARR": "Direct buyer intent" },
+    { "keyword": "AI pricing secondhand items", "intentType": "commercial", "estimatedVolume": "Low", "estimatedCompetitiveness": "Very Low", "contentGapHypothesis": "Emerging topic with minimal coverage", "relevanceToMillionARR": "Core product capability" },
+    { "keyword": "donation processing efficiency", "intentType": "informational", "estimatedVolume": "Low", "estimatedCompetitiveness": "Low", "contentGapHypothesis": "Nonprofit and thrift operations underserved", "relevanceToMillionARR": "Adjacent use case" }
+  ],
+  "serpValidated": [
+    { "keyword": "thrift store inventory management", "hasContentGap": true, "serpInsight": "Dominated by generic inventory articles", "peopleAlsoAsk": ["How do thrift stores organize inventory?", "What POS system do thrift stores use?"], "relatedSearches": ["thrift store software", "goodwill inventory system"] }
+  ],
+  "contentStrategy": { "topOpportunities": ["Comprehensive thrift store inventory guide", "AI pricing comparison for secondhand retail", "Donation processing benchmarks"], "recommendedAngle": "Position as the authority on modern thrift store operations." },
+  "difficultyAssessment": { "dominantPlayers": ["Shopify Blog", "Square Guides"], "roomForNewEntrant": true, "reasoning": "Neither covers thrift-specific workflows." },
+  "expertiseProfile": "## Expertise Profile\n\nDomain: Retail technology, inventory management, CV applications\nDepth: 7/10\nCredentials: Built 3 production CV systems, 2 years retail ops consulting"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "richard-rumelt-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "richard-rumelt",
+    "docType": "design-principles",
+    "currentContent": "# SecondLook Design Principles\n\n## Core Principles\n1. Speed over perfection — fast intake matters more than perfect categorization\n2. Learn from corrections — every manual override trains the model\n3. Regional intelligence — pricing must reflect local market conditions"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "I think principle #1 is too dismissive of quality. Can you help me reframe it to balance speed AND accuracy?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["synergy", "leverage", "best-in-class", "game-changer", "revolutionary"],
+      "signaturePhrases": ["diagnosis", "guiding policy", "coherent action", "kernel", "proximate objectives", "bad strategy"]
+    }
+  }
+}

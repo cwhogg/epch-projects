@@ -1,0 +1,15 @@
+{
+  "name": "example-basic-assistant",
+  "surface": "example",
+  "tags": ["example"],
+  "config": {},
+  "fixtures": {},
+  "conversation": [
+    { "role": "user", "content": "Explain what a product-market fit is in 2-3 sentences." },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["output-length"],
+  "dimensionConfig": {
+    "output-length": { "words": { "max": 100, "warn": 200 }, "sentences": { "max": 10, "warn": 20 } }
+  }
+}

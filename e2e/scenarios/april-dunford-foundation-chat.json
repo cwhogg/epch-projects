@@ -1,0 +1,25 @@
+{
+  "name": "april-dunford-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "april-dunford",
+    "docType": "positioning",
+    "currentContent": "# SecondLook Positioning\n\n## Category\nAI-powered inventory management for thrift retail\n\n## Competitive Alternatives\n- Manual sorting (status quo)\n- GoodSort (workflow optimization without AI)\n- Generic POS systems"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Our competitive alternatives section feels incomplete. What are we missing and how should we think about framing our category?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["disrupt", "innovative solution", "cutting-edge", "world-class"],
+      "signaturePhrases": ["competitive alternatives", "market category", "differentiated value", "best customer", "positioning"]
+    }
+  }
+}

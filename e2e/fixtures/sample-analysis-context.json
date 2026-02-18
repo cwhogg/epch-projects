@@ -1,0 +1,12 @@
+{
+  "ideaName": "SecondLook",
+  "ideaDescription": "AI-powered inventory analysis tool for thrift store owners.",
+  "targetUser": "Independent thrift store owners and managers processing 100+ donation items daily",
+  "problemSolved": "Manual sorting and pricing of donated items is slow, inconsistent, and requires deep product knowledge.",
+  "competitors": "**GoodSort** -- Manual sorting optimization SaaS ($49/mo), 200+ stores. No AI.\n**ThriftTech** -- POS with basic categorization.",
+  "topKeywords": [
+    { "keyword": "thrift store inventory management", "intentType": "informational", "estimatedCompetitiveness": "Low" },
+    { "keyword": "AI pricing secondhand items", "intentType": "commercial", "estimatedCompetitiveness": "Very Low" },
+    { "keyword": "donation processing efficiency", "intentType": "informational", "estimatedCompetitiveness": "Low" }
+  ]
+}
