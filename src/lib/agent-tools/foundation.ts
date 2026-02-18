@@ -300,18 +300,5 @@ export function createFoundationTools(
         }
       },
     },
-
-    {
-      name: 'load_design_seed',
-      description:
-        'Load the existing design principles file as seed input for design principles generation.',
-      input_schema: {
-        type: 'object',
-        properties: {},
-      },
-      execute: async () => {
-        return { content: designPrinciplesSeed };
-      },
-    },
   ];
 }

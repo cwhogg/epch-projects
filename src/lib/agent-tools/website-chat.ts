@@ -34,40 +34,35 @@ export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
       const question = input.question as string;
       const context = input.context as string | undefined;
 
-      try {
-        const advisorPrompt = getAdvisorSystemPrompt(advisorId);
+      const advisorPrompt = getAdvisorSystemPrompt(advisorId);
 
-        const foundationDocsRecord = await getAllFoundationDocs(ideaId);
-        const foundationContext = Object.values(foundationDocsRecord)
-          .filter((doc): doc is NonNullable<typeof doc> => doc !== null && doc !== undefined)
-          .map((doc) => `## ${doc.type} (updated ${doc.editedAt || doc.generatedAt})\n${doc.content}`)
-          .join('\n\n---\n\n');
+      const foundationDocsRecord = await getAllFoundationDocs(ideaId);
+      const foundationContext = Object.values(foundationDocsRecord)
+        .filter((doc): doc is NonNullable<typeof doc> => doc !== null && doc !== undefined)
+        .map((doc) => `## ${doc.type} (updated ${doc.editedAt || doc.generatedAt})\n${doc.content}`)
+        .join('\n\n---\n\n');
 
-        let userMessage = `Question: ${question}`;
-        if (context) {
-          userMessage += `\n\nBuild context:\n${context}`;
-        }
-        if (foundationContext) {
-          userMessage += `\n\nFoundation documents for reference:\n${foundationContext}`;
-        }
-
-        const response = await getAnthropic().messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 2048,
-          system: advisorPrompt,
-          messages: [{ role: 'user', content: userMessage }],
-        });
-
-        const text = response.content
-          .filter((block) => block.type === 'text')
-          .map((block) => (block as { type: 'text'; text: string }).text)
-          .join('\n');
-
-        return text || '(No response from advisor)';
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return `Error consulting advisor "${advisorId}": ${message}`;
+      let userMessage = `Question: ${question}`;
+      if (context) {
+        userMessage += `\n\nBuild context:\n${context}`;
       }
+      if (foundationContext) {
+        userMessage += `\n\nFoundation documents for reference:\n${foundationContext}`;
+      }
+
+      const response = await getAnthropic().messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 2048,
+        system: advisorPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      });
+
+      const text = response.content
+        .filter((block) => block.type === 'text')
+        .map((block) => (block as { type: 'text'; text: string }).text)
+        .join('\n');
+
+      return text || '(No response from advisor)';
     },
   };
 }
