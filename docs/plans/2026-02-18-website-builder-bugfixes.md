@@ -624,7 +624,7 @@ git commit -m "feat: reuse existing GitHub repo and Vercel project on rebuild"
 
 ---
 
-### Task 6: Update ChatMessage type and inject advisor markers in stream
+### ✅ Task 6: Update ChatMessage type and inject advisor markers in stream
 
 **Files:**
 - Modify: `src/types/index.ts:551` (simplify advisorConsultation type)

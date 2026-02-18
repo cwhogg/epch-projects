@@ -320,6 +320,24 @@ async function runAgentStream(
     const toolNamesCalled = toolUseBlocks.map((t) => t.name);
     advanceSessionStep(session, toolNamesCalled);
 
+    // Inject advisor markers for consult_advisor tool results
+    for (let i = 0; i < toolUseBlocks.length; i++) {
+      if (toolUseBlocks[i].name === 'consult_advisor' && !toolResults[i].is_error) {
+        const advisorId = toolUseBlocks[i].input.advisorId as string;
+        const advisor = advisorRegistry.find((a) => a.id === advisorId);
+        const advisorName = advisor?.name || advisorId;
+        const marker = `\n<<<ADVISOR_START>>>:${JSON.stringify({ advisorId, advisorName })}\n${toolResults[i].content}\n<<<ADVISOR_END>>>\n`;
+        controller.enqueue(encoder.encode(marker));
+        assistantText += marker;
+      }
+    }
+
+    // Add paragraph break between tool rounds for readability
+    if (assistantText.length > 0 && !assistantText.endsWith('\n\n')) {
+      controller.enqueue(encoder.encode('\n\n'));
+      assistantText += '\n\n';
+    }
+
     // Add assistant message + tool results to conversation for next round
     currentMessages = [
       ...currentMessages,

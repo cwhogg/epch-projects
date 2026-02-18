@@ -995,3 +995,80 @@ describe('advanceSessionStep', () => {
     // No step 8 to mark active — should not throw
   });
 });
+
+describe('advisor marker injection', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('injects advisor markers for consult_advisor tool calls', async () => {
+    const { getIdeaFromDb } = await import('@/lib/db');
+    (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    const steps = WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const }));
+    steps[0].status = 'complete';
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'autonomous',
+      currentStep: 4, // Past Pressure Test so consult_advisor can advance
+      steps,
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const { createConsultAdvisorTool } = await import('@/lib/agent-tools/website-chat');
+    (createConsultAdvisorTool as ReturnType<typeof vi.fn>).mockReturnValue({
+      name: 'consult_advisor',
+      description: 'mock',
+      input_schema: { type: 'object', properties: {}, required: [] },
+      execute: vi.fn().mockResolvedValue('Shirin says: reduce cognitive load on the CTA.'),
+    });
+
+    let callCount = 0;
+    mockMessagesStream.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        const events = (async function* () {
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Consulting Shirin...' } };
+        })();
+        return {
+          [Symbol.asyncIterator]: () => events,
+          finalMessage: () => Promise.resolve({
+            content: [
+              { type: 'text', text: 'Consulting Shirin...' },
+              { type: 'tool_use', id: 'tool-1', name: 'consult_advisor', input: { advisorId: 'shirin-oreizy', question: 'Review CTA' } },
+            ],
+          }),
+        };
+      }
+      const events = (async function* () {
+        yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Based on her advice...' } };
+      })();
+      return {
+        [Symbol.asyncIterator]: () => events,
+        finalMessage: () => Promise.resolve({
+          content: [{ type: 'text', text: 'Based on her advice...' }],
+        }),
+      };
+    });
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'user', content: 'Review the CTA' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    const text = await readStream(response);
+
+    expect(text).toContain('<<<ADVISOR_START>>>');
+    expect(text).toContain('shirin-oreizy');
+    expect(text).toContain('Shirin Oreizy');
+    expect(text).toContain('reduce cognitive load');
+    expect(text).toContain('<<<ADVISOR_END>>>');
+  });
+});
