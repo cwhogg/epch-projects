@@ -290,7 +290,7 @@
 
 ---
 
-### Task 13: Extract analytics page hooks
+### ✅ Task 13: Extract analytics page hooks
 
 **KBs:** KB-054
 
