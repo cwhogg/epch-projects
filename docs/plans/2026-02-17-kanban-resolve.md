@@ -168,7 +168,7 @@
 
 ---
 
-### Task 7: Clean up useContentCalendar hook
+### ✅ Task 7: Clean up useContentCalendar hook
 
 **KBs:** KB-040, KB-041
 
