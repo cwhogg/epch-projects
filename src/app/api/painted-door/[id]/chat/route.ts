@@ -162,6 +162,18 @@ export async function POST(
     return Response.json({ error: 'No build session found. Start with mode_select.' }, { status: 400 });
   }
 
+  // Advance session from frontend continue signal
+  if (body.type === 'continue' && body.step !== undefined && body.step > session.currentStep) {
+    for (let i = 0; i <= body.step; i++) {
+      if (session.steps[i]) session.steps[i].status = 'complete';
+    }
+    session.currentStep = body.step;
+    if (body.step + 1 < session.steps.length && session.steps[body.step + 1]) {
+      session.steps[body.step + 1].status = 'active';
+    }
+    await saveBuildSession(ideaId, session);
+  }
+
   // Build conversation messages
   const history = await getConversationHistory(ideaId);
 
@@ -303,6 +315,10 @@ async function runAgentStream(
         }
       }),
     );
+
+    // Advance session step based on tools called this round
+    const toolNamesCalled = toolUseBlocks.map((t) => t.name);
+    advanceSessionStep(session, toolNamesCalled);
 
     // Add assistant message + tool results to conversation for next round
     currentMessages = [

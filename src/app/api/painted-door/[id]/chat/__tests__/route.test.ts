@@ -841,6 +841,97 @@ describe('determineStreamEndSignal', () => {
   });
 });
 
+describe('step advancement via tool calls', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function setupForToolTest(currentStep: number) {
+    const { getIdeaFromDb } = await import('@/lib/db');
+    (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+
+    const { getBuildSession, saveBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    const steps = WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const }));
+    for (let i = 0; i < currentStep; i++) steps[i].status = 'complete';
+    if (steps[currentStep]) steps[currentStep].status = 'active';
+
+    const session = {
+      ideaId: 'idea-1',
+      mode: 'interactive' as const,
+      currentStep,
+      steps,
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    };
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue(session);
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    return { session, saveBuildSession: saveBuildSession as ReturnType<typeof vi.fn> };
+  }
+
+  it('advances session when design_brand tool is called', async () => {
+    const { saveBuildSession } = await setupForToolTest(0);
+
+    // Mock tool that returns design_brand
+    const { createWebsiteTools } = await import('@/lib/agent-tools/website');
+    (createWebsiteTools as ReturnType<typeof vi.fn>).mockReturnValue([
+      {
+        name: 'design_brand',
+        description: 'mock',
+        input_schema: { type: 'object', properties: {}, required: [] },
+        execute: vi.fn().mockResolvedValue({ success: true }),
+      },
+    ]);
+
+    // First round: tool call; Second round: text only
+    let callCount = 0;
+    mockMessagesStream.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        const events = (async function* () {
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Designing brand...' } };
+        })();
+        return {
+          [Symbol.asyncIterator]: () => events,
+          finalMessage: () => Promise.resolve({
+            content: [
+              { type: 'text', text: 'Designing brand...' },
+              { type: 'tool_use', id: 'tool-1', name: 'design_brand', input: {} },
+            ],
+          }),
+        };
+      }
+      const events = (async function* () {
+        yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Done.' } };
+      })();
+      return {
+        [Symbol.asyncIterator]: () => events,
+        finalMessage: () => Promise.resolve({
+          content: [{ type: 'text', text: 'Done.' }],
+        }),
+      };
+    });
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'user', content: 'Start' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    await readStream(response);
+
+    // Session should have been saved with currentStep = 1 (design_brand advances past step 0)
+    const savedCalls = saveBuildSession.mock.calls;
+    const lastSaved = savedCalls[savedCalls.length - 1][1];
+    expect(lastSaved.currentStep).toBe(1);
+    expect(lastSaved.steps[0].status).toBe('complete');
+    expect(lastSaved.steps[1].status).toBe('complete');
+    expect(lastSaved.steps[2].status).toBe('active');
+  });
+});
+
 describe('advanceSessionStep', () => {
   it('advances step when tool maps to higher step', () => {
     const session = makeBuildSession({ currentStep: 0 });

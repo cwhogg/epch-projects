@@ -270,7 +270,7 @@ git commit -m "feat: add advanceSessionStep helper with tool-to-step mapping"
 
 ---
 
-### Task 3: Wire step advancement into `runAgentStream` and handle `body.step`
+### ✅ Task 3: Wire step advancement into `runAgentStream` and handle `body.step`
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:112-187` (POST handler) and `route.ts:245-318` (runAgentStream)
