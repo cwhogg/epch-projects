@@ -33,6 +33,14 @@ export const FRAMEWORK_REGISTRY: FrameworkEntry[] = [
       'Find the smallest group of people you could serve so well they would recruit others. Define your tribe by worldview, articulate the change you make, and test for remarkability.',
     contextDocs: ['positioning', 'strategy'],
   },
+  {
+    id: 'landing-page-assembly',
+    displayName: 'Landing Page Assembly',
+    advisors: ['julian-shapiro'],
+    description:
+      'Build conversion-focused landing pages in 4 phases: Extract Core Ingredients, Write the Hero (50% of effort), Assemble Full Page, and Pressure-Test. Treats landing page copy as an engineering problem where Purchase Rate = Desire − (Labor + Confusion).',
+    contextDocs: ['positioning', 'brand-voice', 'seo-strategy'],
+  },
 ];
 
 export function getFrameworkEntry(id: string): FrameworkEntry | undefined {
