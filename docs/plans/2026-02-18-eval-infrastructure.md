@@ -1591,7 +1591,7 @@ git commit -m "feat(eval): add fixture data for all eval surfaces"
 
 ---
 
-### Task 18: Prompt adapter -- advisor-chat surface
+### ✅ Task 18: Prompt adapter -- advisor-chat surface
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts`
