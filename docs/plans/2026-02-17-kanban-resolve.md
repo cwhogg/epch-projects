@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Update stale documentation
+### ✅ Task 1: Update stale documentation
 
 **KBs:** KB-037, KB-053
 

@@ -288,7 +288,7 @@ Located in: `src/lib/agent-tools/foundation.ts`
 
 | Document | Advisor | Upstream Dependencies |
 |----------|---------|----------------------|
-| `strategy` | Richard Rumelt | (none) |
+| `strategy` | Seth Godin | (none) |
 | `positioning` | April Dunford | strategy |
 | `brand-voice` | Brand Copywriter | positioning |
 | `design-principles` | Richard Rumelt | positioning, strategy |
@@ -334,7 +334,7 @@ generate_draft → run_critiques → editor_decision
 
 ## Advisors
 
-The platform includes 13 advisors in the Virtual Board, registered in `src/lib/advisors/registry.ts`:
+The platform includes 14 advisors in the Virtual Board, registered in `src/lib/advisors/registry.ts`:
 
 | ID | Name | Role |
 |----|------|------|
@@ -347,7 +347,11 @@ The platform includes 13 advisors in the Virtual Board, registered in `src/lib/a
 | `robb-wolf` | Robb Wolf | critic |
 | `patrick-campbell` | Patrick Campbell | strategist |
 | `robbie-kellman-baxter` | Robbie Kellman Baxter | strategist |
+| `oli-gardner` | Oli Gardner | critic |
 | `rob-walling` | Rob Walling | strategist |
+| `julian-shapiro` | Julian Shapiro | author |
+| `seth-godin` | Seth Godin | strategist |
+| `joanna-wiebe` | Joanna Wiebe | critic |
 
 Advisor system prompts are `.md` files in `src/lib/advisors/prompts/`, loaded by `src/lib/advisors/prompt-loader.ts`.
 
