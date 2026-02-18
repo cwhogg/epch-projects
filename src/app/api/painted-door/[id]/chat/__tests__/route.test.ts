@@ -515,3 +515,264 @@ describe('Agent loop with tool execution', () => {
     }
   });
 });
+
+describe('Integration: full chat flow', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function setupDefaultMocks() {
+    const { getIdeaFromDb } = await import('@/lib/db');
+    (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+  }
+
+  function mockStreamResponse(text: string) {
+    const finalMsg = {
+      content: [{ type: 'text', text }],
+      stop_reason: 'end_turn',
+    };
+    const events = (async function* () {
+      yield { type: 'content_block_delta', delta: { type: 'text_delta', text } };
+    })();
+    mockMessagesStream.mockReturnValue({
+      [Symbol.asyncIterator]: () => events,
+      finalMessage: () => Promise.resolve(finalMsg),
+    });
+  }
+
+  function makeRequest(body: object) {
+    return new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const paramsPromise = { params: Promise.resolve({ id: 'idea-1' }) };
+
+  it('mode_select creates session and streams Julian intro', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, saveBuildSession, saveConversationHistory } = await import('@/lib/painted-door-db');
+    // After saveBuildSession, getBuildSession returns the session
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'interactive',
+      currentStep: 0,
+      steps: [{ name: 'Extract Ingredients', status: 'pending' }],
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+
+    mockStreamResponse("I've reviewed your foundation documents. Let's begin with Step 1.");
+
+    const response = await POST(makeRequest({ type: 'mode_select', mode: 'interactive' }), paramsPromise);
+    const text = await readStream(response);
+
+    // Session was created
+    expect(saveBuildSession).toHaveBeenCalled();
+    const savedSession = (saveBuildSession as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(savedSession[0]).toBe('idea-1');
+    expect(savedSession[1].mode).toBe('interactive');
+
+    // History was initialized and then saved with assistant response
+    expect(saveConversationHistory).toHaveBeenCalled();
+
+    // Stream contains Julian's intro
+    expect(text).toContain("I've reviewed your foundation documents");
+  });
+
+  it('user message appends to history and streams response', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'interactive',
+      currentStep: 0,
+      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+
+    // Existing conversation history
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { role: 'user', content: 'Start building', timestamp: '2026-02-17T00:00:00Z' },
+      { role: 'assistant', content: 'Starting ingredients extraction.', timestamp: '2026-02-17T00:01:00Z' },
+    ]);
+
+    mockStreamResponse('Here are the refined ingredients based on your feedback.');
+
+    const response = await POST(
+      makeRequest({ type: 'user', content: 'Focus more on developer pain points' }),
+      paramsPromise,
+    );
+    const text = await readStream(response);
+
+    // Assistant text is in the stream
+    expect(text).toContain('refined ingredients');
+
+    // History was saved with both the new user message and the assistant response
+    const saveCalls = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls;
+    expect(saveCalls.length).toBeGreaterThan(0);
+    const lastSavedHistory = saveCalls[saveCalls.length - 1][1];
+    // Should have original 2 messages + new user message + new assistant message = 4
+    expect(lastSavedHistory).toHaveLength(4);
+    expect(lastSavedHistory[2].role).toBe('user');
+    expect(lastSavedHistory[2].content).toContain('developer pain points');
+    expect(lastSavedHistory[3].role).toBe('assistant');
+  });
+
+  it('continue message resumes agent at correct step', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'interactive',
+      currentStep: 1, // Design Brand Identity step
+      steps: [
+        { name: 'Extract Ingredients', status: 'complete' },
+        { name: 'Design Brand Identity', status: 'pending' },
+      ],
+      artifacts: { ingredients: 'extracted ingredients' },
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { role: 'user', content: 'Start', timestamp: '2026-02-17T00:00:00Z' },
+      { role: 'assistant', content: 'Ingredients done.', timestamp: '2026-02-17T00:01:00Z' },
+    ]);
+
+    mockStreamResponse('Moving to brand identity design...');
+
+    const response = await POST(
+      makeRequest({ type: 'continue', step: 1 }),
+      paramsPromise,
+    );
+    const text = await readStream(response);
+
+    expect(text).toContain('brand identity');
+
+    // The continue message was added to history
+    const saveCalls = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls;
+    const lastSavedHistory = saveCalls[saveCalls.length - 1][1];
+    const continueMsg = lastSavedHistory.find(
+      (m: { content: string }) => m.content.includes('Continue to the next step')
+    );
+    expect(continueMsg).toBeDefined();
+  });
+
+  it('conversation history persists across requests', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'interactive',
+      currentStep: 0,
+      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+
+    // First request: empty history
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    mockStreamResponse('First response.');
+    const r1 = await POST(makeRequest({ type: 'user', content: 'Message 1' }), paramsPromise);
+    await readStream(r1);
+
+    // Get what was saved after first request
+    const firstSave = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(firstSave).toHaveLength(2); // user + assistant
+
+    // Second request: history from first request
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([...firstSave]);
+    mockStreamResponse('Second response.');
+    const r2 = await POST(makeRequest({ type: 'user', content: 'Message 2' }), paramsPromise);
+    await readStream(r2);
+
+    // Get what was saved after second request
+    const secondSave = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls[1][1];
+    expect(secondSave).toHaveLength(4); // 2 from first + user + assistant from second
+    expect(secondSave[0].content).toBe('Message 1');
+    expect(secondSave[1].content).toBe('First response.');
+    expect(secondSave[2].content).toBe('Message 2');
+    expect(secondSave[3].content).toBe('Second response.');
+  });
+
+  it('handles Redis failure during stream gracefully', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'autonomous',
+      currentStep: 0,
+      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    // Redis fails on save
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Redis connection refused'));
+
+    mockStreamResponse('Some content here.');
+
+    const response = await POST(makeRequest({ type: 'user', content: 'Go' }), paramsPromise);
+    // The response starts streaming (200 status set before Redis save)
+    expect(response.status).toBe(200);
+
+    // Reading the stream may error due to the Redis failure in the stream controller
+    try {
+      await readStream(response);
+    } catch {
+      // Expected — Redis failure propagates through stream error
+    }
+
+    // Verify save was attempted
+    expect(saveConversationHistory).toHaveBeenCalled();
+  });
+
+  it('handles Anthropic API failure gracefully', async () => {
+    await setupDefaultMocks();
+
+    const { getBuildSession, getConversationHistory } = await import('@/lib/painted-door-db');
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'interactive',
+      currentStep: 0,
+      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      artifacts: {},
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    // Anthropic throws immediately
+    const events = (async function* () {
+      throw new Error('Service unavailable');
+      // eslint-disable-next-line no-unreachable
+      yield; // TypeScript requires at least one yield in a generator
+    })();
+    mockMessagesStream.mockReturnValue({
+      [Symbol.asyncIterator]: () => events,
+      finalMessage: () => Promise.reject(new Error('Service unavailable')),
+    });
+
+    const response = await POST(makeRequest({ type: 'user', content: 'Start' }), paramsPromise);
+    expect(response.status).toBe(200); // Status already set before stream starts
+
+    try {
+      await readStream(response);
+    } catch {
+      // Expected — API failure propagates through stream
+    }
+  });
+});
