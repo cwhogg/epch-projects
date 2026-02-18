@@ -311,7 +311,7 @@
 
 ---
 
-### Task 14: Parallelize sequential Redis fetches
+### ✅ Task 14: Parallelize sequential Redis fetches
 
 **KBs:** KB-055
 
