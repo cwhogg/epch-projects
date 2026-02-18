@@ -1,5 +1,6 @@
 import { ProductIdea, FoundationDocument } from '@/types';
 import { buildExpertiseContext } from './expertise-profile';
+import { capitalize } from './utils';
 
 const RELEVANT_TYPES = ['strategy', 'positioning'] as const;
 const MAX_CONTENT_LENGTH = 4000;
@@ -9,17 +10,10 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 export function buildFoundationContext(docs: FoundationDocument[]): string {
   const relevant = docs
     .filter((d) => (RELEVANT_TYPES as readonly string[]).includes(d.type))
-    .sort((a, b) => {
-      const order = { strategy: 0, positioning: 1 };
-      return (order[a.type as keyof typeof order] ?? 99) - (order[b.type as keyof typeof order] ?? 99);
-    });
+    .sort((a, b) => (a.type === 'strategy' ? -1 : 1));
 
   if (relevant.length === 0) return '';
 

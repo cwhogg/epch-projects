@@ -325,12 +325,20 @@ export async function getFoundationDoc(ideaId: string, docType: FoundationDocTyp
   return parseValue<FoundationDocument>(data);
 }
 
+export async function fetchFoundationDocs(ideaId: string): Promise<FoundationDocument[]> {
+  const results = await Promise.all([
+    getFoundationDoc(ideaId, 'strategy').catch(() => null),
+    getFoundationDoc(ideaId, 'positioning').catch(() => null),
+  ]);
+  return results.filter(Boolean) as FoundationDocument[];
+}
+
 export async function getAllFoundationDocs(ideaId: string): Promise<Partial<Record<FoundationDocType, FoundationDocument>>> {
+  const docs = await Promise.all(FOUNDATION_DOC_TYPES.map((docType) => getFoundationDoc(ideaId, docType)));
   const result: Partial<Record<FoundationDocType, FoundationDocument>> = {};
-  for (const docType of FOUNDATION_DOC_TYPES) {
-    const doc = await getFoundationDoc(ideaId, docType);
-    if (doc) result[docType] = doc;
-  }
+  docs.forEach((doc, i) => {
+    if (doc) result[FOUNDATION_DOC_TYPES[i]] = doc;
+  });
   return result;
 }
 
@@ -339,9 +347,8 @@ export async function deleteFoundationDoc(ideaId: string, docType: FoundationDoc
 }
 
 export async function deleteAllFoundationDocs(ideaId: string): Promise<void> {
-  for (const docType of FOUNDATION_DOC_TYPES) {
-    await getRedis().del(`foundation:${ideaId}:${docType}`);
-  }
+  const r = getRedis();
+  await Promise.all(FOUNDATION_DOC_TYPES.map((docType) => r.del(`foundation:${ideaId}:${docType}`)));
 }
 
 // Foundation Progress
@@ -379,11 +386,11 @@ export async function getAssumption(ideaId: string, type: AssumptionType): Promi
 }
 
 export async function getAllAssumptions(ideaId: string): Promise<Partial<Record<AssumptionType, Assumption>>> {
+  const assumptions = await Promise.all(ASSUMPTION_TYPES.map((type) => getAssumption(ideaId, type)));
   const result: Partial<Record<AssumptionType, Assumption>> = {};
-  for (const type of ASSUMPTION_TYPES) {
-    const assumption = await getAssumption(ideaId, type);
-    if (assumption) result[type] = assumption;
-  }
+  assumptions.forEach((assumption, i) => {
+    if (assumption) result[ASSUMPTION_TYPES[i]] = assumption;
+  });
   return result;
 }
 
@@ -415,12 +422,14 @@ export async function getPivotHistory(ideaId: string, type: AssumptionType): Pro
 
 export async function deleteCanvasData(ideaId: string): Promise<void> {
   const r = getRedis();
-  await r.del(`canvas:${ideaId}`);
-  for (const type of ASSUMPTION_TYPES) {
-    await r.del(`assumption:${ideaId}:${type}`);
-    await r.del(`pivot-suggestions:${ideaId}:${type}`);
-    await r.del(`pivots:${ideaId}:${type}`);
-  }
+  await Promise.all([
+    r.del(`canvas:${ideaId}`),
+    ...ASSUMPTION_TYPES.flatMap((type) => [
+      r.del(`assumption:${ideaId}:${type}`),
+      r.del(`pivot-suggestions:${ideaId}:${type}`),
+      r.del(`pivots:${ideaId}:${type}`),
+    ]),
+  ]);
 }
 
 export async function getAllContentCalendars(): Promise<ContentCalendar[]> {

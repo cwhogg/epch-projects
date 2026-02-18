@@ -13,7 +13,7 @@ graph TB
         IDEATION["/ideation<br/>Ideation stage"]
         IDEAS["/ideas/new<br/>Idea submission"]
         ANALYSIS["/analysis<br/>Leaderboard"]
-        DETAIL["/analyses/[id]<br/>Project dashboard"]
+        DETAIL["/project/[id]<br/>Project dashboard"]
         CONTENT_OV["/content<br/>Content overview"]
         CONTENT_DETAIL["/content/[id]<br/>Content calendar"]
         WEBSITE_OV["/website<br/>Painted door sites"]
@@ -28,7 +28,7 @@ graph TB
     subgraph API["API Routes"]
         API_IDEAS["/api/ideas<br/>CRUD"]
         API_ANALYZE["/api/analyze/[id]<br/>POST triggers, GET polls"]
-        API_ANALYSES["/api/analyses<br/>List & detail"]
+        API_ANALYSES["/api/project<br/>List & detail"]
         API_CONTENT_CAL["/api/content/[ideaId]<br/>Calendar: POST generate, GET, PATCH"]
         API_CONTENT_GEN["/api/content/[ideaId]/generate<br/>POST triggers, GET polls"]
         API_CONTENT_PIECES["/api/content/[ideaId]/pieces<br/>GET list pieces"]
@@ -95,12 +95,12 @@ graph TB
         P_HOME["page.tsx"]
         P_IDEAS["ideas/new/page.tsx"]
         P_ANALYSIS["analysis/page.tsx"]
-        P_DETAIL["analyses/[id]/page.tsx"]
+        P_DETAIL["project/[id]/page.tsx"]
         P_CONTENT_TAB["content/[id]/page.tsx"]
         P_FOUNDATION["foundation/[id]/page.tsx"]
         P_PAINTED_DOOR["website/[id]/page.tsx"]
         P_PAINTED_DOOR_BUILD["website/[id]/build/page.tsx"]
-        P_ANALYTICS_TAB["analyses/[id]/analytics/page.tsx"]
+        P_ANALYTICS_TAB["project/[id]/analytics/page.tsx"]
         P_CONTENT_VIEW["content/[id]/[pieceId]/page.tsx"]
         P_GENERATE["content/[id]/generate/page.tsx"]
         P_CONTENT_OV["content/page.tsx"]
@@ -261,7 +261,7 @@ graph TB
     end
 
     subgraph Advisors["Virtual Board"]
-        advisors_registry["advisors/registry.ts<br/>13 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert, Shirin Oreizy,<br/>Joe Pulizzi, Robb Wolf, Patrick Campbell,<br/>Robbie Kellman Baxter, Rob Walling"]
+        advisors_registry["advisors/registry.ts<br/>14 advisors: Richard Rumelt, April Dunford,<br/>Brand Copywriter, SEO Expert, Shirin Oreizy,<br/>Joe Pulizzi, Robb Wolf, Patrick Campbell,<br/>Robbie Kellman Baxter, Oli Gardner, Rob Walling,<br/>Julian Shapiro, Seth Godin, Joanna Wiebe"]
         advisors_loader["advisors/prompt-loader.ts<br/>getAdvisorSystemPrompt(advisorId)"]
         advisors_prompts["advisors/prompts/<br/>Per-advisor .md system prompts"]
     end
@@ -680,7 +680,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | New Idea | `src/app/ideas/new/page.tsx` | Idea submission form |
 | Ideas (Analyze) | `src/app/ideas/[id]/analyze/page.tsx` | Triggers analysis, shows progress |
 | Analysis List | `src/app/analysis/page.tsx` | Leaderboard of analyzed ideas |
-| Analysis Detail | `src/app/analyses/[id]/page.tsx` | Analysis overview (scores, recommendation) |
+| Project Dashboard | `src/app/project/[id]/page.tsx` | Project overview (scores, recommendation) |
 | Content Tab | `src/app/content/[id]/page.tsx` | Content calendar and piece management |
 | Generate Content | `src/app/content/[id]/generate/page.tsx` | Content generation progress view |
 | View Piece | `src/app/content/[id]/[pieceId]/page.tsx` | Individual content piece view |
@@ -688,7 +688,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Foundation Editor | `src/app/foundation/[id]/edit/[docType]/page.tsx` | Split-pane document editor with advisor chat |
 | Website Tab | `src/app/website/[id]/page.tsx` | Website generation status + regenerate |
 | Website Builder | `src/app/website/[id]/build/page.tsx` | Interactive chat-driven site builder with mode selection, progress sidebar |
-| Analytics Tab | `src/app/analyses/[id]/analytics/page.tsx` | Per-idea GSC analytics |
+| Analytics Tab | `src/app/project/[id]/analytics/page.tsx` | Per-idea GSC analytics |
 | Content Overview | `src/app/content/page.tsx` | Cross-idea content dashboard |
 | Website | `src/app/website/page.tsx` | All painted door sites + publish targets |
 | Testing | `src/app/testing/page.tsx` | SEO performance dashboard |
@@ -701,8 +701,8 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 |------|-------|---------|---------|
 | Ideas | `/api/ideas` | GET, POST, PATCH, DELETE | CRUD for product ideas (Redis + filesystem fallback) |
 | Analysis | `/api/analyze/[id]` | POST, GET | POST triggers agent; GET polls progress |
-| Analyses | `/api/analyses` | GET | List all analyses |
-| Analysis Detail | `/api/analyses/[id]` | GET, DELETE | Fetch/delete analysis with full content |
+| Projects | `/api/project` | GET | List all projects |
+| Project Detail | `/api/project/[id]` | GET, DELETE | Fetch/delete project with full content |
 | Content Calendar | `/api/content/[ideaId]` | POST, GET, PATCH | POST generates calendar (or appends pieces); GET fetches calendar; PATCH updates target/order |
 | Content Pieces | `/api/content/[ideaId]/pieces` | GET | List all content pieces for an idea |
 | Content Piece | `/api/content/[ideaId]/pieces/[pieceId]` | GET, PATCH, DELETE | GET single piece; PATCH rejects piece; DELETE removes from target repo |
@@ -768,7 +768,7 @@ Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` 
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets + build sessions + conversation history |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
 | `src/lib/expertise-profile.ts` | Owner expertise profile for scoring calibration |
-| `src/lib/advisors/registry.ts` | 13-advisor virtual board registry |
+| `src/lib/advisors/registry.ts` | 14-advisor virtual board registry |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
 | `src/lib/frameworks/` | Framework library: registry, loader, 4 prompt sets (content-inc-model, forever-promise, value-metric, landing-page-assembly) |
 | `src/lib/research-agent-parsers.ts` | Research result parsers: competitor, SEO, WTP, scoring extraction |

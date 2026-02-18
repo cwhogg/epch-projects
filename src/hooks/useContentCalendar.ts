@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ContentCalendar, ContentPiece } from '@/types';
 
@@ -20,7 +20,17 @@ export function useContentCalendar(analysisId: string) {
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [appending, setAppending] = useState(false);
-  const [autoGenerating, setAutoGenerating] = useState(false);
+  const autoGenerating = useRef(false);
+
+  const refreshPublishedKeys = useCallback(async () => {
+    const statusRes = await fetch('/api/publish/status').catch(() => null);
+    if (statusRes?.ok) {
+      const statusData = await statusRes.json();
+      if (Array.isArray(statusData.publishedKeys)) {
+        setPublishedKeys(new Set(statusData.publishedKeys as string[]));
+      }
+    }
+  }, []);
 
   const fetchCalendar = useCallback(async () => {
     try {
@@ -42,20 +52,13 @@ export function useContentCalendar(analysisId: string) {
           }
         }
       }
-      // Fetch published status
-      const statusRes = await fetch('/api/publish/status').catch(() => null);
-      if (statusRes?.ok) {
-        const statusData = await statusRes.json();
-        if (Array.isArray(statusData.publishedKeys)) {
-          setPublishedKeys(new Set(statusData.publishedKeys as string[]));
-        }
-      }
+      await refreshPublishedKeys();
     } catch (err) {
       console.error('Failed to fetch calendar:', err);
     } finally {
       setLoading(false);
     }
-  }, [analysisId]);
+  }, [analysisId, refreshPublishedKeys]);
 
   const triggerPublish = async () => {
     setPublishing(true);
@@ -68,14 +71,7 @@ export function useContentCalendar(analysisId: string) {
       });
       const data = await res.json();
       setPublishResult(data.detail || data.action);
-      // Refresh published keys
-      const statusRes = await fetch('/api/publish/status').catch(() => null);
-      if (statusRes?.ok) {
-        const statusData = await statusRes.json();
-        if (Array.isArray(statusData.publishedKeys)) {
-          setPublishedKeys(new Set(statusData.publishedKeys as string[]));
-        }
-      }
+      await refreshPublishedKeys();
     } catch (err) {
       setPublishResult(err instanceof Error ? err.message : 'Publish failed');
     } finally {
@@ -153,8 +149,8 @@ export function useContentCalendar(analysisId: string) {
 
   // Auto-generate calendar if none exists (skip the extra click)
   useEffect(() => {
-    if (!loading && !calendar && !generating && !autoGenerating && !error) {
-      setAutoGenerating(true);
+    if (!loading && !calendar && !generating && !autoGenerating.current && !error) {
+      autoGenerating.current = true;
       generateCalendar();
     }
   }, [loading, calendar]); // eslint-disable-line react-hooks/exhaustive-deps

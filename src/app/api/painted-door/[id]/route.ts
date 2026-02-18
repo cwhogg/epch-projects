@@ -2,8 +2,13 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
 import { getBuildSession, getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
+import type { BuildSession } from '@/types';
 
 export const maxDuration = 300;
+
+function projectBuildSession(session: BuildSession) {
+  return { mode: session.mode, currentStep: session.currentStep, steps: session.steps };
+}
 
 // POST — trigger painted door site generation
 export async function POST(
@@ -83,37 +88,27 @@ export async function GET(
 
   try {
     const progress = await getPaintedDoorProgress(id);
+    const buildSession = await getBuildSession(id);
+
     if (!progress) {
       // Check if a fully deployed site already exists (progress expired)
       const site = await getPaintedDoorSite(id);
       if (site && site.siteUrl && site.status === 'live') {
-        const buildSession = await getBuildSession(id);
         return NextResponse.json({
           ideaId: id,
           status: 'complete',
           currentStep: 'Site deployed!',
           steps: [],
           result: site,
-          ...(buildSession && {
-            buildSession: {
-              mode: buildSession.mode,
-              currentStep: buildSession.currentStep,
-              steps: buildSession.steps,
-            },
-          }),
+          ...(buildSession && { buildSession: projectBuildSession(buildSession) }),
         });
       }
 
       // Check for active build session even when no legacy progress exists
-      const buildSession = await getBuildSession(id);
       if (buildSession) {
         return NextResponse.json({
           status: 'not_started',
-          buildSession: {
-            mode: buildSession.mode,
-            currentStep: buildSession.currentStep,
-            steps: buildSession.steps,
-          },
+          buildSession: projectBuildSession(buildSession),
         });
       }
 
@@ -121,15 +116,10 @@ export async function GET(
     }
 
     // Include build session in progress response if one exists
-    const buildSession = await getBuildSession(id);
     if (buildSession) {
       return NextResponse.json({
         ...progress,
-        buildSession: {
-          mode: buildSession.mode,
-          currentStep: buildSession.currentStep,
-          steps: buildSession.steps,
-        },
+        buildSession: projectBuildSession(buildSession),
       });
     }
 

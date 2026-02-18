@@ -52,12 +52,11 @@ describe('Foundation agent tools', () => {
     tools = createFoundationTools(ideaId);
   });
 
-  it('creates three tools', () => {
-    expect(tools).toHaveLength(3);
+  it('creates two tools', () => {
+    expect(tools).toHaveLength(2);
     expect(tools.map(t => t.name)).toEqual([
       'load_foundation_docs',
       'generate_foundation_doc',
-      'load_design_seed',
     ]);
   });
 
@@ -269,14 +268,4 @@ describe('Foundation agent tools', () => {
     });
   });
 
-  describe('load_design_seed', () => {
-    it('returns the embedded design principles content', async () => {
-      const tool = tools.find(t => t.name === 'load_design_seed')!;
-      const result = await tool.execute({}) as Record<string, unknown>;
-
-      expect(result.content).toBeTruthy();
-      expect(typeof result.content).toBe('string');
-      expect(result.content).toContain('Design Principles');
-    });
-  });
 });

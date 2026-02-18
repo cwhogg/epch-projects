@@ -73,31 +73,14 @@ function ContentGeneratePageInner() {
     }
   }, [analysisId, pipelineMode]);
 
-  const checkProgress = useCallback(async () => {
+  const pollGenerationProgress = useCallback(async () => {
     try {
-      let isDone = false;
+      const res = await fetch(`/api/content/${analysisId}/generate`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setProgress(data);
 
-      if (pipelineMode) {
-        const res = await fetch(`/api/content-pipeline/${analysisId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setCritiqueProgress(data);
-
-        if (data.status === 'complete' || data.status === 'max-rounds-reached') {
-          isDone = true;
-        }
-      } else {
-        const res = await fetch(`/api/content/${analysisId}/generate`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setProgress(data);
-
-        if (data.status === 'complete') {
-          isDone = true;
-        }
-      }
-
-      if (isDone) {
+      if (data.status === 'complete') {
         setTimeout(() => {
           router.push(`/content/${analysisId}`);
         }, 2000);
@@ -105,7 +88,24 @@ function ContentGeneratePageInner() {
     } catch (err) {
       console.error('Error checking progress:', err);
     }
-  }, [analysisId, router, pipelineMode]);
+  }, [analysisId, router]);
+
+  const pollCritiqueProgress = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/content-pipeline/${analysisId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setCritiqueProgress(data);
+
+      if (data.status === 'complete' || data.status === 'max-rounds-reached') {
+        setTimeout(() => {
+          router.push(`/content/${analysisId}`);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error checking progress:', err);
+    }
+  }, [analysisId, router]);
 
   useEffect(() => {
     if (!started) {
@@ -116,11 +116,12 @@ function ContentGeneratePageInner() {
   useEffect(() => {
     if (!started) return;
 
-    const interval = setInterval(checkProgress, 2000);
-    checkProgress();
+    const poll = pipelineMode ? pollCritiqueProgress : pollGenerationProgress;
+    const interval = setInterval(poll, 2000);
+    poll();
 
     return () => clearInterval(interval);
-  }, [started, checkProgress]);
+  }, [started, pipelineMode, pollCritiqueProgress, pollGenerationProgress]);
 
   const steps = progress?.steps || [];
   const completedCount = steps.filter((s) => s.status === 'complete').length;

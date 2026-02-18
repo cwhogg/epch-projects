@@ -5,14 +5,13 @@ vi.mock('@/lib/db', () => ({
   isRedisConfigured: vi.fn(),
   getCanvasState: vi.fn(),
   getAllAssumptions: vi.fn(),
-  getPivotSuggestions: vi.fn(),
-  getPivotHistory: vi.fn(),
   saveCanvasState: vi.fn(),
   saveAssumption: vi.fn(),
 }));
 
 vi.mock('@/lib/validation-canvas', () => ({
   generateAssumptions: vi.fn(),
+  buildPivotData: vi.fn(),
   applyPivot: vi.fn(),
   generatePivotSuggestions: vi.fn(),
 }));
@@ -21,11 +20,9 @@ import {
   isRedisConfigured,
   getCanvasState,
   getAllAssumptions,
-  getPivotSuggestions,
-  getPivotHistory,
   saveCanvasState,
 } from '@/lib/db';
-import { generateAssumptions, applyPivot } from '@/lib/validation-canvas';
+import { generateAssumptions, buildPivotData, applyPivot } from '@/lib/validation-canvas';
 
 // Import route handlers — adjust paths based on actual file structure
 import { GET } from '@/app/api/validation/[ideaId]/route';
@@ -54,8 +51,7 @@ describe('GET /api/validation/[ideaId]', () => {
         linkedStage: 'analysis',
       },
     });
-    vi.mocked(getPivotSuggestions).mockResolvedValue([]);
-    vi.mocked(getPivotHistory).mockResolvedValue([]);
+    vi.mocked(buildPivotData).mockResolvedValue({ pivotSuggestions: {}, pivotHistory: {} });
 
     const req = new NextRequest('http://localhost/api/validation/idea-1');
     const res = await GET(req, { params: Promise.resolve({ ideaId: 'idea-1' }) });

@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { getIdeaFromDb, getFoundationDoc, getProgress, isRedisConfigured } from '@/lib/db';
+import { getIdeaFromDb, fetchFoundationDocs, getProgress, isRedisConfigured } from '@/lib/db';
 import { runResearchAgentAuto } from '@/lib/research-agent';
 import { buildFoundationContext } from '@/lib/research-agent-prompts';
-import { FoundationDocument } from '@/types';
 
 export async function buildEnrichedContext(
   ideaId: string,
   additionalContext?: string
 ): Promise<string | undefined> {
-  try {
-    const [strategyDoc, positioningDoc] = await Promise.all([
-      getFoundationDoc(ideaId, 'strategy').catch(() => null),
-      getFoundationDoc(ideaId, 'positioning').catch(() => null),
-    ]);
+  const docs = await fetchFoundationDocs(ideaId);
+  const foundationBlock = buildFoundationContext(docs);
 
-    const docs = [strategyDoc, positioningDoc].filter(Boolean) as FoundationDocument[];
-    const foundationBlock = buildFoundationContext(docs);
-
-    if (!foundationBlock) return additionalContext;
-    if (!additionalContext) return foundationBlock;
-    return `${foundationBlock}\n\n${additionalContext}`;
-  } catch (error) {
-    console.error('Failed to fetch foundation docs for enriched context:', error);
-    return additionalContext;
-  }
+  if (!foundationBlock) return additionalContext;
+  if (!additionalContext) return foundationBlock;
+  return `${foundationBlock}\n\n${additionalContext}`;
 }
 
 // Allow up to 5 minutes for the full analysis pipeline

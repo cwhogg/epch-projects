@@ -7,18 +7,8 @@ import { advisorRegistry, type AdvisorEntry } from '@/lib/advisors/registry';
 import { applyEditorRubric } from '@/lib/editor-decision';
 import pLimit from 'p-limit';
 
-export interface CritiqueResult {
-  advisorId: string;
-  advisorName: string;
-  score: number;
-  pass: boolean;
-  issues: { severity: string; description: string }[];
-  strengths: string[];
-  error?: string;
-}
-
 export interface CritiqueRoundResult {
-  critiques: CritiqueResult[];
+  critiques: AdvisorCritique[];
   avgScore: number;
   decision: 'approve' | 'revise';
   brief: string;
@@ -163,43 +153,23 @@ export async function runCritiqueRound(
     ),
   );
 
-  const critiques: CritiqueResult[] = results.map((result, idx) => {
+  const critiques: AdvisorCritique[] = results.map((result, idx) => {
     const advisor = critics[idx];
     if (result.status === 'fulfilled') {
-      const c = result.value;
-      return {
-        advisorId: c.advisorId,
-        advisorName: c.name,
-        score: c.score,
-        pass: c.pass,
-        issues: c.issues.map((i) => ({ severity: i.severity, description: i.description })),
-        strengths: [],
-        error: c.error,
-      };
+      return result.value;
     }
     return {
       advisorId: advisor.id,
-      advisorName: advisor.name,
+      name: advisor.name,
       score: 0,
       pass: false,
       issues: [],
-      strengths: [],
       error: result.reason instanceof Error ? result.reason.message : 'Critic call failed',
     };
   });
 
-  // Convert to AdvisorCritique format for editor rubric
-  const advisorCritiques: AdvisorCritique[] = critiques.map((c) => ({
-    advisorId: c.advisorId,
-    name: c.advisorName,
-    score: c.score,
-    pass: c.pass,
-    issues: c.issues.map((i) => ({ severity: i.severity as 'high' | 'medium' | 'low', description: i.description, suggestion: '' })),
-    error: c.error,
-  }));
-
   const editorResult = applyEditorRubric(
-    advisorCritiques,
+    critiques,
     recipe.minAggregateScore,
     previousAvgScore,
   );

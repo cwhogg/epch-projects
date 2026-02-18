@@ -7,7 +7,21 @@ interface RouteContext {
   params: Promise<{ ideaId: string }>;
 }
 
-const VALID_STATUSES: AssumptionStatus[] = ['untested', 'testing', 'validated', 'invalidated'];
+const VALID_STATUSES: AssumptionStatus[] = ['untested', 'testing', 'validated', 'invalidated', 'pivoted'];
+
+function getTimestampUpdate(status: AssumptionStatus, now: number): { validatedAt?: number; invalidatedAt?: number } {
+  switch (status) {
+    case 'validated':
+      return { validatedAt: now, invalidatedAt: undefined };
+    case 'invalidated':
+      return { invalidatedAt: now, validatedAt: undefined };
+    case 'pivoted':
+      return { invalidatedAt: now, validatedAt: undefined };
+    case 'untested':
+    case 'testing':
+      return { validatedAt: undefined, invalidatedAt: undefined };
+  }
+}
 
 /**
  * POST /api/validation/[ideaId]/status
@@ -48,9 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const updated = {
       ...assumption,
       status: status as AssumptionStatus,
-      ...(status === 'validated' ? { validatedAt: now, invalidatedAt: undefined } : {}),
-      ...(status === 'invalidated' ? { invalidatedAt: now, validatedAt: undefined } : {}),
-      ...(status === 'untested' || status === 'testing' ? { validatedAt: undefined, invalidatedAt: undefined } : {}),
+      ...getTimestampUpdate(status as AssumptionStatus, now),
     };
 
     await saveAssumption(ideaId, updated);

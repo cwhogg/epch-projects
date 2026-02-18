@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 vi.mock('@/lib/db', () => ({
   getIdeaFromDb: vi.fn(),
   getProgress: vi.fn(),
-  getFoundationDoc: vi.fn(),
+  fetchFoundationDocs: vi.fn(),
   isRedisConfigured: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ vi.mock('next/server', async (importOriginal) => {
 });
 
 import { POST, buildEnrichedContext } from '@/app/api/analyze/[id]/route';
-import { getIdeaFromDb, getFoundationDoc, isRedisConfigured } from '@/lib/db';
+import { getIdeaFromDb, fetchFoundationDocs, isRedisConfigured } from '@/lib/db';
 import { runResearchAgentAuto } from '@/lib/research-agent';
 import { buildFoundationContext } from '@/lib/research-agent-prompts';
 import { FoundationDocument } from '@/types';
@@ -62,7 +62,7 @@ describe('buildEnrichedContext', () => {
   });
 
   it('returns original additionalContext when no foundation docs exist', async () => {
-    vi.mocked(getFoundationDoc).mockResolvedValue(null);
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([]);
     vi.mocked(buildFoundationContext).mockReturnValue('');
 
     const result = await buildEnrichedContext('idea-123', 'Focus on healthcare');
@@ -70,10 +70,7 @@ describe('buildEnrichedContext', () => {
   });
 
   it('prepends foundation context when strategy doc exists', async () => {
-    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
-      if (type === 'strategy') return makeFoundationDoc('strategy');
-      return null;
-    });
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([makeFoundationDoc('strategy')]);
     vi.mocked(buildFoundationContext).mockReturnValue('STRATEGIC CONTEXT...');
 
     const result = await buildEnrichedContext('idea-123', 'Focus on healthcare');
@@ -83,11 +80,10 @@ describe('buildEnrichedContext', () => {
   });
 
   it('prepends both strategy + positioning when both exist', async () => {
-    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
-      if (type === 'strategy') return makeFoundationDoc('strategy');
-      if (type === 'positioning') return makeFoundationDoc('positioning');
-      return null;
-    });
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([
+      makeFoundationDoc('strategy'),
+      makeFoundationDoc('positioning'),
+    ]);
     vi.mocked(buildFoundationContext).mockReturnValue('STRATEGIC CONTEXT with both');
 
     const result = await buildEnrichedContext('idea-123', 'my context');
@@ -101,46 +97,28 @@ describe('buildEnrichedContext', () => {
   });
 
   it('returns foundation context alone when additionalContext is undefined', async () => {
-    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
-      if (type === 'strategy') return makeFoundationDoc('strategy');
-      return null;
-    });
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([makeFoundationDoc('strategy')]);
     vi.mocked(buildFoundationContext).mockReturnValue('STRATEGIC CONTEXT...');
 
     const result = await buildEnrichedContext('idea-123');
     expect(result).toBe('STRATEGIC CONTEXT...');
   });
 
-  it('returns original additionalContext when getFoundationDoc throws', async () => {
-    vi.mocked(getFoundationDoc).mockRejectedValue(new Error('Redis down'));
+  it('returns original additionalContext when fetchFoundationDocs returns empty on error', async () => {
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([]);
     vi.mocked(buildFoundationContext).mockReturnValue('');
 
     const result = await buildEnrichedContext('idea-123', 'my context');
     expect(result).toBe('my context');
   });
 
-  it('returns partial foundation context when one fetch fails', async () => {
-    vi.mocked(getFoundationDoc).mockImplementation(async (_id, type) => {
-      if (type === 'strategy') return makeFoundationDoc('strategy');
-      throw new Error('positioning fetch failed');
-    });
-    vi.mocked(buildFoundationContext).mockReturnValue('STRATEGIC CONTEXT...');
-
-    const result = await buildEnrichedContext('idea-123', 'my context');
-    expect(result).toContain('STRATEGIC CONTEXT...');
-    expect(buildFoundationContext).toHaveBeenCalledWith([
-      expect.objectContaining({ type: 'strategy' }),
-    ]);
-  });
-
-  it('fetches exactly strategy and positioning', async () => {
-    vi.mocked(getFoundationDoc).mockResolvedValue(null);
+  it('delegates to fetchFoundationDocs with the correct ideaId', async () => {
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([]);
     vi.mocked(buildFoundationContext).mockReturnValue('');
 
     await buildEnrichedContext('idea-123');
-    expect(getFoundationDoc).toHaveBeenCalledTimes(2);
-    expect(getFoundationDoc).toHaveBeenCalledWith('idea-123', 'strategy');
-    expect(getFoundationDoc).toHaveBeenCalledWith('idea-123', 'positioning');
+    expect(fetchFoundationDocs).toHaveBeenCalledTimes(1);
+    expect(fetchFoundationDocs).toHaveBeenCalledWith('idea-123');
   });
 });
 
@@ -161,7 +139,7 @@ describe('POST /api/analyze/[id]', () => {
       createdAt: '2026-01-01',
       status: 'pending',
     });
-    vi.mocked(getFoundationDoc).mockResolvedValue(null);
+    vi.mocked(fetchFoundationDocs).mockResolvedValue([]);
     vi.mocked(buildFoundationContext).mockReturnValue('');
     vi.mocked(runResearchAgentAuto).mockResolvedValue(undefined as never);
 

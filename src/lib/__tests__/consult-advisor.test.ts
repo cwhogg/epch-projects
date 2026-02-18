@@ -47,28 +47,23 @@ describe('consult_advisor tool', () => {
     expect(result).toContain('Oli says: improve your CTA placement.');
   });
 
-  it('returns error string for unknown advisor', async () => {
+  it('throws for unknown advisor', async () => {
     const tool = createConsultAdvisorTool('idea-1');
-    const result = await tool.execute({
+    await expect(tool.execute({
       advisorId: 'unknown',
       question: 'test',
-    });
-    expect(result).toContain('Error');
-    expect(result).toContain('unknown');
+    })).rejects.toThrow('Unknown advisor: unknown');
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it('handles Anthropic API failure gracefully', async () => {
+  it('propagates Anthropic API errors', async () => {
     mockCreate.mockRejectedValueOnce(new Error('Rate limit exceeded'));
 
     const tool = createConsultAdvisorTool('idea-1');
-    const result = await tool.execute({
+    await expect(tool.execute({
       advisorId: 'oli-gardner',
       question: 'test question',
-    });
-
-    expect(result).toContain('Error');
-    expect(result).toContain('Rate limit');
+    })).rejects.toThrow('Rate limit exceeded');
   });
 
   it('includes foundation doc context when available', async () => {

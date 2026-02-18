@@ -116,6 +116,7 @@ export default function ContentCalendarPage() {
   const mergedPieces = getMergedPieces();
   const completedCount = mergedPieces.filter((p) => p.status === 'complete').length;
   const pendingCount = mergedPieces.filter((p) => p.status !== 'complete').length;
+  const queuedPieces = mergedPieces.filter((p) => p.status === 'complete' && !publishedKeys.has(`${analysisId}:${p.id}`));
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -235,29 +236,26 @@ export default function ContentCalendarPage() {
 
       {/* Content Pieces */}
       <div className="space-y-3 animate-slide-up stagger-3">
-        {(() => {
-          const queuedPieces = mergedPieces.filter((p) => p.status === 'complete' && !publishedKeys.has(`${analysisId}:${p.id}`));
-          return mergedPieces.map((piece) => {
-            const isQueued = piece.status === 'complete' && !publishedKeys.has(`${analysisId}:${piece.id}`);
-            const queueIdx = isQueued ? queuedPieces.findIndex((p) => p.id === piece.id) : -1;
+        {mergedPieces.map((piece) => {
+          const isQueued = piece.status === 'complete' && !publishedKeys.has(`${analysisId}:${piece.id}`);
+          const queueIdx = isQueued ? queuedPieces.findIndex((p) => p.id === piece.id) : -1;
 
-            return (
-              <ContentCalendarCard
-                key={piece.id}
-                piece={piece}
-                analysisId={analysisId}
-                selected={selectedIds.has(piece.id)}
-                onToggle={togglePiece}
-                onReject={handleReject}
-                onMoveUp={isQueued && queueIdx > 0 ? () => handleMovePiece(piece.id, 'up') : undefined}
-                onMoveDown={isQueued && queueIdx < queuedPieces.length - 1 ? () => handleMovePiece(piece.id, 'down') : undefined}
-                queueRank={isQueued ? queueIdx + 1 : undefined}
-                disabled={generating || appending}
-                published={publishedKeys.has(`${analysisId}:${piece.id}`)}
-              />
-            );
-          });
-        })()}
+          return (
+            <ContentCalendarCard
+              key={piece.id}
+              piece={piece}
+              analysisId={analysisId}
+              selected={selectedIds.has(piece.id)}
+              onToggle={togglePiece}
+              onReject={handleReject}
+              onMoveUp={isQueued && queueIdx > 0 ? () => handleMovePiece(piece.id, 'up') : undefined}
+              onMoveDown={isQueued && queueIdx < queuedPieces.length - 1 ? () => handleMovePiece(piece.id, 'down') : undefined}
+              queueRank={isQueued ? queueIdx + 1 : undefined}
+              disabled={generating || appending}
+              published={publishedKeys.has(`${analysisId}:${piece.id}`)}
+            />
+          );
+        })}
       </div>
     </div>
   );
