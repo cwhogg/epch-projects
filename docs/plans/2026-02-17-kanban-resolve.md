@@ -48,7 +48,7 @@
 
 ---
 
-### Task 2: Tiny code simplifications
+### ✅ Task 2: Tiny code simplifications
 
 **KBs:** KB-042, KB-049
 

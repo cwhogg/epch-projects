@@ -16,10 +16,7 @@ function capitalize(s: string): string {
 export function buildFoundationContext(docs: FoundationDocument[]): string {
   const relevant = docs
     .filter((d) => (RELEVANT_TYPES as readonly string[]).includes(d.type))
-    .sort((a, b) => {
-      const order = { strategy: 0, positioning: 1 };
-      return (order[a.type as keyof typeof order] ?? 99) - (order[b.type as keyof typeof order] ?? 99);
-    });
+    .sort((a, b) => (a.type === 'strategy' ? -1 : 1));
 
   if (relevant.length === 0) return '';
 
