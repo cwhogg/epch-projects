@@ -1381,7 +1381,7 @@ git commit -m "feat(eval): add eval runner CLI with all modes"
 
 ---
 
-### Task 16: npm script, example scenario, and sample fixture
+### ✅ Task 16: npm script, example scenario, and sample fixture
 
 **Files:**
 - Modify: `package.json` (add `"eval": "tsx e2e/eval-runner.ts"` to scripts)
