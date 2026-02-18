@@ -2,6 +2,10 @@
 
 Next.js app deployed on Vercel. Two collaborators (Eric, Chris) pushing directly to main.
 
+- **GitHub repo**: `cwhogg/epch-projects` (Chris's account)
+- **Vercel deployment**: Deployed through Chris's Vercel account to `epch-projects.vercel.app`
+- Eric's Vercel account (`bigchewy`) hosts separate projects — do not confuse with this one
+
 ## Workflow
 
 - Always `git pull` before starting any work (including before creating worktrees)
