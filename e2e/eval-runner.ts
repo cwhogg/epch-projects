@@ -108,8 +108,9 @@ async function runScenario(scenario: EvalScenario): Promise<ScenarioResult> {
     apiCalls++;
 
     const text = response.content
-      .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
-      .map(b => b.text).join('');
+      .filter(b => b.type === 'text')
+      .map(b => 'text' in b ? b.text : '')
+      .join('');
     messages.push({ role: 'assistant', content: text });
 
     const turnIdx = messages.filter(m => m.role === 'assistant').length - 1;
