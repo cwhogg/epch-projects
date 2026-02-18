@@ -208,7 +208,7 @@ export async function POST(
   }));
 
   // Create tools array: existing website tools + consult_advisor
-  const websiteTools = createWebsiteTools(ideaId);
+  const websiteTools = await createWebsiteTools(ideaId);
   const consultTool = createConsultAdvisorTool(ideaId);
   const allTools = [...websiteTools, consultTool];
 

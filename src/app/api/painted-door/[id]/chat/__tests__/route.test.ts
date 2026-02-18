@@ -68,7 +68,7 @@ vi.mock('@/lib/advisors/registry', () => ({
 }));
 
 vi.mock('@/lib/agent-tools/website', () => ({
-  createWebsiteTools: vi.fn().mockReturnValue([]),
+  createWebsiteTools: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/agent-tools/website-chat', () => ({
@@ -875,7 +875,7 @@ describe('step advancement via tool calls', () => {
 
     // Mock tool that returns design_brand
     const { createWebsiteTools } = await import('@/lib/agent-tools/website');
-    (createWebsiteTools as ReturnType<typeof vi.fn>).mockReturnValue([
+    (createWebsiteTools as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
         name: 'design_brand',
         description: 'mock',

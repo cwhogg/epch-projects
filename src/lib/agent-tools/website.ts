@@ -262,7 +262,7 @@ export function checkBrokenLinks(allFiles: Record<string, string>): ValidationRe
 // Create all tools for the website (painted door) agent
 // ---------------------------------------------------------------------------
 
-export function createWebsiteTools(ideaId: string): ToolDefinition[] {
+export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition[]> {
   // Shared mutable state across tool calls within a single run
   let idea: ProductIdea | null = null;
   let ctx: ContentContext | null = null;
@@ -275,6 +275,28 @@ export function createWebsiteTools(ideaId: string): ToolDefinition[] {
   let siteUrl = '';
   let lastDeploymentId: string | null = null;
   let pushCount = 0;
+
+  // Best-effort preload from database — errors leave state as null
+  try {
+    idea = await getIdeaFromDb(ideaId);
+    if (idea) {
+      ctx = await buildContentContext(ideaId);
+      siteSlug = slugify(idea.name);
+      siteId = `pd-${siteSlug}`;
+    }
+  } catch { /* continue with null — tools will fetch on demand */ }
+
+  try {
+    const existingSite = await getPaintedDoorSite(ideaId);
+    if (existingSite) {
+      brand = existingSite.brand || null;
+      if (existingSite.repoOwner && existingSite.repoName) {
+        repo = { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl };
+      }
+      vercelProjectId = existingSite.vercelProjectId || '';
+      siteUrl = existingSite.siteUrl || '';
+    }
+  } catch { /* continue with null — tools will create fresh */ }
 
   return [
     // -----------------------------------------------------------------------

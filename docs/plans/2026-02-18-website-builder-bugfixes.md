@@ -422,7 +422,7 @@ git commit -m "feat: wire step advancement into agent loop and body.step handler
 
 ---
 
-### Task 4: Make `createWebsiteTools` async with preloading
+### ✅ Task 4: Make `createWebsiteTools` async with preloading
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts:265` (change signature, add preload)
