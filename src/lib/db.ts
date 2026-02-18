@@ -325,6 +325,14 @@ export async function getFoundationDoc(ideaId: string, docType: FoundationDocTyp
   return parseValue<FoundationDocument>(data);
 }
 
+export async function fetchFoundationDocs(ideaId: string): Promise<FoundationDocument[]> {
+  const results = await Promise.all([
+    getFoundationDoc(ideaId, 'strategy').catch(() => null),
+    getFoundationDoc(ideaId, 'positioning').catch(() => null),
+  ]);
+  return results.filter(Boolean) as FoundationDocument[];
+}
+
 export async function getAllFoundationDocs(ideaId: string): Promise<Partial<Record<FoundationDocType, FoundationDocument>>> {
   const result: Partial<Record<FoundationDocType, FoundationDocument>> = {};
   for (const docType of FOUNDATION_DOC_TYPES) {

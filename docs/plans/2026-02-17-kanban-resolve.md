@@ -264,7 +264,7 @@
 
 ---
 
-### Task 12: Extract fetchFoundationDocs helper
+### ✅ Task 12: Extract fetchFoundationDocs helper
 
 **KBs:** KB-050
 

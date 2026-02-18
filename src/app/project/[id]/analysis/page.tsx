@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAnalysisFromDb, getAnalysisContent, getFoundationDoc, isRedisConfigured } from '@/lib/db';
+import { getAnalysisFromDb, getAnalysisContent, fetchFoundationDocs, isRedisConfigured } from '@/lib/db';
 import { getAnalysis } from '@/lib/data';
 import ScoreRing from '@/components/ScoreRing';
 import SEODeepDive from '@/components/SEODeepDive';
@@ -28,12 +28,10 @@ async function getPageData(id: string): Promise<{ analysis: Analysis; content: P
   if (isRedisConfigured()) {
     const analysis = await getAnalysisFromDb(id);
     if (analysis) {
-      const [content, strategyDoc, positioningDoc] = await Promise.all([
+      const [content, foundationDocs] = await Promise.all([
         getAnalysisContent(id),
-        getFoundationDoc(analysis.ideaId, 'strategy').catch(() => null),
-        getFoundationDoc(analysis.ideaId, 'positioning').catch(() => null),
+        fetchFoundationDocs(analysis.ideaId),
       ]);
-      const foundationDocs = [strategyDoc, positioningDoc].filter(Boolean) as FoundationDocument[];
       return { analysis, content: content || { main: 'Analysis content not available' }, foundationDocs };
     }
   }

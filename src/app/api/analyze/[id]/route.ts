@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { getIdeaFromDb, getFoundationDoc, getProgress, isRedisConfigured } from '@/lib/db';
+import { getIdeaFromDb, fetchFoundationDocs, getProgress, isRedisConfigured } from '@/lib/db';
 import { runResearchAgentAuto } from '@/lib/research-agent';
 import { buildFoundationContext } from '@/lib/research-agent-prompts';
-import { FoundationDocument } from '@/types';
 
 export async function buildEnrichedContext(
   ideaId: string,
   additionalContext?: string
 ): Promise<string | undefined> {
-  const [strategyDoc, positioningDoc] = await Promise.all([
-    getFoundationDoc(ideaId, 'strategy').catch(() => null),
-    getFoundationDoc(ideaId, 'positioning').catch(() => null),
-  ]);
-
-  const docs = [strategyDoc, positioningDoc].filter(Boolean) as FoundationDocument[];
+  const docs = await fetchFoundationDocs(ideaId);
   const foundationBlock = buildFoundationContext(docs);
 
   if (!foundationBlock) return additionalContext;
