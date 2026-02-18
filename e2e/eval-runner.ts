@@ -29,10 +29,10 @@ async function main() {
   let scopeReason: string;
 
   if (values.scenario) {
-    scenarios = [loadScenario(values.scenario)];
+    scenarios = [loadScenario(values.scenario as string)];
     trigger = 'manual'; scopeReason = `--scenario ${values.scenario}`;
   } else if (values.tag) {
-    scenarios = loadAllScenarios().filter(s => s.tags.includes(values.tag!));
+    scenarios = loadAllScenarios().filter(s => s.tags.includes(values.tag as string));
     trigger = 'manual'; scopeReason = `--tag ${values.tag}`;
   } else if (values.all) {
     scenarios = loadAllScenarios();
