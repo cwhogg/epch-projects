@@ -127,10 +127,18 @@ export default function WebsiteBuilderPage() {
               }
             }
             setSteps(loadedSteps);
+            // Show a resume status message so the user knows what's happening
+            const resumeStep = data.buildSession.currentStep;
+            const stepName = WEBSITE_BUILD_STEPS[resumeStep]?.name ?? `Step ${resumeStep + 1}`;
+            const completedCount = loadedSteps.filter((s: BuildStep) => s.status === 'complete').length;
+            setMessages([{
+              role: 'assistant',
+              content: `Resuming from **${stepName}** (${completedCount} of ${loadedSteps.length} steps completed). Picking up where we left off...`,
+              timestamp: new Date().toISOString(),
+            }]);
             // Resume: use streamResponse so signals are processed and
             // autonomous mode auto-continues through remaining steps.
             // Deferred via setTimeout so state updates flush first.
-            const resumeStep = data.buildSession.currentStep;
             continueTimerRef.current = setTimeout(
               () => streamResponse({ type: 'continue', step: resumeStep }),
               0,
