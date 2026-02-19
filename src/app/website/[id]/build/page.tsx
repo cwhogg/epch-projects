@@ -277,9 +277,25 @@ export default function WebsiteBuilderPage() {
           setClientState('waiting_for_user');
         }
       } else {
-        // No signal — move streaming content to permanent messages
+        // No signal — still parse advisor tags before storing as messages
+        const fallbackSegments: StreamSegment[] = [];
+        const fallbackParser = new AdvisorStreamParser((seg) => fallbackSegments.push(seg));
+        fallbackParser.push(fullText);
+        fallbackParser.flush();
+
+        const fallbackMessages = fallbackSegments.length > 0
+          ? fallbackSegments.map((seg) => ({
+              role: 'assistant' as const,
+              content: seg.content,
+              timestamp: new Date().toISOString(),
+              ...(seg.type === 'advisor' ? {
+                metadata: { advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName } },
+              } : {}),
+            }))
+          : [{ role: 'assistant' as const, content: fullText, timestamp: new Date().toISOString() }];
+
         setStreamingSegments([]);
-        setMessages((prev) => [...prev, { role: 'assistant' as const, content: fullText, timestamp: new Date().toISOString() }]);
+        setMessages((prev) => [...prev, ...fallbackMessages]);
         setClientState('waiting_for_user');
       }
     } catch (err) {
