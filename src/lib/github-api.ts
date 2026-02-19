@@ -175,6 +175,17 @@ export async function createVercelProject(
   });
 
   if (!res.ok) {
+    // Project already exists — look it up instead of failing
+    if (res.status === 409) {
+      const lookupRes = await fetch(
+        `https://api.vercel.com/v9/projects/${repoName}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (lookupRes.ok) {
+        const existing = await lookupRes.json();
+        return { projectId: existing.id };
+      }
+    }
     const errBody = await res.text();
     throw new Error(`Vercel project creation failed: ${res.status} ${errBody}`);
   }

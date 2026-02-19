@@ -648,7 +648,8 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles, commitMessage);
         pushCount++;
 
-        // Save partial site state
+        // Save partial site state — preserve existing fields from prior builds
+        const existingSite = await getPaintedDoorSite(ideaId);
         const partialSite: PaintedDoorSite = {
           id: siteId,
           ideaId,
@@ -657,11 +658,11 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
           repoOwner: repo.owner,
           repoName: repo.name,
           repoUrl: repo.url,
-          siteUrl: '',
-          vercelProjectId: '',
+          siteUrl: existingSite?.siteUrl || '',
+          vercelProjectId: existingSite?.vercelProjectId || vercelProjectId || '',
           status: 'pushing',
-          createdAt: new Date().toISOString(),
-          signupCount: 0,
+          createdAt: existingSite?.createdAt || new Date().toISOString(),
+          signupCount: existingSite?.signupCount || 0,
         };
         await savePaintedDoorSite(partialSite);
 
@@ -959,6 +960,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
       execute: async () => {
         if (!idea || !brand || !repo) return { error: 'Missing required context' };
 
+        const existingSite = await getPaintedDoorSite(ideaId);
         const finalSite: PaintedDoorSite = {
           id: siteId,
           ideaId,
@@ -970,9 +972,9 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
           siteUrl: siteUrl || '',
           vercelProjectId,
           status: siteUrl ? 'live' : 'deploying',
-          createdAt: new Date().toISOString(),
+          createdAt: existingSite?.createdAt || new Date().toISOString(),
           deployedAt: siteUrl ? new Date().toISOString() : undefined,
-          signupCount: 0,
+          signupCount: existingSite?.signupCount || 0,
         };
         await savePaintedDoorSite(finalSite);
 
