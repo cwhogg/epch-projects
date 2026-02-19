@@ -524,6 +524,9 @@ export const WEBSITE_BUILD_STEPS: { name: string; checkpoint: boolean }[] = [
   { name: 'Verify',                         checkpoint: false },  // 5
 ];
 
+/** Labels for the 5 substages within Step 2 (Write Page Sections). */
+export const SUBSTAGE_LABELS = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'] as const;
+
 /** Advisor IDs that MUST be consulted before a copy-producing stage can advance.
  *  Key format: step index, or "2a"-"2e" for substages within step 2. */
 export const REQUIRED_ADVISORS_PER_STAGE: Record<string, string[]> = {

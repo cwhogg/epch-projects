@@ -38,7 +38,7 @@ export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
 
       const foundationDocsRecord = await getAllFoundationDocs(ideaId);
       const foundationContext = Object.values(foundationDocsRecord)
-        .filter((doc): doc is NonNullable<typeof doc> => doc !== null && doc !== undefined)
+        .filter((doc): doc is NonNullable<typeof doc> => doc != null)
         .map((doc) => `## ${doc.type} (updated ${doc.editedAt || doc.generatedAt})\n${doc.content}`)
         .join('\n\n---\n\n');
 

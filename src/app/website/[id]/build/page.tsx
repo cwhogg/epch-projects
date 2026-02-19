@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
-import { WEBSITE_BUILD_STEPS } from '@/types';
+import { WEBSITE_BUILD_STEPS, SUBSTAGE_LABELS } from '@/types';
 import { AdvisorStreamParser, type StreamSegment } from '@/lib/parse-advisor-segments';
 import { validateCopyQuality } from '@/lib/copy-quality';
 
@@ -19,7 +19,14 @@ const STEP_DESCRIPTIONS = [
   'Check live site, final polish',                      // 5 — Verify
 ];
 
-const SUBSTAGE_LABELS = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'];
+function placeholderForState(state: ClientState): string {
+  switch (state) {
+    case 'streaming': return 'Julian is responding...';
+    case 'polling': return 'Waiting for deployment...';
+    case 'done': return 'Build complete!';
+    default: return 'Reply to Julian...';
+  }
+}
 
 export default function WebsiteBuilderPage() {
   const params = useParams();
@@ -636,12 +643,7 @@ export default function WebsiteBuilderPage() {
                       e.target.style.borderColor = 'var(--border-default)';
                       e.target.style.boxShadow = 'none';
                     }}
-                    placeholder={
-                      clientState === 'streaming' ? 'Julian is responding...' :
-                      clientState === 'polling' ? 'Waiting for deployment...' :
-                      clientState === 'done' ? 'Build complete!' :
-                      'Reply to Julian...'
-                    }
+                    placeholder={placeholderForState(clientState)}
                     rows={1}
                   />
                   <button
@@ -931,19 +933,21 @@ function StepItem({ step, index, description, isLast, nextStatus, currentSubstep
   const isActive = step.status === 'active';
   const isError = step.status === 'error';
 
+  const GRADIENT_TO_SUBTLE = 'linear-gradient(180deg, var(--accent-coral), var(--border-subtle))';
+
+  function connectorBackground(): string {
+    if (isActive) return GRADIENT_TO_SUBTLE;
+    if (isComplete) return nextStatus === 'active' ? GRADIENT_TO_SUBTLE : 'var(--accent-coral)';
+    return 'var(--border-subtle)';
+  }
+
   return (
     <div className={`relative ${isLast ? '' : 'pb-6'}`}>
       {/* Connector line */}
       {!isLast && (
         <div
           className="absolute left-[15px] top-[32px] bottom-0 w-[2px]"
-          style={{
-            background: isComplete
-              ? (nextStatus === 'active' ? 'linear-gradient(180deg, var(--accent-coral), var(--border-subtle))' : 'var(--accent-coral)')
-              : isActive
-                ? 'linear-gradient(180deg, var(--accent-coral), var(--border-subtle))'
-                : 'var(--border-subtle)',
-          }}
+          style={{ background: connectorBackground() }}
         />
       )}
 

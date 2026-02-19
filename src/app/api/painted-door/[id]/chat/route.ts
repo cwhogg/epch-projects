@@ -16,7 +16,7 @@ import {
   saveConversationHistory,
 } from '@/lib/painted-door-db';
 import type { BuildMode, BuildSession, ChatMessage, ChatRequestBody, StreamEndSignal, ToolDefinition } from '@/types';
-import { WEBSITE_BUILD_STEPS, REQUIRED_ADVISORS_PER_STAGE } from '@/types';
+import { WEBSITE_BUILD_STEPS, REQUIRED_ADVISORS_PER_STAGE, SUBSTAGE_LABELS } from '@/types';
 
 export const maxDuration = 300;
 
@@ -33,7 +33,7 @@ export async function assembleSystemPrompt(
   // 3. Foundation documents
   const foundationDocsRecord = await getAllFoundationDocs(ideaId);
   const nonNullDocs = Object.values(foundationDocsRecord).filter(
-    (d): d is NonNullable<typeof d> => d !== null && d !== undefined
+    (d): d is NonNullable<typeof d> => d != null
   );
 
   let foundationSection: string;
@@ -379,14 +379,14 @@ async function runAgentStream(
 
     // Check if required advisors have been consulted before allowing stage to complete
     const advisorCheck = checkAdvisorRequirements(session);
-    if (advisorCheck && session.currentStep <= 3 && advisorEnforcementRetries < 2) {
-      advisorEnforcementRetries++;
-      // Force another LLM turn with enforcement message
-      history.push({ role: 'user', content: advisorCheck, timestamp: new Date().toISOString() });
-      continue; // Continue the agent loop
-    }
-    // If enforcement retries exhausted, allow the stream to proceed with a warning
-    if (advisorCheck && advisorEnforcementRetries >= 2) {
+    if (advisorCheck && session.currentStep <= 3) {
+      if (advisorEnforcementRetries < 2) {
+        advisorEnforcementRetries++;
+        // Force another LLM turn with enforcement message
+        history.push({ role: 'user', content: advisorCheck, timestamp: new Date().toISOString() });
+        continue;
+      }
+      // Enforcement retries exhausted — proceed with a warning
       console.warn(`Advisor enforcement exhausted after ${advisorEnforcementRetries} retries at step ${session.currentStep}. Proceeding without full advisor coverage.`);
     }
   }
@@ -527,12 +527,11 @@ export function determineStreamEndSignal(session: BuildSession): StreamEndSignal
   if (session.mode === 'interactive' && stepConfig?.checkpoint) {
     // For substages within step 2, emit checkpoint at each substep boundary
     if (session.currentStep === 2) {
-      const substageNames = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'];
       return {
         action: 'checkpoint',
         step: session.currentStep,
         substep: session.currentSubstep,
-        prompt: `Stage 2${String.fromCharCode(97 + session.currentSubstep)}: ${substageNames[session.currentSubstep] || 'Section'} is ready for your review.`,
+        prompt: `Stage 2${String.fromCharCode(97 + session.currentSubstep)}: ${SUBSTAGE_LABELS[session.currentSubstep] || 'Section'} is ready for your review.`,
       };
     }
     return {
