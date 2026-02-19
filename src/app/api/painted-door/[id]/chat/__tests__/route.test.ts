@@ -786,7 +786,6 @@ describe('Integration: full chat flow', () => {
     // Anthropic throws immediately
     const events = (async function* () {
       throw new Error('Service unavailable');
-      // eslint-disable-next-line no-unreachable
       yield; // TypeScript requires at least one yield in a generator
     })();
     mockMessagesStream.mockReturnValue({
