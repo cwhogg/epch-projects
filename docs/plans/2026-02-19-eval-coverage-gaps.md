@@ -370,7 +370,7 @@ git commit -m "feat: add website-chat surface to eval prompt adapter (KB-099)"
 
 ---
 
-### Task 5: Create autonomous-mode-scoping scenario
+### ✅ Task 5: Create autonomous-mode-scoping scenario
 
 Tests that the website builder in autonomous mode scopes its response to the current stage only, per the fix-autonomous-mode-chain changes.
 

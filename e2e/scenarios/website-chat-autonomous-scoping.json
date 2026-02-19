@@ -1,0 +1,22 @@
+{
+  "name": "website-chat-autonomous-scoping",
+  "surface": "website-chat",
+  "tags": ["website-chat", "painted-door"],
+  "config": {
+    "mode": "autonomous"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "I choose \"You've got this\" mode. Let's begin!" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["instruction-following", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["game-changer", "revolutionary", "cutting-edge", "world-class"]
+    }
+  }
+}
