@@ -209,9 +209,11 @@ export async function POST(
       timestamp: new Date().toISOString(),
     });
   } else if (body.type === 'continue') {
+    const stepIdx = body.step ?? session.currentStep;
+    const stepName = WEBSITE_BUILD_STEPS[stepIdx]?.name ?? `step ${stepIdx + 1}`;
     history.push({
       role: 'user',
-      content: `Continue to the next step (step ${(body.step ?? session.currentStep) + 1}).`,
+      content: `Continue. Now work on stage ${stepIdx + 1}: ${stepName}.`,
       timestamp: new Date().toISOString(),
     });
   }
