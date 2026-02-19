@@ -1,0 +1,24 @@
+{
+  "name": "website-chat-continue-message",
+  "surface": "website-chat",
+  "tags": ["website-chat", "painted-door"],
+  "config": {
+    "mode": "autonomous"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "I choose \"You've got this\" mode. Let's begin!" },
+    { "role": "assistant", "evaluate": false },
+    { "role": "user", "content": "Continue. Now work on stage 2: Write Hero." },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["instruction-following", "voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["game-changer", "revolutionary", "cutting-edge", "world-class", "innovative solution"]
+    }
+  }
+}

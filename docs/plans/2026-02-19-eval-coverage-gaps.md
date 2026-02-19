@@ -421,7 +421,7 @@ git commit -m "feat: add autonomous mode scoping eval scenario (KB-099)"
 
 ---
 
-### Task 6: Create continue-message scenario
+### ✅ Task 6: Create continue-message scenario
 
 Tests that the LLM responds correctly to the stage-specific continue message format ("Continue. Now work on stage N: Step Name."), which was changed in the fix-autonomous-mode-chain branch.
 
