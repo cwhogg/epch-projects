@@ -127,17 +127,14 @@ export default function WebsiteBuilderPage() {
               }
             }
             setSteps(loadedSteps);
-            // Trigger continuation to resume the conversation
-            try {
-              await fetch(`/api/painted-door/${ideaId}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'continue' }),
-              });
-            } catch {
-              // Non-critical
-            }
-            setClientState('waiting_for_user');
+            // Resume: use streamResponse so signals are processed and
+            // autonomous mode auto-continues through remaining steps.
+            // Deferred via setTimeout so state updates flush first.
+            const resumeStep = data.buildSession.currentStep;
+            continueTimerRef.current = setTimeout(
+              () => streamResponse({ type: 'continue', step: resumeStep }),
+              0,
+            );
             return;
           }
         }
