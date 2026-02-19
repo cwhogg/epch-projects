@@ -232,8 +232,12 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     // --- Step 6: Wait for Deploy ---
     await updateStep(ideaId, progress, 5, 'running');
 
-    // Push empty commit to trigger Vercel's GitHub webhook
-    await triggerDeployViaGitPush(repo.owner, repo.name);
+    // On first build, push empty commit to trigger Vercel's GitHub webhook
+    // (the Vercel project was just created so it missed the file push).
+    // On rebuild, the file push already triggered the webhook — skip.
+    if (!isRebuild) {
+      await triggerDeployViaGitPush(repo.owner, repo.name);
+    }
 
     const siteUrl = await waitForDeployment(vercelProjectId, repo.name);
 

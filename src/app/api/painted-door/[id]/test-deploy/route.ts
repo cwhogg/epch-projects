@@ -80,9 +80,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       steps.push(`Reusing Vercel project: ${vercelProjectId}`);
     }
 
-    // Step 3: Trigger deploy
-    await triggerDeployViaGitPush(repoOwner, repoName);
-    steps.push('Triggered deploy via git push');
+    // Step 3: Trigger deploy — only needed for new Vercel projects that missed the push webhook.
+    // When reusing an existing project, the push already triggered deployment.
+    if (!site?.vercelProjectId) {
+      await triggerDeployViaGitPush(repoOwner, repoName);
+      steps.push('Triggered deploy via empty commit');
+    } else {
+      steps.push('Deploy triggered by push webhook (existing Vercel project)');
+    }
 
     // Save site record
     const updatedSite = {
