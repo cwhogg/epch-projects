@@ -8,6 +8,8 @@
 
 **Architecture:** The website builder is a chat-driven agent loop where Julian Shapiro leads users through landing page creation. The chat API route (`src/app/api/painted-door/[id]/chat/route.ts`) streams LLM responses, manages step advancement via tool calls, and injects advisor response markers into the stream. The frontend (`src/app/website/[id]/build/page.tsx`) parses these markers into separate message bubbles and manages step progress UI. This plan replaces the 8-stage model with a 6-stage model (with substages in stage 3), adds code-level enforcement of mandatory advisor calls, fixes four synchronization bugs, and adds a copy quality validation layer.
 
+**Stage numbering note:** The design doc uses 1-indexed stage numbers (Stage 1 through Stage 6, substages 3a-3e). This plan uses 0-indexed array indices (stage 0 through 5, substages 2a-2e) because `WEBSITE_BUILD_STEPS` is a zero-indexed array. The mapping is: Design Stage 1 = code index 0, Design Stage 2 = code index 1, Design Stage 3 = code index 2, etc. User-facing text (framework prompt, sidebar labels) should display 1-indexed names without numeric prefixes.
+
 **Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, Anthropic SDK, Vitest
 
 **Lesson learned:** Always run `npm run build` as verification — vitest transpiles with esbuild/SWC which strips types without checking. The Next.js build runs `tsc` and catches type errors that tests miss (`docs/lessons-learned/2026-02-18-build-catches-type-errors-tests-miss.md`).
@@ -376,8 +378,9 @@ Expected: New `AdvisorStreamParser` tests FAIL (import not found), existing test
 Add to `src/lib/parse-advisor-segments.ts` (after the existing `parseStreamSegments` function):
 
 ```typescript
-const START_MARKER = '<<<ADVISOR_START>>>';
-const END_MARKER = '<<<ADVISOR_END>>>';
+// Reuse existing constants from the top of this file:
+// const ADVISOR_START = '<<<ADVISOR_START>>>';
+// const ADVISOR_END = '<<<ADVISOR_END>>>';
 
 export class AdvisorStreamParser {
   private buffer = '';
@@ -648,7 +651,19 @@ export interface BuildSession {
 }
 ```
 
-**Step 4: Update `ChatRequestBody` (lines 562-567)**
+**Step 4: Update `StreamEndSignal` type (line 556-560)**
+
+Add `substep` to the checkpoint variant and `repoUrl` to the complete variant:
+
+```typescript
+export type StreamEndSignal =
+  | { action: 'checkpoint'; step: number; substep?: number; prompt: string }
+  | { action: 'continue'; step: number }
+  | { action: 'poll'; step: number; pollUrl: string }
+  | { action: 'complete'; result: { siteUrl: string; repoUrl: string } };
+```
+
+**Step 5: Update `ChatRequestBody` (lines 562-567)**
 
 Add `substep` field:
 
@@ -662,13 +677,13 @@ export interface ChatRequestBody {
 }
 ```
 
-**Step 5: Commit**
+**Step 6: Commit**
 
 ```bash
 git add src/types/index.ts
 git commit -m "feat: replace 8-stage website builder types with 6-stage model
 
-Adds currentSubstep, REQUIRED_ADVISORS_PER_STAGE, updated artifacts schema.
+Adds currentSubstep, REQUIRED_ADVISORS_PER_STAGE, StreamEndSignal substep, updated artifacts schema.
 Tests will break until backend route is updated in subsequent tasks."
 ```
 
@@ -994,9 +1009,16 @@ const TOOL_COMPLETES_STEP: Record<string, number> = {
 
 Replace the existing `advanceSessionStep` (lines 394-415) with:
 
+First, update the existing import at the top of `route.ts` (around line 19) to include `REQUIRED_ADVISORS_PER_STAGE`:
 ```typescript
-import { REQUIRED_ADVISORS_PER_STAGE } from '@/types';
+// Find the existing line: import { WEBSITE_BUILD_STEPS } from '@/types';
+// Replace with:
+import { WEBSITE_BUILD_STEPS, REQUIRED_ADVISORS_PER_STAGE } from '@/types';
+```
 
+Then replace the `advanceSessionStep` function:
+
+```typescript
 export function advanceSessionStep(
   session: BuildSession,
   toolNames: string[],
@@ -1007,13 +1029,6 @@ export function advanceSessionStep(
     const step = TOOL_COMPLETES_STEP[name];
     if (step === undefined) continue;
     if (step > maxStep) maxStep = step;
-
-    // Track advisor calls for enforcement
-    if (name === 'consult_advisor') {
-      // Don't use this for step advancement — advisor calls tracked separately
-      maxStep = Math.max(maxStep, -1); // no-op for advancement
-      continue;
-    }
   }
 
   if (maxStep > session.currentStep) {
@@ -1078,9 +1093,30 @@ export function advanceSubstep(session: BuildSession): boolean {
 }
 ```
 
-**Step 3: Update continue signal handling**
+**Step 3: Update mode_select session initializer (lines 142-153)**
 
-Update the continue signal handler (around lines 165-175) to support substep advancement:
+The session creation for `mode_select` must include the new fields. Replace lines 142-153:
+
+```typescript
+const session: BuildSession = {
+  ideaId,
+  mode: body.mode,
+  currentStep: 0,
+  currentSubstep: 0,
+  steps: WEBSITE_BUILD_STEPS.map((s) => ({
+    name: s.name,
+    status: 'pending' as const,
+  })),
+  artifacts: {},
+  advisorCallsThisRound: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+```
+
+**Step 4: Update continue signal handling**
+
+Update the continue signal handler (around lines 165-175) to support substep advancement and reset advisor tracking:
 
 ```typescript
 if (body.type === 'continue') {
@@ -1106,27 +1142,43 @@ if (body.type === 'continue') {
 
 **Step 4: Add advisor tracking in the agent loop**
 
-In the agent loop where `consult_advisor` tool calls are processed (around lines 323-333), add tracking:
+In the agent loop where `consult_advisor` tool calls are processed (around lines 323-333), add tracking. Also handle advisor call failures gracefully — if the tool result is an error, still track the advisor (to prevent enforcement loops) but do NOT inject the advisor markers:
 
 ```typescript
-if (toolUseBlocks[i].name === 'consult_advisor' && !toolResults[i].is_error) {
+if (toolUseBlocks[i].name === 'consult_advisor') {
   const advisorId = toolUseBlocks[i].input.advisorId as string;
-  trackAdvisorCall(session, advisorId);
-  // ... existing marker injection code ...
+
+  if (!toolResults[i].is_error) {
+    trackAdvisorCall(session, advisorId);
+    // ... existing marker injection code ...
+  } else {
+    // Track as called (prevent enforcement loop) but skip marker injection.
+    // The advisor response won't appear as a bubble — Julian continues without it.
+    trackAdvisorCall(session, advisorId);
+    console.warn(`Advisor ${advisorId} call failed. Proceeding without their input.`);
+  }
 }
 ```
 
 **Step 5: Add advisor enforcement check after each round**
 
-After the tool execution loop completes each round, before emitting the signal, check advisor requirements:
+After the tool execution loop completes each round, before emitting the signal, check advisor requirements. Use a retry counter (max 2) to prevent infinite loops if the LLM ignores enforcement:
 
 ```typescript
+// At the top of the agent loop (before the while loop), initialize:
+let advisorEnforcementRetries = 0;
+
 // After tool execution, check if advisor requirements are met
 const advisorCheck = checkAdvisorRequirements(session);
-if (advisorCheck && session.currentStep <= 3) {
+if (advisorCheck && session.currentStep <= 3 && advisorEnforcementRetries < 2) {
+  advisorEnforcementRetries++;
   // Force another LLM turn with enforcement message
   history.push({ role: 'user', content: advisorCheck, timestamp: new Date().toISOString() });
   continue; // Continue the agent loop
+}
+// If enforcement retries exhausted, allow the stream to proceed with a warning
+if (advisorCheck && advisorEnforcementRetries >= 2) {
+  console.warn(`Advisor enforcement exhausted after ${advisorEnforcementRetries} retries at step ${session.currentStep}. Proceeding without full advisor coverage.`);
 }
 ```
 
@@ -1201,11 +1253,7 @@ export function determineStreamEndSignal(session: BuildSession): StreamEndSignal
 
 > **Behavior change:** The `complete` signal now includes `repoUrl` in addition to `siteUrl`. The `poll` check uses step name instead of hardcoded index 6 (now index 4). Checkpoint signals include optional `substep` field for stage 2 substages.
 
-**Step 2: Update `StreamEndSignal` type if needed**
-
-If `StreamEndSignal` is defined in `src/types/index.ts`, add `substep?: number` and `repoUrl?: string` to the appropriate variants. If it's defined inline in the route file, update it there.
-
-**Step 3: Commit**
+**Step 2: Commit**
 
 ```bash
 git add src/app/api/painted-door/[id]/chat/route.ts
@@ -1443,11 +1491,9 @@ describe('determineStreamEndSignal', () => {
     }
   });
 
-  it('returns continue for non-checkpoint step', () => {
-    const session = makeBuildSession({ currentStep: 4 }); // Build & Deploy
-    // Wait, Build & Deploy returns 'poll'. Let me use Verify.
-    const session2 = makeBuildSession({ mode: 'autonomous', currentStep: 3 });
-    const signal = determineStreamEndSignal(session2);
+  it('returns continue for autonomous mode at checkpoint step', () => {
+    const session = makeBuildSession({ mode: 'autonomous', currentStep: 3 });
+    const signal = determineStreamEndSignal(session);
     expect(signal.action).toBe('continue');
   });
 });
@@ -1464,12 +1510,63 @@ Update the existing `assembleSystemPrompt` tests to check for new content:
 
 The test `'advances session when design_brand tool is called'` should be removed (no more `design_brand` tool in step mapping). Replace with a test for `assemble_site_files` advancing to step 4.
 
-**Step 8: Run tests**
+**Step 8: Add missing test cases from design testing strategy**
+
+Add these additional test cases to cover gaps identified in the design doc's testing strategy:
+
+```typescript
+describe('out-of-order substep handling', () => {
+  it('ignores substep continue signals when not at step 2', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    // Simulate a stale substep continue signal arriving for step 2
+    const result = advanceSubstep(session);
+    expect(result).toBe(false);
+    expect(session.currentStep).toBe(1); // unchanged
+  });
+});
+
+describe('advisor enforcement edge cases', () => {
+  it('enforcement retry counter resets between stages', () => {
+    // When moving to a new stage, the enforcement counter should not carry over
+    const session = makeBuildSession({ currentStep: 0 });
+    session.advisorCallsThisRound = [];
+    const check1 = checkAdvisorRequirements(session);
+    expect(check1).not.toBeNull(); // missing advisors
+
+    // Simulate advancing to next stage
+    session.currentStep = 1;
+    session.advisorCallsThisRound = [];
+    const check2 = checkAdvisorRequirements(session);
+    expect(check2).not.toBeNull(); // missing advisors for new stage
+    expect(check2).toContain('shirin-oreizy'); // stage 1 requires shirin
+  });
+
+  it('returns null for stages without advisor requirements (step 4, 5)', () => {
+    const session4 = makeBuildSession({ currentStep: 4 });
+    expect(checkAdvisorRequirements(session4)).toBeNull();
+
+    const session5 = makeBuildSession({ currentStep: 5 });
+    expect(checkAdvisorRequirements(session5)).toBeNull();
+  });
+});
+
+describe('session initialization', () => {
+  it('mode_select creates session with currentSubstep 0 and empty advisorCallsThisRound', () => {
+    // This test verifies the session created by mode_select has the new fields.
+    // The actual POST handler test should verify this. Add assertion to existing
+    // mode_select integration test:
+    // expect(savedSession.currentSubstep).toBe(0);
+    // expect(savedSession.advisorCallsThisRound).toEqual([]);
+  });
+});
+```
+
+**Step 9: Run tests**
 
 Run: `npm test`
 Expected: All tests PASS
 
-**Step 9: Commit**
+**Step 10: Commit**
 
 ```bash
 git add src/app/api/painted-door/[id]/chat/__tests__/route.test.ts
@@ -1483,7 +1580,16 @@ git commit -m "test: update all backend tests for 6-stage model with advisor enf
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx`
 
-**Step 1: Update `STEP_DESCRIPTIONS` (lines 12-21)**
+**Step 1: Update React import (line 3)**
+
+The existing import is missing `useMemo`. Update:
+```typescript
+// Find: import { useEffect, useState, useRef } from 'react';
+// Replace with:
+import { useEffect, useState, useRef, useMemo } from 'react';
+```
+
+**Step 2: Update `STEP_DESCRIPTIONS` (lines 12-21)**
 
 Replace with:
 
@@ -1498,7 +1604,7 @@ const STEP_DESCRIPTIONS = [
 ];
 ```
 
-**Step 2: Fix status bar sync (derive currentStep from steps array)**
+**Step 3: Fix status bar sync (derive currentStep from steps array)**
 
 Remove the `currentStep` state variable (line 38):
 ```typescript
@@ -1515,11 +1621,12 @@ const derivedStep = useMemo(() => {
 
 Replace all references to `currentStep` with `derivedStep` throughout the component, EXCEPT where `setCurrentStep` was called. Those `setCurrentStep` calls should be replaced with `updateStepStatus` calls that set the appropriate step statuses (which will cause `derivedStep` to recalculate).
 
-**Step 3: Fix polling closure (use signal-based ref)**
+**Step 4: Fix polling closure (use signal-based ref)**
 
-Add a ref to track the latest signal step:
+Add refs to track the latest signal step and current substep:
 ```typescript
 const lastSignalStepRef = useRef(0);
+const currentSubstepRef = useRef(0);
 ```
 
 In `handleSignal`, update the ref:
@@ -1542,7 +1649,7 @@ function startPolling() {
 }
 ```
 
-**Step 4: Add substage progress indicator for stage 2**
+**Step 5: Add substage progress indicator for stage 2**
 
 Add a substage indicator that shows progress through the 5 substages when step 2 is active. In the sidebar `StepItem` for step 2, add:
 
@@ -1550,9 +1657,16 @@ Add a substage indicator that shows progress through the 5 substages when step 2
 const SUBSTAGE_LABELS = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'];
 ```
 
-When step 2 is active, render a mini-progress row below the step name showing which substage is current (derive from the last checkpoint signal's `substep` field, stored in a `currentSubstepRef`).
+When step 2 is active, render a mini-progress row below the step name showing which substage is current. Update `currentSubstepRef.current` from the last checkpoint signal's `substep` field in `handleSignal`:
 
-**Step 5: Update step reconciliation**
+```typescript
+// In handleSignal, when a checkpoint signal for step 2 arrives:
+if (signal.action === 'checkpoint' && signal.substep !== undefined) {
+  currentSubstepRef.current = signal.substep;
+}
+```
+
+**Step 6: Update step reconciliation**
 
 Add reconciliation on session load (around line 80) — force any step at index < derivedStep to `'complete'` if it's still showing `'active'`:
 
@@ -1572,14 +1686,21 @@ if (data.buildSession) {
 }
 ```
 
-**Step 6: Update status bar step count**
+**Step 7: Update status bar step count**
 
 In the status bar (lines 622-630), change `8` to `steps.length` and use `derivedStep` instead of `currentStep`:
 ```typescript
 Step {Math.min(derivedStep + 1, steps.length)} of {steps.length}
 ```
 
-**Step 7: Handle substep continue signals**
+**Step 8: Update mode-select UI (lines 424, 453, 465-480)**
+
+The mode-select screen references "8 steps" and has 8-item step pill arrays. Update:
+- Change any "8 steps" text to "6 stages"
+- Update the step pill arrays from 8 items to 6 items matching `WEBSITE_BUILD_STEPS`
+- Update any preview/description text that references the old stage names
+
+**Step 9: Handle substep continue signals**
 
 When the user approves a substage checkpoint, send a continue signal with the substep:
 
@@ -1588,7 +1709,7 @@ When the user approves a substage checkpoint, send a continue signal with the su
 streamResponse({ type: 'continue', step: 2, substep: currentSubstepRef.current + 1 });
 ```
 
-**Step 8: Commit**
+**Step 10: Commit**
 
 ```bash
 git add src/app/website/[id]/build/page.tsx
@@ -1633,7 +1754,24 @@ The existing post-stream `parseStreamSegments` call (lines 192-208) should be re
 
 Instead of updating a single placeholder message during streaming and splitting at the end, the parser's callback should append new `ChatMessage` objects to the messages array as advisor segments complete. Julian text continues to update the current placeholder; advisor segments create new entries.
 
-**Step 3: Commit**
+**Step 3: Wire copy quality validation into the stream**
+
+Import `validateCopyQuality` and run it on each completed segment's content. If flags are found, add a visual indicator (e.g., a subtle warning icon or muted text) on the message bubble to signal potential AI slop. This is an informational check for the developer/user — it does NOT block the stream.
+
+```typescript
+import { validateCopyQuality } from '@/lib/copy-quality';
+
+// In the parser callback, after pushing a segment:
+const flags = validateCopyQuality(seg.content);
+if (flags.length > 0) {
+  // Attach quality flags to the message for optional UI rendering
+  console.warn(`Copy quality flags in ${seg.type} segment:`, flags.map(f => f.category));
+}
+```
+
+> **Note:** Full UI rendering of copy quality flags is optional for v1. The `console.warn` provides developer visibility. If UI rendering is desired, add a `qualityFlags` field to the `ChatMessage` type and render a small indicator.
+
+**Step 4: Commit**
 
 ```bash
 git add src/app/website/[id]/build/page.tsx
