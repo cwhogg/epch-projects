@@ -112,16 +112,19 @@ describe('assembleSystemPrompt', () => {
     expect(prompt).toContain('developers');
   });
 
-  it('includes mode instruction for interactive', async () => {
+  it('includes mode instruction for interactive with 6 stages', async () => {
     const prompt = await assembleSystemPrompt('idea-1', 'interactive');
-    expect(prompt).toContain('checkpoint');
+    expect(prompt).toContain('6-stage');
     expect(prompt).toContain('pause');
+    expect(prompt).toContain('social proof');
+    expect(prompt).toContain('em dash');
   });
 
-  it('includes mode instruction for autonomous', async () => {
+  it('includes mode instruction for autonomous with 6 stages', async () => {
     const prompt = await assembleSystemPrompt('idea-1', 'autonomous');
     expect(prompt).not.toContain('pause');
-    expect(prompt).toContain('narrat');
+    expect(prompt).toContain('6 stages');
+    expect(prompt).toContain('Narrate');
   });
 
   it('includes available advisor roster', async () => {
@@ -196,8 +199,10 @@ describe('POST /api/painted-door/[id]/chat', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'pending' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'pending' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -265,8 +270,10 @@ describe('Agent loop with tool execution', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -313,8 +320,10 @@ describe('Agent loop with tool execution', () => {
       ideaId: 'idea-1',
       mode: 'autonomous',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -393,9 +402,11 @@ describe('Agent loop with tool execution', () => {
     (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
       ideaId: 'idea-1',
       mode: 'interactive',
-      currentStep: 0, // Step 0 = Extract Ingredients, which IS a checkpoint
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentStep: 0, // Step 0 = Extract & Validate Ingredients, which IS a checkpoint
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -439,8 +450,10 @@ describe('Agent loop with tool execution', () => {
       ideaId: 'idea-1',
       mode: 'autonomous',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -483,8 +496,10 @@ describe('Agent loop with tool execution', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -560,8 +575,10 @@ describe('Integration: full chat flow', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'pending' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'pending' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -592,8 +609,10 @@ describe('Integration: full chat flow', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -633,12 +652,14 @@ describe('Integration: full chat flow', () => {
     (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
       ideaId: 'idea-1',
       mode: 'interactive',
-      currentStep: 1, // Design Brand Identity step
+      currentStep: 1, // Write Hero step
+      currentSubstep: 0,
       steps: [
-        { name: 'Extract Ingredients', status: 'complete' },
-        { name: 'Design Brand Identity', status: 'pending' },
+        { name: 'Extract & Validate Ingredients', status: 'complete' },
+        { name: 'Write Hero', status: 'pending' },
       ],
       artifacts: { ingredients: 'extracted ingredients' },
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -648,7 +669,7 @@ describe('Integration: full chat flow', () => {
       { role: 'assistant', content: 'Ingredients done.', timestamp: '2026-02-17T00:01:00Z' },
     ]);
 
-    mockStreamResponse('Moving to brand identity design...');
+    mockStreamResponse('Moving to hero section...');
 
     const response = await POST(
       makeRequest({ type: 'continue', step: 1 }),
@@ -656,7 +677,7 @@ describe('Integration: full chat flow', () => {
     );
     const text = await readStream(response);
 
-    expect(text).toContain('brand identity');
+    expect(text).toContain('hero');
 
     // The continue message was added to history
     const saveCalls = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls;
@@ -675,8 +696,10 @@ describe('Integration: full chat flow', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -714,8 +737,10 @@ describe('Integration: full chat flow', () => {
       ideaId: 'idea-1',
       mode: 'autonomous',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -749,8 +774,10 @@ describe('Integration: full chat flow', () => {
       ideaId: 'idea-1',
       mode: 'interactive',
       currentStep: 0,
-      steps: [{ name: 'Extract Ingredients', status: 'active' }],
+      currentSubstep: 0,
+      steps: [{ name: 'Extract & Validate Ingredients', status: 'active' }],
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -778,7 +805,7 @@ describe('Integration: full chat flow', () => {
   });
 });
 
-import { advanceSessionStep, determineStreamEndSignal } from '../route';
+import { advanceSessionStep, determineStreamEndSignal, trackAdvisorCall, checkAdvisorRequirements, advanceSubstep } from '../route';
 import { WEBSITE_BUILD_STEPS } from '@/types';
 
 function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
@@ -786,8 +813,10 @@ function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
     ideaId: 'idea-1',
     mode: 'interactive',
     currentStep: 0,
+    currentSubstep: 0,
     steps: WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const })),
     artifacts: {},
+    advisorCallsThisRound: [],
     createdAt: '2026-02-17T00:00:00Z',
     updatedAt: '2026-02-17T00:00:00Z',
     ...overrides,
@@ -796,17 +825,10 @@ function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
 
 describe('determineStreamEndSignal', () => {
   it('returns checkpoint for interactive mode at checkpoint step', () => {
-    const session = makeBuildSession({ currentStep: 0 }); // step 0 IS a checkpoint
+    const session = makeBuildSession({ currentStep: 0 });
     const signal = determineStreamEndSignal(session);
     expect(signal.action).toBe('checkpoint');
     expect(signal).toHaveProperty('step', 0);
-  });
-
-  it('returns continue for interactive mode at non-checkpoint step', () => {
-    const session = makeBuildSession({ currentStep: 1 }); // step 1 is NOT a checkpoint
-    const signal = determineStreamEndSignal(session);
-    expect(signal.action).toBe('continue');
-    expect(signal).toHaveProperty('step', 1);
   });
 
   it('returns continue for autonomous mode even at checkpoint step', () => {
@@ -815,29 +837,47 @@ describe('determineStreamEndSignal', () => {
     expect(signal.action).toBe('continue');
   });
 
-  it('returns poll for deploy step (step 6)', () => {
-    const session = makeBuildSession({ currentStep: 6 });
+  it('returns poll for Build & Deploy step (step 4)', () => {
+    const session = makeBuildSession({ currentStep: 4 });
     const signal = determineStreamEndSignal(session);
     expect(signal.action).toBe('poll');
     expect(signal).toHaveProperty('pollUrl', '/api/painted-door/idea-1');
   });
 
   it('returns complete when last step is complete', () => {
-    const session = makeBuildSession({ currentStep: 7 });
-    session.steps[7].status = 'complete';
+    const session = makeBuildSession({ currentStep: 5 });
+    session.steps[5].status = 'complete';
     session.artifacts.siteUrl = 'https://example.vercel.app';
+    session.artifacts.repoUrl = 'https://github.com/user/repo';
     const signal = determineStreamEndSignal(session);
     expect(signal.action).toBe('complete');
     if (signal.action === 'complete') {
       expect(signal.result.siteUrl).toBe('https://example.vercel.app');
+      expect(signal.result.repoUrl).toBe('https://github.com/user/repo');
     }
   });
 
   it('does not return complete when last step is NOT complete', () => {
-    const session = makeBuildSession({ currentStep: 7 });
-    // step 7 status is still 'pending'
+    const session = makeBuildSession({ currentStep: 5 });
     const signal = determineStreamEndSignal(session);
     expect(signal.action).not.toBe('complete');
+  });
+
+  it('returns checkpoint with substep info for step 2', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 2 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('checkpoint');
+    if (signal.action === 'checkpoint') {
+      expect(signal.substep).toBe(2);
+      expect(signal.prompt).toContain('2c');
+      expect(signal.prompt).toContain('How It Works');
+    }
+  });
+
+  it('returns continue for autonomous mode at checkpoint step', () => {
+    const session = makeBuildSession({ mode: 'autonomous', currentStep: 3 });
+    const signal = determineStreamEndSignal(session);
+    expect(signal.action).toBe('continue');
   });
 });
 
@@ -859,8 +899,10 @@ describe('step advancement via tool calls', () => {
       ideaId: 'idea-1',
       mode: 'interactive' as const,
       currentStep,
+      currentSubstep: 0,
       steps,
       artifacts: {},
+      advisorCallsThisRound: [] as string[],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     };
@@ -870,14 +912,14 @@ describe('step advancement via tool calls', () => {
     return { session, saveBuildSession: saveBuildSession as ReturnType<typeof vi.fn> };
   }
 
-  it('advances session when design_brand tool is called', async () => {
-    const { saveBuildSession } = await setupForToolTest(0);
+  it('advances session when assemble_site_files tool is called', async () => {
+    const { saveBuildSession } = await setupForToolTest(3);
 
-    // Mock tool that returns design_brand
+    // Mock tool that returns assemble_site_files
     const { createWebsiteTools } = await import('@/lib/agent-tools/website');
     (createWebsiteTools as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
-        name: 'design_brand',
+        name: 'assemble_site_files',
         description: 'mock',
         input_schema: { type: 'object', properties: {}, required: [] },
         execute: vi.fn().mockResolvedValue({ success: true }),
@@ -890,14 +932,14 @@ describe('step advancement via tool calls', () => {
       callCount++;
       if (callCount === 1) {
         const events = (async function* () {
-          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Designing brand...' } };
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Assembling site...' } };
         })();
         return {
           [Symbol.asyncIterator]: () => events,
           finalMessage: () => Promise.resolve({
             content: [
-              { type: 'text', text: 'Designing brand...' },
-              { type: 'tool_use', id: 'tool-1', name: 'design_brand', input: {} },
+              { type: 'text', text: 'Assembling site...' },
+              { type: 'tool_use', id: 'tool-1', name: 'assemble_site_files', input: {} },
             ],
           }),
         };
@@ -915,41 +957,29 @@ describe('step advancement via tool calls', () => {
 
     const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
       method: 'POST',
-      body: JSON.stringify({ type: 'user', content: 'Start' }),
+      body: JSON.stringify({ type: 'user', content: 'Start building' }),
       headers: { 'Content-Type': 'application/json' },
     });
 
     const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
     await readStream(response);
 
-    // Session should have been saved with currentStep = 1 (design_brand advances past step 0)
+    // Session should have been saved with currentStep = 4 (assemble_site_files -> Build & Deploy)
     const savedCalls = saveBuildSession.mock.calls;
     const lastSaved = savedCalls[savedCalls.length - 1][1];
-    expect(lastSaved.currentStep).toBe(1);
-    expect(lastSaved.steps[0].status).toBe('complete');
-    expect(lastSaved.steps[1].status).toBe('complete');
-    expect(lastSaved.steps[2].status).toBe('active');
+    expect(lastSaved.currentStep).toBe(4);
+    for (let i = 0; i <= 4; i++) {
+      expect(lastSaved.steps[i].status).toBe('complete');
+    }
+    expect(lastSaved.steps[5].status).toBe('active');
   });
 });
 
 describe('advanceSessionStep', () => {
   it('advances step when tool maps to higher step', () => {
     const session = makeBuildSession({ currentStep: 0 });
-    advanceSessionStep(session, ['design_brand']);
-    expect(session.currentStep).toBe(1);
-    expect(session.steps[0].status).toBe('complete');
-    expect(session.steps[1].status).toBe('complete');
-    expect(session.steps[2].status).toBe('active');
-  });
-
-  it('skips intermediate steps when tool maps to much higher step', () => {
-    const session = makeBuildSession({ currentStep: 0 });
     advanceSessionStep(session, ['assemble_site_files']);
-    expect(session.currentStep).toBe(3);
-    for (let i = 0; i <= 3; i++) {
-      expect(session.steps[i].status).toBe('complete');
-    }
-    expect(session.steps[4].status).toBe('active');
+    expect(session.currentStep).toBe(4); // Build & Deploy
   });
 
   it('does not move backward', () => {
@@ -960,39 +990,31 @@ describe('advanceSessionStep', () => {
 
   it('ignores unknown tools', () => {
     const session = makeBuildSession({ currentStep: 0 });
-    advanceSessionStep(session, ['update_file', 'some_unknown_tool']);
-    expect(session.currentStep).toBe(0); // unchanged
+    advanceSessionStep(session, ['unknown_tool']);
+    expect(session.currentStep).toBe(0);
   });
 
-  it('uses highest step when multiple tools called in one round', () => {
-    const session = makeBuildSession({ currentStep: 0 });
-    advanceSessionStep(session, ['get_idea_context', 'design_brand']);
-    expect(session.currentStep).toBe(1); // design_brand is higher
-  });
-
-  it('consult_advisor only advances when currentStep >= 4', () => {
-    const session = makeBuildSession({ currentStep: 2 });
+  it('does not advance on consult_advisor (tracked separately)', () => {
+    const session = makeBuildSession({ currentStep: 1 });
     advanceSessionStep(session, ['consult_advisor']);
-    expect(session.currentStep).toBe(2); // unchanged — too early
-
-    const session2 = makeBuildSession({ currentStep: 4 });
-    advanceSessionStep(session2, ['consult_advisor']);
-    expect(session2.currentStep).toBe(5); // advances past Pressure Test
+    expect(session.currentStep).toBe(1); // unchanged
   });
 
-  it('marks last step active when advancing to second-to-last', () => {
-    const session = makeBuildSession({ currentStep: 5 });
-    advanceSessionStep(session, ['push_files']);
-    expect(session.currentStep).toBe(6);
-    expect(session.steps[7].status).toBe('active');
+  it('marks intermediate steps complete when jumping', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    advanceSessionStep(session, ['create_repo']);
+    expect(session.currentStep).toBe(4);
+    for (let i = 0; i <= 4; i++) {
+      expect(session.steps[i].status).toBe('complete');
+    }
+    expect(session.steps[5].status).toBe('active');
   });
 
   it('does not set active beyond steps array bounds', () => {
-    const session = makeBuildSession({ currentStep: 6 });
+    const session = makeBuildSession({ currentStep: 4 });
     advanceSessionStep(session, ['finalize_site']);
-    expect(session.currentStep).toBe(7);
-    expect(session.steps[7].status).toBe('complete');
-    // No step 8 to mark active — should not throw
+    expect(session.currentStep).toBe(5);
+    expect(session.steps[5].status).toBe('complete');
   });
 });
 
@@ -1011,9 +1033,11 @@ describe('advisor marker injection', () => {
     (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
       ideaId: 'idea-1',
       mode: 'autonomous',
-      currentStep: 4, // Past Pressure Test so consult_advisor can advance
+      currentStep: 1, // Write Hero - a copy-producing stage that uses advisors
+      currentSubstep: 0,
       steps,
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: '2026-02-17T00:00:00Z',
       updatedAt: '2026-02-17T00:00:00Z',
     });
@@ -1070,5 +1094,125 @@ describe('advisor marker injection', () => {
     expect(text).toContain('Shirin Oreizy');
     expect(text).toContain('reduce cognitive load');
     expect(text).toContain('<<<ADVISOR_END>>>');
+  });
+});
+
+describe('trackAdvisorCall', () => {
+  it('adds advisor ID to tracking list', () => {
+    const session = makeBuildSession();
+    trackAdvisorCall(session, 'shirin-oreizy');
+    expect(session.advisorCallsThisRound).toContain('shirin-oreizy');
+  });
+
+  it('does not duplicate advisor IDs', () => {
+    const session = makeBuildSession();
+    trackAdvisorCall(session, 'copywriter');
+    trackAdvisorCall(session, 'copywriter');
+    expect(session.advisorCallsThisRound).toHaveLength(1);
+  });
+
+  it('initializes tracking array if missing', () => {
+    const session = makeBuildSession();
+    session.advisorCallsThisRound = undefined;
+    trackAdvisorCall(session, 'april-dunford');
+    expect(session.advisorCallsThisRound).toEqual(['april-dunford']);
+  });
+});
+
+describe('checkAdvisorRequirements', () => {
+  it('returns null when all required advisors are called', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    session.advisorCallsThisRound = ['april-dunford', 'copywriter'];
+    expect(checkAdvisorRequirements(session)).toBeNull();
+  });
+
+  it('returns message listing missing advisors', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    session.advisorCallsThisRound = ['april-dunford']; // missing copywriter
+    const result = checkAdvisorRequirements(session);
+    expect(result).toContain('copywriter');
+  });
+
+  it('returns null for non-copy-producing stages', () => {
+    const session = makeBuildSession({ currentStep: 4 }); // Build & Deploy
+    expect(checkAdvisorRequirements(session)).toBeNull();
+  });
+
+  it('uses substep key for step 2', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 1 }); // 2b: Features
+    session.advisorCallsThisRound = ['copywriter', 'oli-gardner'];
+    expect(checkAdvisorRequirements(session)).toBeNull();
+  });
+
+  it('detects missing advisors for substep 2d', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 3 }); // 2d: Target Audience
+    session.advisorCallsThisRound = ['shirin-oreizy']; // missing april-dunford
+    const result = checkAdvisorRequirements(session);
+    expect(result).toContain('april-dunford');
+  });
+});
+
+describe('advanceSubstep', () => {
+  it('increments substep within step 2', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 0 });
+    const completed = advanceSubstep(session);
+    expect(completed).toBe(false);
+    expect(session.currentSubstep).toBe(1);
+  });
+
+  it('resets advisor tracking on substep advance', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 0 });
+    session.advisorCallsThisRound = ['shirin-oreizy', 'copywriter'];
+    advanceSubstep(session);
+    expect(session.advisorCallsThisRound).toEqual([]);
+  });
+
+  it('completes step 2 when all 5 substeps are done', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 4 });
+    session.steps[2].status = 'active';
+    const completed = advanceSubstep(session);
+    expect(completed).toBe(true);
+    expect(session.currentStep).toBe(3);
+    expect(session.steps[2].status).toBe('complete');
+    expect(session.steps[3].status).toBe('active');
+  });
+
+  it('does nothing for non-step-2 stages', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    const completed = advanceSubstep(session);
+    expect(completed).toBe(false);
+  });
+});
+
+describe('out-of-order substep handling', () => {
+  it('ignores substep continue signals when not at step 2', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    const result = advanceSubstep(session);
+    expect(result).toBe(false);
+    expect(session.currentStep).toBe(1); // unchanged
+  });
+});
+
+describe('advisor enforcement edge cases', () => {
+  it('enforcement retry counter resets between stages', () => {
+    const session = makeBuildSession({ currentStep: 0 });
+    session.advisorCallsThisRound = [];
+    const check1 = checkAdvisorRequirements(session);
+    expect(check1).not.toBeNull(); // missing advisors
+
+    // Simulate advancing to next stage
+    session.currentStep = 1;
+    session.advisorCallsThisRound = [];
+    const check2 = checkAdvisorRequirements(session);
+    expect(check2).not.toBeNull(); // missing advisors for new stage
+    expect(check2).toContain('shirin-oreizy'); // stage 1 requires shirin
+  });
+
+  it('returns null for stages without advisor requirements (step 4, 5)', () => {
+    const session4 = makeBuildSession({ currentStep: 4 });
+    expect(checkAdvisorRequirements(session4)).toBeNull();
+
+    const session5 = makeBuildSession({ currentStep: 5 });
+    expect(checkAdvisorRequirements(session5)).toBeNull();
   });
 });
