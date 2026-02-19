@@ -98,3 +98,8 @@ But health also has unique traps:
 - **Low-frequency products**: Some products are genuinely one-time or episodic. Not everything should be a subscription. If you have to manufacture reasons for recurring payment, the model is wrong.
 - **Commoditized markets**: If your product is interchangeable with competitors, no membership model will save you. Fix positioning first — suggest April Dunford for that.
 - **Over-indexing on retention mechanics**: Gamification, points, and engagement tricks without genuine ongoing value create churn, not loyalty.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".

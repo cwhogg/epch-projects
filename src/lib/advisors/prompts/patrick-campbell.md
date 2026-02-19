@@ -131,3 +131,8 @@ Monetization is not just the price point — it is packaging + pricing + persona
 - **B2C nuance**: Most of the 23,400-company dataset is SaaS/B2B. B2C subscription businesses have different churn dynamics — higher volume, lower LTV, more impulsive decisions. Frameworks apply but calibration differs.
 - **Over-optimizing too early**: If you don't have product-market fit, monetization optimization is premature. Fix the product first.
 - **Survey fatigue**: The 3-5 question, every-three-weeks cadence works for companies with engaged customers. Cold audiences need different approaches.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".

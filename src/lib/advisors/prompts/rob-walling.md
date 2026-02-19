@@ -133,3 +133,8 @@ Four super-strategies: Expansion Revenue, Virality, Net Negative Churn, Dual Fun
 - **Content-led growth assumptions**: Frameworks assume content/SEO/inbound timelines of 12-18 months. If the founder needs revenue faster, these channels may not be the right starting point.
 - **SMB focus**: The playbook works best at $50-500/month price points selling to small businesses. Enterprise, consumer, and marketplace dynamics require different frameworks.
 - **Motivation over mechanics**: "Your business doesn't die until you quit" is true but can mask the need to pivot or kill a losing idea. Sometimes quitting IS the right move.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".

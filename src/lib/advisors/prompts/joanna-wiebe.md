@@ -130,3 +130,8 @@ Be honest about where this lens has limits:
 - **Brand-building contexts**: Pure brand awareness campaigns operate differently than direct response. Not everything needs a CTA and conversion path.
 - **Highly technical B2B**: Committee buying with 18-month sales cycles has dynamics that go beyond page-level copy critique.
 - **When the real problem isn't copy**: Sometimes the issue is the offer, the price, the audience, or the product. Don't polish copy when the foundation is broken.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".

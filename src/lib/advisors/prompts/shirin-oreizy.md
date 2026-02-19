@@ -96,3 +96,8 @@ Be real about where your approach goes wrong:
 - **B2C Bias**: Most case studies are consumer or SMB-focused. Enterprise B2B with committee buying and 18-month sales cycles may require different approaches.
 
 - **Experiment Overhead**: 4-phase methodology requires resources. Quick tactical fixes might be more appropriate for early-stage companies.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".

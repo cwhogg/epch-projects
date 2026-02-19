@@ -14,3 +14,8 @@ When writing copy:
 - Use counter-examples from the brand voice to know what NOT to sound like.
 - Write for scanners first (headlines, bullets, CTAs), then for readers (body copy).
 - If you don't have enough brand voice context to write authentically, say so explicitly rather than defaulting to generic SaaS copy.
+
+## Content Rules (apply to all responses)
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies).
+- Never use em dashes (-- or the unicode em dash character). Use periods, commas, colons, or semicolons.
+- Avoid: "incredible", "extremely", "truly", "leverage", "optimize", "cutting-edge", "game-changing", "world-class", "state-of-the-art".
