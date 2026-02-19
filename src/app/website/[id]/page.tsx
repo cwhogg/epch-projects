@@ -18,6 +18,7 @@ export default function PaintedDoorProgressPage() {
   const [loading, setLoading] = useState(true);
   const [triggered, setTriggered] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testDeployStatus, setTestDeployStatus] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pollProgress = useCallback(async () => {
@@ -251,6 +252,44 @@ export default function PaintedDoorProgressPage() {
           >
             {progress?.status === 'error' ? 'Rebuild Site' : 'Build Site'}
           </Link>
+        </div>
+      )}
+
+      {/* Temporary: Test Deploy button to verify pipeline without LLM */}
+      {((!progress && !triggered) || progress?.status === 'error') && (
+        <div className="card-static p-5 animate-slide-up stagger-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                DEBUG: Push a minimal test page to verify the deploy pipeline works end-to-end.
+              </p>
+              {testDeployStatus && (
+                <p className="text-xs mt-1 font-mono" style={{ color: testDeployStatus.startsWith('Error') ? 'var(--color-danger)' : 'var(--accent-coral)' }}>
+                  {testDeployStatus}
+                </p>
+              )}
+            </div>
+            <button
+              className="btn btn-ghost text-xs"
+              style={{ borderColor: 'var(--text-muted)', color: 'var(--text-muted)' }}
+              onClick={async () => {
+                setTestDeployStatus('Pushing test page...');
+                try {
+                  const res = await fetch(`/api/painted-door/${analysisId}/test-deploy`, { method: 'POST' });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setTestDeployStatus(`Deployed! Check ${data.expectedUrl} in ~60s. Steps: ${data.steps.join(' → ')}`);
+                  } else {
+                    setTestDeployStatus(`Error: ${data.error}. Steps: ${data.steps?.join(' → ') || 'none'}`);
+                  }
+                } catch (err) {
+                  setTestDeployStatus(`Error: ${err instanceof Error ? err.message : 'unknown'}`);
+                }
+              }}
+            >
+              Test Deploy
+            </button>
+          </div>
         </div>
       )}
 
