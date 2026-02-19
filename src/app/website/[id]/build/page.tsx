@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
 import { WEBSITE_BUILD_STEPS, SUBSTAGE_LABELS } from '@/types';
@@ -31,7 +31,9 @@ function placeholderForState(state: ClientState): string {
 export default function WebsiteBuilderPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const ideaId = params.id as string;
+  const freshStart = searchParams.get('fresh') === '1';
 
   const [clientState, setClientState] = useState<ClientState>('loading');
   const [ideaName, setIdeaName] = useState('');
@@ -97,28 +99,22 @@ export default function WebsiteBuilderPage() {
         // Non-critical
       }
 
-      // Check for existing build session
+      // Fresh start: clear all stale state and go to mode selection
+      if (freshStart) {
+        await fetch(`/api/painted-door/${ideaId}/reset`, { method: 'POST' });
+        // Strip ?fresh=1 from URL so refreshing doesn't re-reset
+        router.replace(`/website/${ideaId}/build`, { scroll: false });
+        setClientState('mode_select');
+        return;
+      }
+
+      // Check for existing build session to resume
       try {
         const res = await fetch(`/api/painted-door/${ideaId}`);
         if (res.ok) {
           const data = await res.json();
 
-          // Auto-reset stale/error/complete sessions so user can rebuild
-          if (data.status === 'error' || data.status === 'complete') {
-            await fetch(`/api/painted-door/${ideaId}/reset`, { method: 'POST' });
-            setClientState('mode_select');
-            return;
-          }
-
           if (data.buildSession) {
-            // Check if session has any error steps — auto-reset
-            const hasError = data.buildSession.steps.some((s: BuildStep) => s.status === 'error');
-            if (hasError) {
-              await fetch(`/api/painted-door/${ideaId}/reset`, { method: 'POST' });
-              setClientState('mode_select');
-              return;
-            }
-
             setMode(data.buildSession.mode);
             // Reconcile step statuses: force stale active states to complete
             const loadedSteps = data.buildSession.steps;

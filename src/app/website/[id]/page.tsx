@@ -201,7 +201,7 @@ export default function PaintedDoorProgressPage() {
                 See Site
               </a>
               <Link
-                href={`/website/${analysisId}/build`}
+                href={`/website/${analysisId}/build?fresh=1`}
                 className="btn btn-ghost text-sm"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -247,7 +247,7 @@ export default function PaintedDoorProgressPage() {
               : 'Launch the interactive site builder to create your landing page with AI-powered guidance.'}
           </p>
           <Link
-            href={`/website/${analysisId}/build`}
+            href={`/website/${analysisId}/build?fresh=1`}
             className="btn btn-primary"
           >
             {progress?.status === 'error' ? 'Rebuild Site' : 'Build Site'}
