@@ -2,7 +2,7 @@ import type { ToolDefinition, BrandIdentity, PaintedDoorSite, ProductIdea, Evalu
 import { ContentContext } from '@/lib/content-prompts';
 import { buildContentContext, generateContentCalendar } from '@/lib/content-agent';
 import { detectVertical } from '@/lib/seo-knowledge';
-import { getIdeaFromDb } from '@/lib/db';
+import { getIdeaFromDb, getAllFoundationDocs } from '@/lib/db';
 import { buildBrandIdentityPrompt } from '@/lib/painted-door-prompts';
 import { assembleAllFiles, ApprovedCopy } from '@/lib/painted-door-templates';
 import {
@@ -357,7 +357,14 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         if (!idea || !ctx) return { error: 'Call get_idea_context first' };
 
         const visualOnly = (input.visualOnly as boolean) || false;
-        const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly);
+
+        // Load Foundation documents so brand identity reflects design principles
+        const foundationDocsRecord = await getAllFoundationDocs(ideaId);
+        const foundationDocs = Object.values(foundationDocsRecord)
+          .filter((d): d is NonNullable<typeof d> => d != null)
+          .map((d) => ({ type: d.type, content: d.content }));
+
+        const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly, foundationDocs.length > 0 ? foundationDocs : undefined);
         const response = await getAnthropic().messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 2048,

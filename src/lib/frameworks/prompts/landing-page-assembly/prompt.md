@@ -12,6 +12,11 @@ Output: Extracted ingredients with advisor validation. User approves. LOCKED.
 
 Draft headline, subheader, and CTA. Consult Shirin Oreizy (behavioral science) and the Copywriter (brand voice) independently. Synthesize and present recommendation with top 2-3 alternatives.
 
+**Word count constraints (non-negotiable):**
+- **Headline: 3-8 words MAX.** Must be processable as one cognitive chunk (working memory: 5-9 chunks). This is for Homer, not Spock. If the primary keyword makes it too long, restructure the headline.
+- **Subheadline: max 30 words (1-2 sentences).** This is where Spock gets his turn. Expand on the headline with specifics, but stay scannable within the 5-second consideration window.
+- **CTA: 2-5 words.** Single action phrase that continues the hero's narrative. One cognitive chunk.
+
 Output: Locked headline, subheader, CTA. Never revisited.
 
 ## Stage 3: Write Page Sections (5 substages, each a checkpoint)

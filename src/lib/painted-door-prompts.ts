@@ -63,8 +63,14 @@ export function buildBrandIdentityPrompt(
 
   const foundationSection = foundationDocs && foundationDocs.length > 0
     ? `\n\n## FOUNDATION DOCUMENTS (Source of Truth)
-These strategic documents have already been finalized. Derive the brand identity from them.
+These strategic documents have already been finalized. You MUST derive the brand identity from them.
 Do not contradict any decisions made in these documents.
+
+CRITICAL — Design-Principles Override:
+- If a design-principles document exists, extract its color palette, typography, and visual direction. Use those exact values (or close derivatives) for the colors and typography fields.
+- If design-principles specifies a light theme, use a light background. If dark, use dark. Do NOT default to dark.
+- If brand-voice exists, the voice object must match its tone and personality.
+- If positioning exists, derive the tagline, heroHeadline, and value props from its positioning framework.
 
 ${foundationDocs.map((d) => `### ${d.type}\n${d.content}`).join('\n\n')}\n`
     : '';
@@ -97,11 +103,11 @@ ${visualOnly ? '' : `- Value props must be derived from the actual problem/solut
 
 SEO REQUIREMENTS:
 - seoDescription: Must naturally include the #1 target keyword AND one secondary keyword. Write for click-through rate — compelling, specific, 150-160 chars.
-- heroHeadline: Must contain the primary target keyword. It should read naturally to humans while being optimized for search.
-- heroSubheadline: Incorporate 1-2 secondary keywords naturally.
+- heroHeadline: 3-8 words MAX. Must contain the primary target keyword while staying instantly scannable. Brevity is non-negotiable — if the keyword makes it too long, restructure.
+- heroSubheadline: 1-2 sentences, max 30 words. Incorporate 1-2 secondary keywords naturally.
 - tagline: Should reinforce the core search intent users have.
-- Value prop titles: Each should target a different secondary keyword or People Also Ask question where possible.
-- ctaText: Use action-oriented language matching the dominant search intent (transactional → "Get Started Free", informational → "Learn How It Works").`}
+- Value prop titles: 2-6 words each. Each should target a different secondary keyword or People Also Ask question where possible.
+- ctaText: 2-5 words. Action-oriented language matching the dominant search intent (transactional → "Get Started Free", informational → "Learn How It Works").`}
 
 Respond with ONLY valid JSON matching this exact schema:
 ${visualOnly ? `{
@@ -116,7 +122,7 @@ ${visualOnly ? `{
   "colors": {
     "primary": "#hex",
     "primaryLight": "#hex (lighter variant of primary)",
-    "background": "#hex (page background, dark theme preferred)",
+    "background": "#hex (page background — derive from Foundation design-principles if available)",
     "backgroundElevated": "#hex (card/elevated surface background)",
     "textPrimary": "#hex (main text color)",
     "textSecondary": "#hex (secondary text)",
@@ -144,7 +150,7 @@ Do NOT include landingPage, seoDescription, or any copy fields — those are gen
   "colors": {
     "primary": "#hex",
     "primaryLight": "#hex (lighter variant of primary)",
-    "background": "#hex (page background, dark theme preferred)",
+    "background": "#hex (page background — derive from Foundation design-principles if available)",
     "backgroundElevated": "#hex (card/elevated surface background)",
     "textPrimary": "#hex (main text color)",
     "textSecondary": "#hex (secondary text)",
@@ -158,13 +164,13 @@ Do NOT include landingPage, seoDescription, or any copy fields — those are gen
     "monoFont": "string (Google Font name)"
   },
   "landingPage": {
-    "heroHeadline": "string (compelling, keyword-rich headline)",
-    "heroSubheadline": "string (1-2 sentences expanding on the headline)",
-    "ctaText": "string (button text, e.g., 'Get Early Access')",
+    "heroHeadline": "string (3-8 words MAX. Must be instantly scannable — one cognitive chunk. Include primary keyword naturally.)",
+    "heroSubheadline": "string (1-2 sentences, max 30 words. Expands on the headline with specifics.)",
+    "ctaText": "string (2-5 words. Action phrase that continues the hero narrative, e.g., 'Get Early Access')",
     "valueProps": [
-      { "title": "string (short title)", "description": "string (1-2 sentences)" },
-      { "title": "string", "description": "string" },
-      { "title": "string", "description": "string" }
+      { "title": "string (2-6 words, scannable label)", "description": "string (1-2 sentences)" },
+      { "title": "string (2-6 words)", "description": "string" },
+      { "title": "string (2-6 words)", "description": "string" }
     ],
     "faqs": [
       { "question": "string (derived from People Also Ask data)", "answer": "string (2-3 sentences)" }

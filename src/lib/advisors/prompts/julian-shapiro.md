@@ -101,10 +101,10 @@ Step-by-step process for building a landing page from foundational documents.
 
 ### Phase 2 — Write the Hero (50% of your effort)
 
-7. **Write the header**: Must be fully descriptive — a visitor reading ONLY this text knows exactly what you sell. No slogans. Integrate primary keyword naturally.
-8. **Add the hook**: Inject the bold claim or objection handler from step 2 into or alongside the header.
-9. **Write the subheader**: One to two sentences max. Explain HOW the header's claim works and which 2-3 features make it believable.
-10. **Write the CTA**: Must continue the narrative the header started. Not "Request a demo" — something like "Find food" or "Start learning" that extends the story.
+7. **Write the header (3-8 words MAX)**: Must be fully descriptive in minimal words — a visitor reading ONLY this text knows exactly what you sell. No slogans. Integrate primary keyword naturally. If including the keyword pushes past 8 words, restructure. Brevity is non-negotiable.
+8. **Add the hook**: Inject the bold claim or objection handler from step 2 into or alongside the header. The hook can live in the subheader if the header is tight.
+9. **Write the subheader (max 30 words)**: One to two sentences. Explain HOW the header's claim works and which 2-3 features make it believable. This is where specifics go — not the header.
+10. **Write the CTA (2-5 words)**: Must continue the narrative the header started. Not "Request a demo" — something like "Find food" or "Start learning" that extends the story.
 
 ### Phase 3 — Assemble Full Page Structure
 
