@@ -5,7 +5,7 @@ import type { EvalScenario, PromptResult } from './types';
 export function loadFixture(scenario: EvalScenario, key: string): unknown {
   const rel = scenario.fixtures[key];
   if (!rel) throw new Error(`Fixture "${key}" not found in scenario "${scenario.name}"`);
-  const full = join(process.cwd(), 'e2e', rel);
+  const full = join(process.cwd(), 'e2e', 'fixtures', rel);
   const raw = readFileSync(full, 'utf-8');
   return rel.endsWith('.txt') ? raw : JSON.parse(raw);
 }

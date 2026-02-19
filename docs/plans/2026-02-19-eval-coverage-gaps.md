@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Fix loadFixture path bug
+### ✅ Task 1: Fix loadFixture path bug
 
 The `loadFixture` function in `e2e/prompt-adapter.ts` resolves fixture paths to `e2e/<filename>`, but all fixture files live in `e2e/fixtures/`. This bug prevents any fixture-dependent scenario from running. No eval log exists (`e2e/eval-log.jsonl` is absent), confirming the runner has never successfully executed fixture-dependent scenarios.
 
