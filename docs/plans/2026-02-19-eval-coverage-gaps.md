@@ -208,7 +208,7 @@ git commit -m "feat: register 11 missing LLM surfaces in eval-config (KB-100)"
 
 ---
 
-### Task 3: Write failing test for website-chat prompt adapter surface
+### ✅ Task 3: Write failing test for website-chat prompt adapter surface
 
 **Files:**
 - Modify: `e2e/__tests__/prompt-adapter.test.ts` (add website-chat describe block)
