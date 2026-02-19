@@ -234,20 +234,22 @@ export default function PaintedDoorProgressPage() {
         </div>
       ) : null}
 
-      {/* Build Site button for not-started state */}
-      {!progress && !triggered && (
+      {/* Build Site button for not-started or failed state */}
+      {((!progress && !triggered) || progress?.status === 'error') && (
         <div className="card-static p-8 text-center animate-slide-up stagger-2">
           <h2 className="font-display text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-            Ready to Build
+            {progress?.status === 'error' ? 'Build Failed' : 'Ready to Build'}
           </h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-            Launch the interactive site builder to create your landing page with AI-powered guidance.
+            {progress?.status === 'error'
+              ? 'The previous build encountered an error. Click below to start a fresh build.'
+              : 'Launch the interactive site builder to create your landing page with AI-powered guidance.'}
           </p>
           <Link
             href={`/website/${analysisId}/build`}
             className="btn btn-primary"
           >
-            Build Site
+            {progress?.status === 'error' ? 'Rebuild Site' : 'Build Site'}
           </Link>
         </div>
       )}

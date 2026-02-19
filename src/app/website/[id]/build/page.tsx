@@ -102,7 +102,23 @@ export default function WebsiteBuilderPage() {
         const res = await fetch(`/api/painted-door/${ideaId}`);
         if (res.ok) {
           const data = await res.json();
+
+          // Auto-reset stale/error/complete sessions so user can rebuild
+          if (data.status === 'error' || data.status === 'complete') {
+            await fetch(`/api/painted-door/${ideaId}/reset`, { method: 'POST' });
+            setClientState('mode_select');
+            return;
+          }
+
           if (data.buildSession) {
+            // Check if session has any error steps — auto-reset
+            const hasError = data.buildSession.steps.some((s: BuildStep) => s.status === 'error');
+            if (hasError) {
+              await fetch(`/api/painted-door/${ideaId}/reset`, { method: 'POST' });
+              setClientState('mode_select');
+              return;
+            }
+
             setMode(data.buildSession.mode);
             // Reconcile step statuses: force stale active states to complete
             const loadedSteps = data.buildSession.steps;
