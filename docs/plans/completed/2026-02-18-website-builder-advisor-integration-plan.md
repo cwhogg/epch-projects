@@ -33,7 +33,7 @@ Tasks that modify the same files must execute in order. The dependency chain is:
 
 ---
 
-### Task 1: Create copy quality validation module
+### ✅ Task 1: Create copy quality validation module
 
 **Files:**
 - Create: `src/lib/copy-quality.ts`
@@ -245,7 +245,7 @@ git commit -m "feat: add copy quality validation module with AI slop blocklist"
 
 ---
 
-### Task 2: Add AdvisorStreamParser class for incremental bubble parsing
+### ✅ Task 2: Add AdvisorStreamParser class for incremental bubble parsing
 
 **Files:**
 - Modify: `src/lib/parse-advisor-segments.ts`
@@ -489,7 +489,7 @@ git commit -m "feat: add AdvisorStreamParser for incremental streaming bubble de
 
 ---
 
-### Task 3: Add visual-identity foundation doc type
+### ✅ Task 3: Add visual-identity foundation doc type
 
 **Files:**
 - Modify: `src/types/index.ts` (lines 357-372)
@@ -567,7 +567,7 @@ git commit -m "feat: add visual-identity foundation doc type"
 
 ---
 
-### Task 4: Replace 8-stage model with 6-stage types
+### ✅ Task 4: Replace 8-stage model with 6-stage types
 
 **Files:**
 - Modify: `src/types/index.ts` (lines 517-567)
@@ -689,7 +689,7 @@ Tests will break until backend route is updated in subsequent tasks."
 
 ---
 
-### Task 5: Rewrite landing-page-assembly framework prompt
+### ✅ Task 5: Rewrite landing-page-assembly framework prompt
 
 **Files:**
 - Modify: `src/lib/frameworks/prompts/landing-page-assembly/prompt.md`
@@ -788,7 +788,7 @@ git commit -m "feat: rewrite landing-page-assembly framework for 6-stage advisor
 
 ---
 
-### Task 6: Update advisor prompts with content quality rules
+### ✅ Task 6: Update advisor prompts with content quality rules
 
 **Files:**
 - Modify: all 14 files in `src/lib/advisors/prompts/*.md`
@@ -830,7 +830,7 @@ git commit -m "feat: add content quality rules to all 14 advisor prompts"
 
 ---
 
-### Task 7: Remove socialProofApproach and reduce advisor max_tokens
+### ✅ Task 7: Remove socialProofApproach and reduce advisor max_tokens
 
 **Files:**
 - Modify: `src/types/index.ts` (lines 186-193)
@@ -860,7 +860,7 @@ git commit -m "fix: remove socialProofApproach, reduce advisor max_tokens to 102
 
 ---
 
-### Task 8: Rewrite assembleSystemPrompt for 6-stage model
+### ✅ Task 8: Rewrite assembleSystemPrompt for 6-stage model
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts` (lines 23-110)
@@ -979,7 +979,7 @@ git commit -m "feat: rewrite assembleSystemPrompt for 6-stage model with mandato
 
 ---
 
-### Task 9: Rewrite step advancement and advisor enforcement
+### ✅ Task 9: Rewrite step advancement and advisor enforcement
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts` (lines 373-415, and continue signal handling at lines 165-175)
@@ -1191,7 +1191,7 @@ git commit -m "feat: rewrite step advancement with substep tracking and advisor 
 
 ---
 
-### Task 10: Rewrite determineStreamEndSignal for 6-stage model
+### ✅ Task 10: Rewrite determineStreamEndSignal for 6-stage model
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts` (lines 417-452)
@@ -1262,7 +1262,7 @@ git commit -m "feat: rewrite determineStreamEndSignal for 6-stage + substep mode
 
 ---
 
-### Task 11: Update all backend tests for 6-stage model
+### ✅ Task 11: Update all backend tests for 6-stage model
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/__tests__/route.test.ts`
@@ -1575,7 +1575,7 @@ git commit -m "test: update all backend tests for 6-stage model with advisor enf
 
 ---
 
-### Task 12: Update frontend for 6-stage model
+### ✅ Task 12: Update frontend for 6-stage model
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx`
@@ -1718,7 +1718,7 @@ git commit -m "feat: update frontend for 6-stage model with derived step and sub
 
 ---
 
-### Task 13: Integrate AdvisorStreamParser in frontend streaming
+### ✅ Task 13: Integrate AdvisorStreamParser in frontend streaming
 
 **Files:**
 - Modify: `src/app/website/[id]/build/page.tsx`
@@ -1780,7 +1780,7 @@ git commit -m "feat: integrate AdvisorStreamParser for incremental advisor bubbl
 
 ---
 
-### Task 14: Update architecture documentation
+### ✅ Task 14: Update architecture documentation
 
 **Files:**
 - Modify: `docs/architecture.md`
@@ -1809,7 +1809,7 @@ git commit -m "docs: update architecture for 6-stage website builder model"
 
 ---
 
-### Task 15: Full build and test verification
+### ✅ Task 15: Full build and test verification
 
 **Files:** None (verification only)
 

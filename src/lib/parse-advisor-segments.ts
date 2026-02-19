@@ -112,13 +112,65 @@ export class AdvisorStreamParser {
     this.buffer = '';
   }
 
+  /** Peek at in-progress content in the buffer (not yet emitted as a complete segment).
+   *  Returns the current streaming segment for real-time rendering. */
+  peekInProgress(): StreamSegment | null {
+    const buf = this.buffer;
+    if (!buf.trim()) return null;
+
+    const startIdx = buf.indexOf(ADVISOR_START);
+
+    if (startIdx < 0) {
+      // No advisor markers — all julian text
+      return { type: 'julian', content: buf };
+    }
+
+    // Julian text before the marker (should have been eagerly emitted,
+    // but handle edge case where it wasn't)
+    if (startIdx > 0) {
+      const before = buf.slice(0, startIdx);
+      if (before.trim()) {
+        return { type: 'julian', content: before };
+      }
+    }
+
+    // We're inside an advisor block (START found but no END)
+    const afterStart = buf.slice(startIdx + ADVISOR_START.length);
+    if (!afterStart.startsWith(':')) return null;
+
+    const firstNewline = afterStart.indexOf('\n', 1);
+    if (firstNewline < 0) return null; // JSON line not complete yet
+
+    try {
+      const meta = JSON.parse(afterStart.slice(1, firstNewline));
+      const content = afterStart.slice(firstNewline + 1);
+      return {
+        type: 'advisor',
+        content,
+        advisorId: meta.advisorId,
+        advisorName: meta.advisorName,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   private drainCompleteSegments(): void {
     while (true) {
       const startIdx = this.buffer.indexOf(ADVISOR_START);
       if (startIdx < 0) break;
 
       const endIdx = this.buffer.indexOf(ADVISOR_END, startIdx);
-      if (endIdx < 0) break; // Incomplete marker — wait for more data
+      if (endIdx < 0) {
+        // Eagerly emit julian text before an unclosed advisor block
+        // so it renders as a separate completed bubble during streaming
+        const beforeText = this.buffer.slice(0, startIdx).replace(/\n$/, '');
+        if (beforeText.trim()) {
+          this.emitJulian(beforeText);
+          this.buffer = this.buffer.slice(startIdx);
+        }
+        break; // Wait for end marker
+      }
 
       // Emit julian text before the advisor marker
       const beforeText = this.buffer.slice(0, startIdx).replace(/\n$/, '');

@@ -1,13 +1,51 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
 import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
-import { getBuildSession, getPaintedDoorProgress, getPaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite } from '@/lib/painted-door-db';
-import type { BuildSession } from '@/types';
+import { getBuildSession, getPaintedDoorProgress, getPaintedDoorSite, savePaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite, deleteBuildSession, deleteConversationHistory } from '@/lib/painted-door-db';
+import type { BuildSession, PaintedDoorSite } from '@/types';
 
 export const maxDuration = 300;
 
 function projectBuildSession(session: BuildSession) {
   return { mode: session.mode, currentStep: session.currentStep, steps: session.steps };
+}
+
+/** Actively check Vercel deployment status and update the site record if deployment completed. */
+async function checkAndUpdateDeployment(site: PaintedDoorSite): Promise<'complete' | 'error' | 'deploying'> {
+  const token = process.env.VERCEL_TOKEN;
+  if (!token || !site.vercelProjectId) return 'deploying';
+
+  try {
+    const res = await fetch(
+      `https://api.vercel.com/v6/deployments?projectId=${site.vercelProjectId}&limit=1`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' as RequestCache },
+    );
+    if (!res.ok) return 'deploying';
+
+    const data = await res.json();
+    const deployment = data.deployments?.[0];
+    if (!deployment) return 'deploying';
+
+    const state = deployment.state || deployment.readyState;
+
+    if (state === 'READY') {
+      site.siteUrl = `https://${deployment.url}`;
+      site.status = 'live';
+      site.deployedAt = new Date().toISOString();
+      await savePaintedDoorSite(site);
+      return 'complete';
+    }
+
+    if (state === 'ERROR' || state === 'CANCELED') {
+      site.status = 'failed';
+      await savePaintedDoorSite(site);
+      return 'error';
+    }
+
+    return 'deploying';
+  } catch {
+    return 'deploying';
+  }
 }
 
 // POST — trigger painted door site generation
@@ -91,8 +129,37 @@ export async function GET(
     const buildSession = await getBuildSession(id);
 
     if (!progress) {
-      // Check if a fully deployed site already exists (progress expired)
       const site = await getPaintedDoorSite(id);
+
+      // Site is actively deploying — check Vercel for completion
+      if (site && site.status === 'deploying' && site.vercelProjectId) {
+        const deployResult = await checkAndUpdateDeployment(site);
+        if (deployResult === 'complete') {
+          return NextResponse.json({
+            ideaId: id,
+            status: 'complete',
+            currentStep: 'Site deployed!',
+            steps: [],
+            result: site,
+            ...(buildSession && { buildSession: projectBuildSession(buildSession) }),
+          });
+        }
+        if (deployResult === 'error') {
+          return NextResponse.json({
+            ideaId: id,
+            status: 'error',
+            message: 'Deployment failed',
+            ...(buildSession && { buildSession: projectBuildSession(buildSession) }),
+          });
+        }
+        // Still deploying — return deploying status so frontend keeps polling
+        return NextResponse.json({
+          status: 'deploying',
+          ...(buildSession && { buildSession: projectBuildSession(buildSession) }),
+        });
+      }
+
+      // Fully deployed site already exists
       if (site && site.siteUrl && site.status === 'live') {
         return NextResponse.json({
           ideaId: id,
@@ -281,6 +348,8 @@ export async function DELETE(
 
   await deletePaintedDoorProgress(id);
   await deletePaintedDoorSite(id);
+  await deleteBuildSession(id);
+  await deleteConversationHistory(id);
 
   // Clean up publish target and email signups if we have a siteId
   if (siteId) {

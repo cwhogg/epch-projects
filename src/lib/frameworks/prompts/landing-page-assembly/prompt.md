@@ -1,57 +1,57 @@
 # Landing Page Assembly Framework (6 Stages)
 
-Build a high-converting landing page through structured advisor collaboration. Every copy-producing stage (0, 1, 2a-2e) follows the advisor collaboration protocol. Decisions lock at each stage and are never revisited.
+Build a high-converting landing page through structured advisor collaboration. Every copy-producing stage (1, 2, 3a-3e) follows the advisor collaboration protocol. Decisions lock at each stage and are never revisited.
 
-## Stage 0: Extract & Validate Ingredients (checkpoint)
+## Stage 1: Extract & Validate Ingredients (checkpoint)
 
 Pull value props, hooks, features, and brand voice constraints from foundation docs. Before presenting to the user, consult April Dunford (positioning accuracy) and the Copywriter (voice alignment). Optionally consult Shirin Oreizy (behavioral framing).
 
 Output: Extracted ingredients with advisor validation. User approves. LOCKED.
 
-## Stage 1: Write Hero (checkpoint)
+## Stage 2: Write Hero (checkpoint)
 
 Draft headline, subheader, and CTA. Consult Shirin Oreizy (behavioral science) and the Copywriter (brand voice) independently. Synthesize and present recommendation with top 2-3 alternatives.
 
 Output: Locked headline, subheader, CTA. Never revisited.
 
-## Stage 2: Write Page Sections (5 substages, each a checkpoint)
+## Stage 3: Write Page Sections (5 substages, each a checkpoint)
 
 Each substage follows the advisor collaboration protocol.
 
-### 2a: Problem Awareness
+### 3a: Problem Awareness
 Required advisors: Shirin Oreizy, Copywriter. Optional: Joanna Wiebe.
 
-### 2b: Features (3-6 blocks)
+### 3b: Features (3-6 blocks)
 Required advisors: Copywriter, Oli Gardner.
 
-### 2c: How It Works
+### 3c: How It Works
 Required advisors: Copywriter. Optional: Oli Gardner.
 
-### 2d: Target Audience
+### 3d: Target Audience
 Required advisors: Shirin Oreizy, April Dunford.
 
-### 2e: Objection Handling + Final CTA
+### 3e: Objection Handling + Final CTA
 Required advisors: Shirin Oreizy, Joanna Wiebe. Optional: Copywriter.
 
 Output: All page sections locked individually per substage.
 
-## Stage 3: Final Review (checkpoint)
+## Stage 4: Final Review (checkpoint)
 
 Concise coherence check across all locked sections. Only surface issues if serious (e.g., a feature section undermines the hero's promise). No more than 200 words. If something requires reopening a locked section, flag it with a clear reason.
 
 Output: Either "looks coherent, ready to build" or a specific concern.
 
-## Stage 4: Build & Deploy
+## Stage 5: Build & Deploy
 
 Generate code from locked copy + visual design tokens from foundation docs. Deploy to Vercel. No interactive checkpoints.
 
-## Stage 5: Verify
+## Stage 6: Verify
 
 Check live site, final polish.
 
 ## Advisor Collaboration Protocol
 
-Every copy-producing stage (0, 1, 2a-2e) follows this exact sequence:
+Every copy-producing stage (1, 2, 3a-3e) follows this exact sequence:
 
 1. **Draft.** Write initial take based on locked ingredients and prior locked sections. Draft is NOT shown to user yet.
 2. **Advisor consultation.** Call consult_advisor for each required advisor, passing your draft and asking for their independent take. Each advisor responds in their own message bubble.

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
 import { WEBSITE_BUILD_STEPS, SUBSTAGE_LABELS } from '@/types';
@@ -30,6 +30,7 @@ function placeholderForState(state: ClientState): string {
 
 export default function WebsiteBuilderPage() {
   const params = useParams();
+  const router = useRouter();
   const ideaId = params.id as string;
 
   const [clientState, setClientState] = useState<ClientState>('loading');
@@ -40,11 +41,20 @@ export default function WebsiteBuilderPage() {
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [streamingSegments, setStreamingSegments] = useState<ChatMessage[]>([]);
   const [steps, setSteps] = useState<BuildStep[]>(
     WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' }))
   );
   const [inputValue, setInputValue] = useState('');
   const [siteResult, setSiteResult] = useState<{ siteUrl: string; repoUrl: string } | null>(null);
+
+  // Combine permanent messages with streaming segments for display
+  const displayMessages = useMemo(() => {
+    if (streamingSegments.length > 0) {
+      return [...messages, ...streamingSegments];
+    }
+    return messages;
+  }, [messages, streamingSegments]);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -62,7 +72,7 @@ export default function WebsiteBuilderPage() {
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, clientState]);
+  }, [displayMessages, clientState]);
 
   // Cleanup poll on unmount
   useEffect(() => {
@@ -174,83 +184,89 @@ export default function WebsiteBuilderPage() {
         return;
       }
 
-      // Add a placeholder assistant message
-      const assistantMsg: ChatMessage = {
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      const chunks: string[] = [];
+      const allChunks: string[] = [];
+
+      // Use AdvisorStreamParser incrementally for real-time segment rendering
+      const completedSegments: StreamSegment[] = [];
+      const streamParser = new AdvisorStreamParser((seg) => completedSegments.push(seg));
+
+      // Show empty placeholder while waiting for first chunk
+      setStreamingSegments([{ role: 'assistant', content: '', timestamp: new Date().toISOString() }]);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        chunks.push(chunk);
-        const accumulated = chunks.join('');
+        allChunks.push(chunk);
+        streamParser.push(chunk);
 
-        // Update the last assistant message with accumulated text
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (last && last.role === 'assistant') {
-            updated[updated.length - 1] = { ...last, content: accumulated };
+        // Build current messages from completed segments + in-progress content
+        const inProgress = streamParser.peekInProgress();
+        const currentStreamMsgs: ChatMessage[] = completedSegments.map((seg) => ({
+          role: 'assistant' as const,
+          content: seg.content,
+          timestamp: new Date().toISOString(),
+          ...(seg.type === 'advisor' ? {
+            metadata: { advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName } },
+          } : {}),
+        }));
+
+        if (inProgress) {
+          // Strip signal text that may appear in the last chunk
+          const displayContent = inProgress.content.replace(/\n__SIGNAL__:.+$/, '');
+          if (displayContent.trim() || currentStreamMsgs.length === 0) {
+            currentStreamMsgs.push({
+              role: 'assistant' as const,
+              content: displayContent || '',
+              timestamp: new Date().toISOString(),
+              ...(inProgress.type === 'advisor' ? {
+                metadata: { advisorConsultation: { advisorId: inProgress.advisorId, advisorName: inProgress.advisorName } },
+              } : {}),
+            });
           }
-          return updated;
-        });
+        } else if (currentStreamMsgs.length === 0) {
+          // No content yet — show loading placeholder
+          currentStreamMsgs.push({ role: 'assistant', content: '', timestamp: new Date().toISOString() });
+        }
+
+        setStreamingSegments(currentStreamMsgs);
       }
 
-      const fullText = chunks.join('');
-
-      // Check for signal at the end of the stream
+      // Stream complete — do final parse with copy quality validation
+      const fullText = allChunks.join('');
       const signalMatch = fullText.match(/\n__SIGNAL__:(.+)$/);
+
       if (signalMatch) {
         const cleanText = fullText.replace(/\n__SIGNAL__:.+$/, '');
 
-        // Use AdvisorStreamParser for incremental segment detection with copy quality validation
-        const segments: StreamSegment[] = [];
-        const parser = new AdvisorStreamParser((seg) => {
+        const finalSegments: StreamSegment[] = [];
+        const finalParser = new AdvisorStreamParser((seg) => {
           const flags = validateCopyQuality(seg.content);
           if (flags.length > 0) {
             console.warn(`Copy quality flags in ${seg.type} segment:`, flags.map(f => f.category));
           }
-          segments.push(seg);
+          finalSegments.push(seg);
         });
-        parser.push(cleanText);
-        parser.flush();
+        finalParser.push(cleanText);
+        finalParser.flush();
 
-        if (segments.length > 1) {
-          // Replace the single assistant message with multiple messages
-          setMessages((prev) => {
-            const withoutLast = prev.slice(0, -1); // remove placeholder
-            const newMessages = segments.map((seg) => ({
+        // Move streaming segments to permanent messages
+        const finalMessages = finalSegments.length > 0
+          ? finalSegments.map((seg) => ({
               role: 'assistant' as const,
               content: seg.content,
               timestamp: new Date().toISOString(),
               ...(seg.type === 'advisor' ? {
-                metadata: {
-                  advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName },
-                },
+                metadata: { advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName } },
               } : {}),
-            }));
-            return [...withoutLast, ...newMessages];
-          });
-        } else {
-          // No advisor markers — just set clean text
-          setMessages((prev) => {
-            const updated = [...prev];
-            const last = updated[updated.length - 1];
-            if (last && last.role === 'assistant') {
-              updated[updated.length - 1] = { ...last, content: cleanText };
-            }
-            return updated;
-          });
-        }
+            }))
+          : [{ role: 'assistant' as const, content: cleanText, timestamp: new Date().toISOString() }];
+
+        setStreamingSegments([]);
+        setMessages((prev) => [...prev, ...finalMessages]);
 
         try {
           const signal: StreamEndSignal = JSON.parse(signalMatch[1]);
@@ -259,9 +275,13 @@ export default function WebsiteBuilderPage() {
           setClientState('waiting_for_user');
         }
       } else {
+        // No signal — move streaming content to permanent messages
+        setStreamingSegments([]);
+        setMessages((prev) => [...prev, { role: 'assistant' as const, content: fullText, timestamp: new Date().toISOString() }]);
         setClientState('waiting_for_user');
       }
     } catch (err) {
+      setStreamingSegments([]);
       setError(err instanceof Error ? err.message : 'Connection failed');
       setClientState('waiting_for_user');
     } finally {
@@ -278,8 +298,11 @@ export default function WebsiteBuilderPage() {
       case 'checkpoint':
         if ('substep' in signal && signal.substep !== undefined) {
           currentSubstepRef.current = signal.substep;
+          // Substep checkpoint: keep step 2 active (not all substeps done yet)
+          updateStepStatus(signal.step, 'active');
+        } else {
+          updateStepStatus(signal.step, 'complete');
         }
-        updateStepStatus(signal.step, 'complete');
         setClientState('waiting_for_user');
         break;
       case 'continue':
@@ -294,6 +317,10 @@ export default function WebsiteBuilderPage() {
         }
         break;
       case 'poll':
+        // Mark all steps up to the poll step as complete, then set poll step active
+        if (signal.step > 0) {
+          updateStepStatus(signal.step - 1, 'complete');
+        }
         updateStepStatus(signal.step, 'active');
         setClientState('polling');
         startPolling();
@@ -307,7 +334,9 @@ export default function WebsiteBuilderPage() {
   }
 
   function startPolling() {
+    let pollCount = 0;
     pollRef.current = setInterval(async () => {
+      pollCount++;
       try {
         const res = await fetch(`/api/painted-door/${ideaId}`);
         if (!res.ok) return;
@@ -321,6 +350,12 @@ export default function WebsiteBuilderPage() {
             setError('Deployment failed');
             setClientState('waiting_for_user');
           }
+        } else if (pollCount >= 100) {
+          // Safety timeout after ~5 minutes of polling
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setError('Deployment timed out. Try refreshing the page.');
+          setClientState('waiting_for_user');
         }
       } catch {
         // Continue polling
@@ -352,6 +387,25 @@ export default function WebsiteBuilderPage() {
 
     await streamResponse({ type: 'mode_select', mode: selectedMode });
     setSelectingMode(null);
+  }
+
+  async function handleStartOver() {
+    if (!confirm('This will delete all progress and start the build from scratch. Continue?')) return;
+    try {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      await fetch(`/api/painted-door/${ideaId}`, { method: 'DELETE' });
+      router.refresh();
+      // Reset all state to initial
+      setMessages([]);
+      setStreamingSegments([]);
+      setSteps(WEBSITE_BUILD_STEPS.map((s) => ({ ...s, status: 'pending' as const })));
+      setMode(null);
+      setError(null);
+      setSiteResult(null);
+      setClientState('mode_select');
+    } catch {
+      setError('Failed to reset. Try refreshing the page.');
+    }
   }
 
   async function handleSendMessage() {
@@ -541,12 +595,12 @@ export default function WebsiteBuilderPage() {
           {/* Chat messages area */}
           <div className="flex-1 overflow-y-auto px-6 py-5" style={{ scrollbarWidth: 'thin' }}>
             <div className="max-w-[720px] mx-auto space-y-5">
-              {messages.map((msg, i) => (
+              {displayMessages.map((msg, i) => (
                 <ChatBubble key={i} message={msg} />
               ))}
 
               {/* Streaming indicator */}
-              {clientState === 'streaming' && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && (
+              {clientState === 'streaming' && displayMessages.length > 0 && displayMessages[displayMessages.length - 1]?.role === 'assistant' && (
                 <div className="ml-11 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent-coral)' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Julian is thinking...</span>
@@ -658,14 +712,23 @@ export default function WebsiteBuilderPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span>Step {Math.min(derivedStep + 1, steps.length)} of {steps.length}</span>
-                <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
-                <span>{steps[derivedStep]?.name || 'Complete'}</span>
-                <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
-                <span className="font-medium" style={{ color: 'var(--accent-coral)' }}>
-                  {mode === 'interactive' ? 'Interactive' : 'Autonomous'} mode
-                </span>
+              <div className="flex items-center justify-between mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <div className="flex items-center gap-3">
+                  <span>Step {Math.min(derivedStep + 1, steps.length)} of {steps.length}</span>
+                  <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
+                  <span>{steps[derivedStep]?.name || 'Complete'}</span>
+                  <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
+                  <span className="font-medium" style={{ color: 'var(--accent-coral)' }}>
+                    {mode === 'interactive' ? 'Interactive' : 'Autonomous'} mode
+                  </span>
+                </div>
+                <button
+                  onClick={handleStartOver}
+                  disabled={clientState === 'streaming'}
+                  className="transition-colors hover:text-[var(--accent-coral)] disabled:opacity-40"
+                >
+                  Start over
+                </button>
               </div>
             </div>
           </div>

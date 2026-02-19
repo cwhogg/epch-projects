@@ -275,6 +275,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
   let siteUrl = '';
   let lastDeploymentId: string | null = null;
   let pushCount = 0;
+  let isRebuild = false;
 
   // Best-effort preload from database — errors leave state as null
   try {
@@ -576,7 +577,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     {
       name: 'create_repo',
       description:
-        'Create a new GitHub repository for the site. Handles name collisions by appending a random suffix.',
+        'Get or create the GitHub repository for the site. Reuses the existing repo when rebuilding; creates a new one only on first build.',
       input_schema: {
         type: 'object',
         properties: {},
@@ -587,6 +588,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
 
         // Reuse existing repo if preloaded or found in DB
         if (repo) {
+          isRebuild = true;
           return {
             success: true,
             reused: true,
@@ -601,6 +603,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
           const existingSite = await getPaintedDoorSite(ideaId);
           if (existingSite?.repoOwner && existingSite?.repoName) {
             repo = { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl };
+            isRebuild = true;
             return {
               success: true,
               reused: true,
@@ -628,7 +631,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     {
       name: 'push_files',
       description:
-        'Push all generated files to the GitHub repository. Requires create_repo and file generation to have been called first.',
+        'Push all generated files to the GitHub repository. On rebuilds this updates the existing repo with new content. Requires create_repo and file generation to have been called first.',
       input_schema: {
         type: 'object',
         properties: {},
@@ -640,7 +643,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         if (!idea || !brand) return { error: 'Missing idea or brand context' };
 
         const commitMessage = pushCount === 0
-          ? 'Initial commit: painted door test site'
+          ? (isRebuild ? 'Rebuild: painted door test site' : 'Initial commit: painted door test site')
           : 'Fix build errors';
         const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles, commitMessage);
         pushCount++;
@@ -676,7 +679,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     {
       name: 'create_vercel_project',
       description:
-        'Create a Vercel project linked to the GitHub repo, with environment variables configured. Requires push_files to have been called first.',
+        'Get or create the Vercel project linked to the GitHub repo. Reuses the existing project when rebuilding. Requires push_files to have been called first.',
       input_schema: {
         type: 'object',
         properties: {},
@@ -718,7 +721,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     {
       name: 'trigger_deploy',
       description:
-        'Push an empty commit to trigger the Vercel GitHub webhook for initial deployment. Requires create_vercel_project to have been called first.',
+        'Push an empty commit to trigger the Vercel GitHub webhook for deployment. Requires create_vercel_project to have been called first.',
       input_schema: {
         type: 'object',
         properties: {},

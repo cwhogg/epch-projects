@@ -405,6 +405,21 @@ async function runAgentStream(
   const signal = determineStreamEndSignal(session);
   controller.enqueue(encoder.encode(`\n__SIGNAL__:${JSON.stringify(signal)}`));
 
+  // Advance session past checkpoint so the next user message runs on the next step.
+  // Without this, session.currentStep stays stuck and every subsequent signal
+  // repeats the same checkpoint, causing the sidebar to freeze.
+  if (signal.action === 'checkpoint') {
+    if (session.currentStep === 2) {
+      advanceSubstep(session);
+    } else if (session.currentStep < session.steps.length - 1) {
+      session.steps[session.currentStep].status = 'complete';
+      session.currentStep += 1;
+      session.currentSubstep = 0;
+      session.advisorCallsThisRound = [];
+      session.steps[session.currentStep].status = 'active';
+    }
+  }
+
   session.updatedAt = new Date().toISOString();
   await saveBuildSession(ideaId, session);
   controller.close();
@@ -531,7 +546,7 @@ export function determineStreamEndSignal(session: BuildSession): StreamEndSignal
         action: 'checkpoint',
         step: session.currentStep,
         substep: session.currentSubstep,
-        prompt: `Stage 2${String.fromCharCode(97 + session.currentSubstep)}: ${SUBSTAGE_LABELS[session.currentSubstep] || 'Section'} is ready for your review.`,
+        prompt: `Stage 3${String.fromCharCode(97 + session.currentSubstep)}: ${SUBSTAGE_LABELS[session.currentSubstep] || 'Section'} is ready for your review.`,
       };
     }
     return {

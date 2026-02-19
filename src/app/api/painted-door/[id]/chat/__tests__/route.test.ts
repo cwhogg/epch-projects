@@ -868,7 +868,7 @@ describe('determineStreamEndSignal', () => {
     expect(signal.action).toBe('checkpoint');
     if (signal.action === 'checkpoint') {
       expect(signal.substep).toBe(2);
-      expect(signal.prompt).toContain('2c');
+      expect(signal.prompt).toContain('3c');
       expect(signal.prompt).toContain('How It Works');
     }
   });

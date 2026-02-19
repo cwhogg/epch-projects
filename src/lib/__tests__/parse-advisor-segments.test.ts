@@ -131,10 +131,11 @@ describe('AdvisorStreamParser', () => {
     parser.push('Some text\n<<<ADVISOR_START>>>:{"advisorId":"copywriter","advisorName":"Copywriter"}\nPartial response without end marker');
     parser.flush();
 
-    // Should fall back to single julian segment with the raw text
-    expect(segments).toHaveLength(1);
-    expect(segments[0].type).toBe('julian');
-    expect(segments[0].content).toContain('Partial response without end marker');
+    // Julian text before the marker is eagerly emitted, then the unclosed block is collapsed to julian on flush
+    expect(segments).toHaveLength(2);
+    expect(segments[0]).toEqual({ type: 'julian', content: 'Some text' });
+    expect(segments[1].type).toBe('julian');
+    expect(segments[1].content).toContain('Partial response without end marker');
   });
 
   it('handles multiple advisor segments in sequence', () => {
@@ -186,5 +187,102 @@ describe('AdvisorStreamParser', () => {
 
     expect(segments[segments.length - 1].type).toBe('julian');
     expect(segments[segments.length - 1].content).toContain('More Julian text.');
+  });
+
+  describe('peekInProgress', () => {
+    it('returns null when buffer is empty', () => {
+      const parser = new AdvisorStreamParser(() => {});
+      expect(parser.peekInProgress()).toBeNull();
+    });
+
+    it('returns julian segment for plain text in buffer', () => {
+      const parser = new AdvisorStreamParser(() => {});
+      parser.push('Hello from Julian.');
+      const inProgress = parser.peekInProgress();
+      expect(inProgress).toEqual({ type: 'julian', content: 'Hello from Julian.' });
+    });
+
+    it('returns in-progress advisor segment when inside unclosed advisor block', () => {
+      const segments: StreamSegment[] = [];
+      const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+      // Push julian text followed by unclosed advisor block
+      parser.push('Julian intro.\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}\nPartial advisor text');
+
+      // Julian text before the marker should have been eagerly emitted
+      expect(segments).toHaveLength(1);
+      expect(segments[0]).toEqual({ type: 'julian', content: 'Julian intro.' });
+
+      // peekInProgress should show the in-progress advisor content
+      const inProgress = parser.peekInProgress();
+      expect(inProgress).toMatchObject({
+        type: 'advisor',
+        advisorId: 'shirin-oreizy',
+        advisorName: 'Shirin Oreizy',
+      });
+      expect(inProgress!.content).toContain('Partial advisor text');
+    });
+
+    it('returns null when buffer has only whitespace', () => {
+      const segments: StreamSegment[] = [];
+      const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+      parser.push('Text.\n<<<ADVISOR_START>>>:{"advisorId":"x","advisorName":"X"}\nContent.\n<<<ADVISOR_END>>>\n');
+      // After draining, buffer should be empty or whitespace
+      expect(parser.peekInProgress()).toBeNull();
+    });
+
+    it('reflects growing content as more chunks arrive', () => {
+      const parser = new AdvisorStreamParser(() => {});
+
+      parser.push('Hello');
+      expect(parser.peekInProgress()?.content).toBe('Hello');
+
+      parser.push(' world');
+      expect(parser.peekInProgress()?.content).toBe('Hello world');
+    });
+
+    it('transitions from julian to advisor in-progress when START marker arrives', () => {
+      const segments: StreamSegment[] = [];
+      const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+      // First chunk: plain julian text
+      parser.push('Let me check with Shirin.');
+      expect(parser.peekInProgress()?.type).toBe('julian');
+      expect(segments).toHaveLength(0);
+
+      // Second chunk: advisor block starts (no END yet)
+      parser.push('\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}\nHere is my');
+      // Julian text should have been eagerly emitted
+      expect(segments).toHaveLength(1);
+      expect(segments[0].type).toBe('julian');
+      // In-progress should now be the advisor
+      const inProgress = parser.peekInProgress();
+      expect(inProgress?.type).toBe('advisor');
+      expect(inProgress?.content).toContain('Here is my');
+    });
+  });
+
+  describe('eager julian emission before unclosed advisor blocks', () => {
+    it('emits julian text immediately when advisor START marker arrives without END', () => {
+      const segments: StreamSegment[] = [];
+      const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+      parser.push('Julian text before advisor.\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}\nAdvisor content streaming...');
+
+      // Julian text before the unclosed block should be emitted immediately
+      expect(segments).toHaveLength(1);
+      expect(segments[0]).toEqual({ type: 'julian', content: 'Julian text before advisor.' });
+    });
+
+    it('does not emit empty julian text before advisor block', () => {
+      const segments: StreamSegment[] = [];
+      const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+      parser.push('<<<ADVISOR_START>>>:{"advisorId":"x","advisorName":"X"}\nContent...');
+
+      // No julian segment should be emitted (nothing before the marker)
+      expect(segments).toHaveLength(0);
+    });
   });
 });
