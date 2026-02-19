@@ -11,6 +11,7 @@ const DOC_LABELS: Record<FoundationDocType, string> = {
   'design-principles': 'Design Principles',
   'seo-strategy': 'SEO Strategy',
   'social-media-strategy': 'Social Media',
+  'visual-identity': 'Visual Identity',
 };
 
 interface IdeaFoundation {

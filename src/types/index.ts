@@ -360,7 +360,8 @@ export type FoundationDocType =
   | 'brand-voice'
   | 'design-principles'
   | 'seo-strategy'
-  | 'social-media-strategy';
+  | 'social-media-strategy'
+  | 'visual-identity';
 
 export const FOUNDATION_DOC_TYPES: FoundationDocType[] = [
   'strategy',
@@ -369,6 +370,7 @@ export const FOUNDATION_DOC_TYPES: FoundationDocType[] = [
   'design-principles',
   'seo-strategy',
   'social-media-strategy',
+  'visual-identity',
 ];
 
 export interface FoundationDocument {

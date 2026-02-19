@@ -19,6 +19,7 @@ export const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
   'design-principles': 'richard-rumelt',
   'seo-strategy': 'seo-expert',
   'social-media-strategy': 'april-dunford',
+  'visual-identity': 'copywriter',
 };
 
 function buildGenerationPrompt(

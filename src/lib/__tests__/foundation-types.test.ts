@@ -21,7 +21,7 @@ describe('Foundation types', () => {
     expect(doc.editedAt).toBeNull();
   });
 
-  it('FoundationDocType covers all 6 document types', () => {
+  it('FoundationDocType covers all 7 document types', () => {
     const types: FoundationDocType[] = [
       'strategy',
       'positioning',
@@ -29,8 +29,9 @@ describe('Foundation types', () => {
       'design-principles',
       'seo-strategy',
       'social-media-strategy',
+      'visual-identity',
     ];
-    expect(types).toHaveLength(6);
+    expect(types).toHaveLength(7);
   });
 
   it('FoundationProgress tracks per-doc status', () => {
@@ -45,6 +46,7 @@ describe('Foundation types', () => {
         'design-principles': 'pending',
         'seo-strategy': 'pending',
         'social-media-strategy': 'pending',
+        'visual-identity': 'pending',
       },
       error: undefined,
     };

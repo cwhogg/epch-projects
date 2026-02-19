@@ -47,6 +47,7 @@ const FOUNDATION_LABELS: Record<FoundationDocType, string> = {
   'design-principles': 'Design Principles',
   'seo-strategy': 'SEO Strategy',
   'social-media-strategy': 'Social Media',
+  'visual-identity': 'Visual Identity',
 };
 
 function parseSeoMetrics(seoData: string | undefined): { agreedKeywords: number; serpValidated: number } {
