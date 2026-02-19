@@ -120,10 +120,15 @@ describe('assembleSystemPrompt', () => {
     expect(prompt).toContain('em dash');
   });
 
-  it('includes mode instruction for autonomous with 6 stages', async () => {
+  it('autonomous prompt scopes LLM to current stage only', async () => {
     const prompt = await assembleSystemPrompt('idea-1', 'autonomous');
-    expect(prompt).not.toContain('pause');
-    expect(prompt).toContain('6 stages');
+    // Must tell LLM to do ONLY the current stage
+    expect(prompt).toContain('current stage');
+    // Must NOT tell LLM to run through all stages continuously
+    expect(prompt).not.toContain('all 6 stages continuously');
+    expect(prompt).not.toContain('without stopping');
+    // Should still require advisor consultation
+    expect(prompt).toContain('consult_advisor');
     expect(prompt).toContain('Narrate');
   });
 
