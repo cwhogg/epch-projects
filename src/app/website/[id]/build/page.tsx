@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
@@ -10,15 +10,15 @@ import { parseStreamSegments } from '@/lib/parse-advisor-segments';
 type ClientState = 'loading' | 'mode_select' | 'streaming' | 'waiting_for_user' | 'polling' | 'done';
 
 const STEP_DESCRIPTIONS = [
-  'Pull value props, pain points, angles',
-  'Colors, typography, visual tone',
-  'Headline, subhead, CTA copy',
-  'Structure sections, layout grid',
-  'Stress-test claims and flow',
-  'Expert panel critique',
-  'Generate code, deploy to Vercel',
-  'Check live site, final polish',
+  'Extract value props, validate with advisors',        // 0 — Extract & Validate
+  'Draft headline, subhead, CTA with advisor input',    // 1 — Write Hero
+  'Problem, features, how-it-works, audience, CTA',     // 2 — Write Page Sections
+  'Coherence check across all locked sections',         // 3 — Final Review
+  'Generate code, deploy to Vercel',                    // 4 — Build & Deploy
+  'Check live site, final polish',                      // 5 — Verify
 ];
+
+const SUBSTAGE_LABELS = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'];
 
 export default function WebsiteBuilderPage() {
   const params = useParams();
@@ -35,7 +35,6 @@ export default function WebsiteBuilderPage() {
   const [steps, setSteps] = useState<BuildStep[]>(
     WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' }))
   );
-  const [currentStep, setCurrentStep] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const [siteResult, setSiteResult] = useState<{ siteUrl: string; repoUrl: string } | null>(null);
 
@@ -43,6 +42,14 @@ export default function WebsiteBuilderPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const streamingRef = useRef(false);
+  const lastSignalStepRef = useRef(0);
+  const currentSubstepRef = useRef(0);
+
+  // Derive current step from steps array instead of separate state (prevents desync)
+  const derivedStep = useMemo(() => {
+    const activeIdx = steps.findIndex((s) => s.status === 'active');
+    return activeIdx >= 0 ? activeIdx : steps.filter((s) => s.status === 'complete').length;
+  }, [steps]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -77,8 +84,17 @@ export default function WebsiteBuilderPage() {
           const data = await res.json();
           if (data.buildSession) {
             setMode(data.buildSession.mode);
-            setCurrentStep(data.buildSession.currentStep);
-            setSteps(data.buildSession.steps);
+            // Reconcile step statuses: force stale active states to complete
+            const loadedSteps = data.buildSession.steps;
+            const activeIdx = loadedSteps.findIndex((s: BuildStep) => s.status === 'active');
+            if (activeIdx >= 0) {
+              for (let i = 0; i < activeIdx; i++) {
+                if (loadedSteps[i].status !== 'complete') {
+                  loadedSteps[i].status = 'complete';
+                }
+              }
+            }
+            setSteps(loadedSteps);
             // Trigger continuation to resume the conversation
             try {
               await fetch(`/api/painted-door/${ideaId}/chat`, {
@@ -236,20 +252,30 @@ export default function WebsiteBuilderPage() {
   }
 
   function handleSignal(signal: StreamEndSignal) {
+    if ('step' in signal) {
+      lastSignalStepRef.current = signal.step;
+    }
+
     switch (signal.action) {
       case 'checkpoint':
-        setCurrentStep(signal.step);
+        if ('substep' in signal && signal.substep !== undefined) {
+          currentSubstepRef.current = signal.substep;
+        }
         updateStepStatus(signal.step, 'complete');
         setClientState('waiting_for_user');
         break;
       case 'continue':
-        setCurrentStep(signal.step);
-        updateStepStatus(signal.step, 'complete');
-        // Auto-send continuation
-        streamResponse({ type: 'continue', step: signal.step + 1 });
+        // For substep advancement within step 2
+        if (signal.step === 2 && currentSubstepRef.current < 4) {
+          currentSubstepRef.current += 1;
+          updateStepStatus(signal.step, 'active');
+          streamResponse({ type: 'continue', step: 2, substep: currentSubstepRef.current });
+        } else {
+          updateStepStatus(signal.step, 'complete');
+          streamResponse({ type: 'continue', step: signal.step + 1 });
+        }
         break;
       case 'poll':
-        setCurrentStep(signal.step);
         updateStepStatus(signal.step, 'active');
         setClientState('polling');
         startPolling();
@@ -272,7 +298,7 @@ export default function WebsiteBuilderPage() {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           if (data.status === 'complete') {
-            streamResponse({ type: 'continue', step: currentStep + 1 });
+            streamResponse({ type: 'continue', step: lastSignalStepRef.current + 1 });
           } else {
             setError('Deployment failed');
             setClientState('waiting_for_user');
@@ -419,7 +445,7 @@ export default function WebsiteBuilderPage() {
                   the positioning is sharp, and I have a clear picture of the audience and value props.
                 </p>
                 <p className="text-[15px] leading-relaxed mt-3" style={{ color: 'var(--text-secondary)' }}>
-                  I&apos;ll walk you through 8 steps to build your landing page, from extracting core ingredients
+                  I&apos;ll walk you through 6 stages to build your landing page, from extracting core ingredients
                   to deploying the final site. How do you want to work?
                 </p>
               </div>
@@ -450,7 +476,7 @@ export default function WebsiteBuilderPage() {
               <ModeCard
                 mode="autonomous"
                 title="You've got this"
-                description="Autonomous build. I'll run through all 8 steps and present the finished page for your review."
+                description="Autonomous build. I'll run through all 6 stages and present the finished page for your review."
                 time="~5 min hands-free"
                 icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>}
                 timeIcon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>}
@@ -459,11 +485,11 @@ export default function WebsiteBuilderPage() {
               />
             </div>
 
-            {/* 8-step preview pills */}
+            {/* 6-stage preview pills */}
             <div className="animate-slide-up mt-8 text-center" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                <span className="text-[11px] mr-1" style={{ color: 'var(--text-muted)' }}>8 steps:</span>
-                {['Extract', 'Brand', 'Hero', 'Assemble', 'Test', 'Review', 'Deploy', 'Verify'].map((step, i, arr) => (
+                <span className="text-[11px] mr-1" style={{ color: 'var(--text-muted)' }}>6 stages:</span>
+                {['Extract', 'Hero', 'Sections', 'Review', 'Deploy', 'Verify'].map((step, i, arr) => (
                   <span key={step} className="contents">
                     <span
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
@@ -620,9 +646,9 @@ export default function WebsiteBuilderPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span>Step {Math.min(currentStep + 1, 8)} of 8</span>
+                <span>Step {Math.min(derivedStep + 1, steps.length)} of {steps.length}</span>
                 <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
-                <span>{steps[currentStep]?.name || 'Complete'}</span>
+                <span>{steps[derivedStep]?.name || 'Complete'}</span>
                 <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-muted)' }} />
                 <span className="font-medium" style={{ color: 'var(--accent-coral)' }}>
                   {mode === 'interactive' ? 'Interactive' : 'Autonomous'} mode
@@ -669,6 +695,7 @@ export default function WebsiteBuilderPage() {
                   description={STEP_DESCRIPTIONS[i]}
                   isLast={i === steps.length - 1}
                   nextStatus={i < steps.length - 1 ? steps[i + 1].status : 'pending'}
+                  currentSubstep={i === 2 ? currentSubstepRef.current : undefined}
                 />
               ))}
             </div>
@@ -881,12 +908,13 @@ function InlineContent({ text }: { text: string }) {
   );
 }
 
-function StepItem({ step, index, description, isLast, nextStatus }: {
+function StepItem({ step, index, description, isLast, nextStatus, currentSubstep }: {
   step: BuildStep;
   index: number;
   description: string;
   isLast: boolean;
   nextStatus: BuildStep['status'];
+  currentSubstep?: number;
 }) {
   const isComplete = step.status === 'complete';
   const isActive = step.status === 'active';
@@ -951,7 +979,34 @@ function StepItem({ step, index, description, isLast, nextStatus }: {
           <div className="text-xs mt-0.5" style={{ color: isActive ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
             {description}
           </div>
-          {isActive && (
+          {isActive && index === 2 && currentSubstep !== undefined && (
+            <div className="mt-2 space-y-1">
+              {SUBSTAGE_LABELS.map((label, si) => (
+                <div key={si} className="flex items-center gap-1.5">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${si === currentSubstep ? 'animate-pulse' : ''}`}
+                    style={{
+                      background: si < currentSubstep ? 'var(--accent-emerald)'
+                        : si === currentSubstep ? 'var(--accent-coral)'
+                        : 'var(--border-subtle)',
+                    }}
+                  />
+                  <span
+                    className="text-[11px]"
+                    style={{
+                      color: si === currentSubstep ? 'var(--accent-coral)'
+                        : si < currentSubstep ? 'var(--text-secondary)'
+                        : 'var(--text-muted)',
+                      fontWeight: si === currentSubstep ? 500 : 400,
+                    }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {isActive && (index !== 2 || currentSubstep === undefined) && (
             <div className="mt-2 flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent-coral)' }} />
               <span className="text-[11px] font-medium" style={{ color: 'var(--accent-coral)' }}>In progress...</span>

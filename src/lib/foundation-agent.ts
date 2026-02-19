@@ -45,6 +45,7 @@ function makeInitialProgress(ideaId: string): FoundationProgress {
       'design-principles': 'pending',
       'seo-strategy': 'pending',
       'social-media-strategy': 'pending',
+      'visual-identity': 'pending',
     },
   };
 }

@@ -123,11 +123,11 @@ describe('Foundation page data', () => {
     // FocusFrame (6 docs) should come first (most complete)
     expect(result[0].ideaName).toBe('FocusFrame');
     expect(result[0].completedCount).toBe(6);
-    expect(result[0].totalCount).toBe(6);
+    expect(result[0].totalCount).toBe(7);
     // SecondLook (2 docs) second
     expect(result[1].ideaName).toBe('SecondLook');
     expect(result[1].completedCount).toBe(2);
-    expect(result[1].totalCount).toBe(6);
+    expect(result[1].totalCount).toBe(7);
   });
 
   it('sorts by name when completion counts are equal', async () => {

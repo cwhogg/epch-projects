@@ -17,6 +17,7 @@ const CHAT_CONTEXT_DOCS: Record<FoundationDocType, FoundationDocType[]> = {
   'design-principles': ['strategy', 'positioning'],
   'seo-strategy': ['strategy', 'positioning'],
   'social-media-strategy': ['strategy', 'positioning'],
+  'visual-identity': ['strategy', 'positioning'],
 };
 
 export const maxDuration = 60;
