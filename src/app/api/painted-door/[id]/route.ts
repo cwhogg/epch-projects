@@ -132,7 +132,7 @@ export async function GET(
       const site = await getPaintedDoorSite(id);
 
       // Site is actively deploying — check Vercel for completion
-      if (site && site.status === 'deploying' && site.vercelProjectId) {
+      if (site && (site.status === 'deploying' || site.status === 'pushing') && site.vercelProjectId) {
         const deployResult = await checkAndUpdateDeployment(site);
         if (deployResult === 'complete') {
           return NextResponse.json({

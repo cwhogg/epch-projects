@@ -691,6 +691,12 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
 
         // Reuse existing Vercel project if preloaded
         if (vercelProjectId) {
+          // Still mark site as deploying so the polling endpoint detects it
+          const existingSite = await getPaintedDoorSite(ideaId);
+          if (existingSite && existingSite.status !== 'deploying') {
+            existingSite.status = 'deploying';
+            await savePaintedDoorSite(existingSite);
+          }
           return {
             success: true,
             reused: true,
