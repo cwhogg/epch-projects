@@ -503,20 +503,19 @@ export function advanceSubstep(session: BuildSession): boolean {
 export function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
   const stepConfig = WEBSITE_BUILD_STEPS[session.currentStep];
 
-  // Build complete
-  if (session.currentStep >= WEBSITE_BUILD_STEPS.length - 1 &&
-      session.steps[session.currentStep]?.status === 'complete') {
+  // Complete: last step is done
+  if (session.currentStep >= session.steps.length - 1 && session.steps[session.currentStep]?.status === 'complete') {
     return {
       action: 'complete',
       result: {
         siteUrl: session.artifacts.siteUrl || '',
-        repoUrl: '',
+        repoUrl: session.artifacts.repoUrl || '',
       },
     };
   }
 
-  // Deploy step — use polling
-  if (session.currentStep === 6) {
+  // Poll: Build & Deploy step (check by name, not index)
+  if (stepConfig?.name === 'Build & Deploy') {
     return {
       action: 'poll',
       step: session.currentStep,
@@ -524,15 +523,28 @@ export function determineStreamEndSignal(session: BuildSession): StreamEndSignal
     };
   }
 
-  // Checkpoint in interactive mode
+  // Checkpoint: interactive mode at a checkpoint step
   if (session.mode === 'interactive' && stepConfig?.checkpoint) {
+    // For substages within step 2, emit checkpoint at each substep boundary
+    if (session.currentStep === 2) {
+      const substageNames = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'];
+      return {
+        action: 'checkpoint',
+        step: session.currentStep,
+        substep: session.currentSubstep,
+        prompt: `Stage 2${String.fromCharCode(97 + session.currentSubstep)}: ${substageNames[session.currentSubstep] || 'Section'} is ready for your review.`,
+      };
+    }
     return {
       action: 'checkpoint',
       step: session.currentStep,
-      prompt: `Step ${session.currentStep + 1} complete. Review and provide feedback, or say "continue" to proceed.`,
+      prompt: `${stepConfig.name} is ready for your review.`,
     };
   }
 
-  // Auto-continue
-  return { action: 'continue', step: session.currentStep };
+  // Continue: autonomous mode or non-checkpoint step
+  return {
+    action: 'continue',
+    step: session.currentStep,
+  };
 }
