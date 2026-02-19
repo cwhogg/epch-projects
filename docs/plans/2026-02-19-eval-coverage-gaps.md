@@ -110,7 +110,7 @@ git commit -m "fix: loadFixture reads from e2e/fixtures/ directory"
 
 ---
 
-### Task 2: Register missing LLM surfaces in eval-config.ts
+### ✅ Task 2: Register missing LLM surfaces in eval-config.ts
 
 Add the 11 files identified by KB-100 to `llmSurfacePatterns` so the auto-trigger mechanism detects changes to these surfaces.
 
