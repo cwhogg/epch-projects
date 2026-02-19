@@ -290,7 +290,7 @@ git commit -m "test: add failing tests for website-chat prompt adapter surface"
 
 ---
 
-### Task 4: Implement website-chat surface in prompt-adapter
+### ✅ Task 4: Implement website-chat surface in prompt-adapter
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts:14-72` (add new case in switch)
