@@ -65,14 +65,14 @@ export async function assembleSystemPrompt(
     siteSection = `\n\n## Existing Site\nThis is a REBUILD. An existing site is live at ${existingSite.siteUrl}.\nReview what exists and propose targeted changes vs. a full rebuild where appropriate.`;
   }
 
-  // 6. Mode instruction
+  // 6. Mode instruction (updated for 6 stages)
   const modeInstruction = mode === 'interactive'
     ? `## Mode: Interactive ("Build with me")
-You are in interactive mode. At the end of steps 1 (Extract Ingredients), 3 (Write Hero), 4 (Assemble Page), and 6 (Advisor Review), you MUST pause and present your work for user feedback before continuing. At each checkpoint, summarize what you've done and ask for the user's input.
+You are in interactive mode. Follow the 6-stage process. At every copy-producing stage (0, 1, 2a-2e, 3), you MUST pause and present your work for user feedback before continuing. You MUST call consult_advisor for the required advisors at each stage before presenting your synthesis.
 
 When you finish a checkpoint step, end your message by describing what you've completed and what you'd like feedback on.`
     : `## Mode: Autonomous ("You've got this")
-You are in autonomous mode. Run through all 8 steps continuously without stopping. You should narrate your progress as you go — the user is watching the chat in real time. Do not wait for user input between steps.`;
+You are in autonomous mode. Run through all 6 stages continuously without stopping. You MUST still call consult_advisor for the required advisors at each stage. Narrate your progress as you go.`;
 
   // 7. Advisor roster
   const advisorsWithExpertise = advisorRegistry.filter((a) => a.evaluationExpertise);
@@ -87,9 +87,17 @@ ${framework ? `## FRAMEWORK\n${framework}\n` : ''}
 
 ## Your Task
 
-You are building a landing page for a product. Follow your Landing Page Assembly framework through all 8 steps. Use the foundation documents below as your source of truth — never contradict what's already decided. Fill gaps where docs don't specify exact values.
+You are building a landing page for a product. Follow the Landing Page Assembly framework through all 6 stages. Use the foundation documents below as your source of truth. Fill gaps where docs don't specify exact values.
+
+You MUST call consult_advisor for the required advisors at EVERY copy-producing stage before presenting your recommendation to the user. This is mandatory, not optional.
 
 ${modeInstruction}
+
+## Content Quality Rules
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies). The target users are pre-launch startups. Social proof does not exist and should never be referenced.
+- Never use em dashes (-- or unicode em dash). Use periods, commas, colons, or semicolons instead.
+- Keep each message concise. The user is reading a chat, not a report.
+- Before finalizing any copy, check it against the AI slop blocklist in the framework. If any pattern appears, rewrite that sentence.
 
 ## Foundation Documents
 ${foundationSection}
@@ -99,14 +107,14 @@ ${ideaSection}
 ${siteSection}
 
 ## Available Advisors for Consultation
-Use the consult_advisor tool when a decision falls outside your core expertise.
+You MUST use the consult_advisor tool for the required advisors at each stage.
 ${advisorRoster}
 
 ## Build Tools
-You have access to all website build tools (design_brand, assemble_site_files, create_repo, push_files, etc.) plus consult_advisor. Use them when you reach the appropriate step.
+You have access to all website build tools (assemble_site_files, create_repo, push_files, etc.) plus consult_advisor. Use them when you reach the appropriate step.
 
 ## Output
-Respond conversationally — this is a chat, not a report. When you use a tool, explain what you're doing and why. When consulting an advisor, share their key insights with the user.`;
+Respond conversationally. When you use a tool, explain what you're doing and why. When consulting an advisor, do NOT paraphrase their response. Their response appears as a separate message bubble.`;
 }
 
 export async function POST(
