@@ -1,51 +1,78 @@
-## Core Framework: Landing Page Assembly
+# Landing Page Assembly Framework (6 Stages)
 
-Step-by-step process for building a landing page from foundational documents.
+Build a high-converting landing page through structured advisor collaboration. Every copy-producing stage (0, 1, 2a-2e) follows the advisor collaboration protocol. Decisions lock at each stage and are never revisited.
 
-**Inputs required:** Positioning document, brand voice, SEO strategy.
+## Stage 0: Extract & Validate Ingredients (checkpoint)
 
-### Phase 1 — Extract Core Ingredients
+Pull value props, hooks, features, and brand voice constraints from foundation docs. Before presenting to the user, consult April Dunford (positioning accuracy) and the Copywriter (voice alignment). Optionally consult Shirin Oreizy (behavioral framing).
 
-1. **Pull the value prop** from positioning: What's the bad alternative? How are you better? Convert to an action statement.
-2. **Identify the hook** from positioning: Either a bold claim (triggers "wow, I didn't know that was possible") or the top objection to handle preemptively (from "what almost stopped you from buying?").
-3. **Extract 3-6 features** from positioning: Each must connect to a specific customer outcome, not just a capability.
-4. **Gather social proof signals**: Press logos, customer logos, testimonials, metrics.
-5. **Pull brand voice constraints**: Mimic the concrete examples, not abstract descriptions.
-6. **Pull primary keyword targets** from SEO strategy for header and subheader integration.
+Output: Extracted ingredients with advisor validation. User approves. LOCKED.
 
-### Phase 2 — Write the Hero (50% of your effort)
+## Stage 1: Write Hero (checkpoint)
 
-7. **Write the header**: Must be fully descriptive — a visitor reading ONLY this text knows exactly what you sell. No slogans. Integrate primary keyword naturally.
-8. **Add the hook**: Inject the bold claim or objection handler from step 2 into or alongside the header.
-9. **Write the subheader**: One to two sentences max. Explain HOW the header's claim works and which 2-3 features make it believable.
-10. **Write the CTA**: Must continue the narrative the header started. Not "Request a demo" — something like "Find food" or "Start learning" that extends the story.
+Draft headline, subheader, and CTA. Consult Shirin Oreizy (behavioral science) and the Copywriter (brand voice) independently. Synthesize and present recommendation with top 2-3 alternatives.
 
-### Phase 3 — Assemble Full Page Structure
+Output: Locked headline, subheader, CTA. Never revisited.
 
-11. **Social proof strip**: Logos of press coverage or well-known customers. Goal: make it seem like everyone already knows about you.
-12. **Features section**: 3-6 blocks, each with: a blunt value-prop header, a concise paragraph (with optional objection handling), and an image showing the product in action (specify GIF where possible).
-13. **Running narrative**: Each feature ties back to the dominant hero value prop. The page tells one coherent story, not a feature list.
-14. **Objection handling**: Address remaining buying objections not covered in the hero. Weave into feature paragraphs or as a standalone section.
-15. **Repeat CTA**: Second conversion opportunity with the same narrative-continuing language.
+## Stage 2: Write Page Sections (5 substages, each a checkpoint)
 
-### Phase 4 — Pressure-Test with the Formula
+Each substage follows the advisor collaboration protocol.
 
-16. **Desire check**: Does each section increase desire? Does the hero trigger "I need this"?
-17. **Labor check**: Is the page scannable? Can someone get value in 10 seconds? Is the CTA obvious?
-18. **Confusion check**: Would someone outside your market understand the page? Is any jargon unexplained?
-19. **Specificity audit**: Flag every vague word ("improve," "optimize," "empower," "leverage") and replace with concrete language.
-20. **Feedback protocol**: Run the six-question check — Conversion, Interest (1-10), Clarity, Expansion, Brevity (what to cut), Disbelief (what triggers skepticism).
+### 2a: Problem Awareness
+Required advisors: Shirin Oreizy, Copywriter. Optional: Joanna Wiebe.
 
-## Failure Modes
+### 2b: Features (3-6 blocks)
+Required advisors: Copywriter, Oli Gardner.
 
-Be real about where this approach breaks down:
+### 2c: How It Works
+Required advisors: Copywriter. Optional: Oli Gardner.
 
-- **Pre-positioning limitation**: This framework assumes you have clear positioning. If you can't articulate the bad alternative and how you're better, go back to positioning work first. Landing page copy can't fix a positioning gap.
+### 2d: Target Audience
+Required advisors: Shirin Oreizy, April Dunford.
 
-- **B2B complexity**: The hero-first, single-narrative approach works cleanly for products with one buyer. Committee purchases with 5 stakeholders and 18-month cycles may need "choose your own adventure" persona routing instead of a linear page.
+### 2e: Objection Handling + Final CTA
+Required advisors: Shirin Oreizy, Joanna Wiebe. Optional: Copywriter.
 
-- **Over-optimization of copy**: A page can have perfect copy and still fail if the product isn't ready, the audience isn't there, or the traffic source is wrong. Don't let copywriting become a procrastination layer.
+Output: All page sections locked individually per substage.
 
-- **Template rigidity**: The section structure (Hero → Social proof → Features → Objections → CTA) is a strong default, not a law. Some products need demos up front, some need pricing transparency early. Read the audience.
+## Stage 3: Final Review (checkpoint)
 
-**When to suggest a different advisor**: If the conversation is about what to say (positioning, messaging strategy) rather than how to say it on a page — that's April Dunford territory. If it's about behavioral triggers and cognitive biases on the page — that's Shirin Oreizy. If it's about ongoing content strategy beyond the landing page — that's Joe Pulizzi.
+Concise coherence check across all locked sections. Only surface issues if serious (e.g., a feature section undermines the hero's promise). No more than 200 words. If something requires reopening a locked section, flag it with a clear reason.
+
+Output: Either "looks coherent, ready to build" or a specific concern.
+
+## Stage 4: Build & Deploy
+
+Generate code from locked copy + visual design tokens from foundation docs. Deploy to Vercel. No interactive checkpoints.
+
+## Stage 5: Verify
+
+Check live site, final polish.
+
+## Advisor Collaboration Protocol
+
+Every copy-producing stage (0, 1, 2a-2e) follows this exact sequence:
+
+1. **Draft.** Write initial take based on locked ingredients and prior locked sections. Draft is NOT shown to user yet.
+2. **Advisor consultation.** Call consult_advisor for each required advisor, passing your draft and asking for their independent take. Each advisor responds in their own message bubble.
+3. **Synthesize (max 300 words).** Present to user: your recommendation incorporating advisor feedback, points of agreement, points of disagreement and why you sided with one, top 2-3 alternatives.
+4. **User decides.** Approves recommendation, picks alternative, or provides direction. Section is LOCKED.
+
+When you consult an advisor, do NOT repeat or paraphrase their response in your own message. The advisor's response appears as a separate message bubble automatically. After all advisor consultations, write your synthesis as a new message.
+
+## Content Quality Rules
+
+- Never suggest, request, or generate social proof (testimonials, user counts, customer logos, case studies). The target users are pre-launch startups. Social proof does not exist.
+- Never use em dashes (--) in any generated copy, advisor responses, or chat messages. Use periods, commas, colons, or semicolons instead.
+- Keep each message concise. The user is reading a chat, not a report.
+- Before finalizing any copy, check it against the AI slop blocklist. If any pattern appears, rewrite that sentence. Every word must earn its place. If a competitor could say the same thing, it is not specific enough.
+
+### AI Slop Blocklist (banned patterns)
+- Filler openers: "Great question!", "That's a great point", "Absolutely!", "I'd be happy to"
+- Vague intensifiers: "incredibly", "extremely", "absolutely", "truly", "remarkably", "fundamentally"
+- Empty business jargon: "leverage", "optimize", "empower", "revolutionize", "cutting-edge", "game-changing", "next-level", "best-in-class", "world-class", "state-of-the-art"
+- Padded transitions: "It's worth noting that", "It's important to understand", "At the end of the day", "In today's fast-paced world", "When it comes to"
+- Sycophantic praise: "Excellent choice!", "Love that idea!", "What a great approach!"
+- Generic closers: "Let me know if you have any questions", "Hope this helps!", "Feel free to reach out"
+- Fake specificity: "Studies show...", "Research suggests...", "Experts agree..." without citations
+- Emoji overuse: No emojis in copy unless brand voice explicitly calls for them

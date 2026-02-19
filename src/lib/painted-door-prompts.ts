@@ -93,9 +93,7 @@ ${vertical === 'b2b-saas' ? 'For B2B SaaS: use professional authority, clean des
 CRITICAL RULES:
 - Colors must be accessible (sufficient contrast ratios)
 - Fonts must be from Google Fonts
-${visualOnly ? '' : `- Do NOT fabricate testimonials, user counts, or social proof
-- Social proof approach should describe the TYPE of proof to add later (e.g., "early access waitlist count", "beta user testimonials once available")
-- Value props must be derived from the actual problem/solution, not invented features
+${visualOnly ? '' : `- Value props must be derived from the actual problem/solution, not invented features
 
 SEO REQUIREMENTS:
 - seoDescription: Must naturally include the #1 target keyword AND one secondary keyword. Write for click-through rate — compelling, specific, 150-160 chars.
@@ -168,7 +166,6 @@ Do NOT include landingPage, seoDescription, or any copy fields — those are gen
       { "title": "string", "description": "string" },
       { "title": "string", "description": "string" }
     ],
-    "socialProofApproach": "string (describe the type of social proof to use, not actual testimonials)",
     "faqs": [
       { "question": "string (derived from People Also Ask data)", "answer": "string (2-3 sentences)" }
     ]

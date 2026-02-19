@@ -305,14 +305,14 @@ graph LR
     subgraph Foundation
         B7 --> C1["User visits Foundation tab"]
         C1 --> C2["POST /api/foundation/[ideaId]"]
-        C2 --> C3["Foundation Agent generates 6 docs:<br/>strategy → positioning →<br/>brand-voice, design-principles,<br/>seo-strategy, social-media-strategy"]
+        C2 --> C3["Foundation Agent generates 7 docs:<br/>strategy → positioning →<br/>brand-voice, design-principles,<br/>visual-identity, seo-strategy,<br/>social-media-strategy"]
     end
 
     subgraph Website
         B7 --> D1["User clicks Build Website"]
         D1 --> D1a["/website/[id]/build"]
         D1a --> D1b["Mode selection:<br/>Interactive or Autonomous"]
-        D1b --> D1c["Chat-driven agent loop<br/>Julian Shapiro leads 8-step build<br/>with consult_advisor tool"]
+        D1b --> D1c["Chat-driven agent loop<br/>Julian Shapiro leads 6-stage build<br/>with mandatory consult_advisor"]
         D1c --> D4["Live site on Vercel<br/>with email signup"]
     end
 
@@ -642,6 +642,8 @@ flowchart LR
     POSITIONING --> VOICE["brand-voice<br/>(Copywriter)"]
     POSITIONING --> DESIGN["design-principles<br/>(Richard Rumelt)"]
     STRATEGY --> DESIGN
+    POSITIONING --> VISUAL["visual-identity<br/>(Copywriter)"]
+    VOICE --> VISUAL
     POSITIONING --> SEO_STRAT["seo-strategy<br/>(SEO Expert)"]
     POSITIONING --> SOCIAL["social-media-strategy<br/>(April Dunford)"]
     VOICE --> SOCIAL
@@ -650,11 +652,12 @@ flowchart LR
     style POSITIONING fill:#1a3a4a,stroke:#4ade80
     style VOICE fill:#1a2a3a,stroke:#60a5fa
     style DESIGN fill:#1a2a3a,stroke:#60a5fa
+    style VISUAL fill:#1a2a3a,stroke:#60a5fa
     style SEO_STRAT fill:#1a2a3a,stroke:#60a5fa
     style SOCIAL fill:#1a2a3a,stroke:#60a5fa
 ```
 
-Each doc depends on its predecessors. Strategy is generated first (core diagnosis + guiding policy), then positioning (category, competitive alternatives, differentiators), then four downstream docs. Design-principles depends on both strategy and positioning. Social-media-strategy depends on both positioning and brand-voice.
+Each doc depends on its predecessors. Strategy is generated first (core diagnosis + guiding policy), then positioning (category, competitive alternatives, differentiators), then five downstream docs. Design-principles depends on both strategy and positioning. Visual-identity depends on positioning and brand-voice. Social-media-strategy depends on both positioning and brand-voice.
 
 ---
 
@@ -734,8 +737,8 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 |-------|------|-----------|---------|
 | Research | `src/lib/research-agent.ts` | `agent-tools/research.ts` | Market research: competitors, SEO pipeline, WTP, scoring |
 | Content | `src/lib/content-agent.ts` | `agent-tools/content.ts` | Content calendar generation and piece writing |
-| Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 6 strategic foundation documents |
-| Website | `src/lib/painted-door-agent.ts` | `agent-tools/website.ts` | Brand identity → GitHub repo → Vercel deploy |
+| Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 7 strategic foundation documents |
+| Website | `src/lib/painted-door-agent.ts` | `agent-tools/website.ts` | 6-stage build with substages, code-level advisor enforcement, copy quality validation → GitHub repo → Vercel deploy |
 | Analytics | `src/lib/analytics-agent.ts` | `agent-tools/analytics.ts` | Weekly GSC data collection and performance reports |
 | Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Goal-oriented critique pipeline with framework injection, named critics, and agent-controlled critique selection |
 
@@ -782,7 +785,9 @@ Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` 
 | `src/lib/frameworks/framework-loader.ts` | Per-framework prompt loader (reads `.md` from disk) |
 | `src/lib/content-recipes.ts` | Content recipe definitions with authorFramework, namedCritics, and LLM-based critic selection |
 | `src/lib/critique-service.ts` | Shared critique service: `runCritiqueRound()` for website builder and critique agent |
-| `src/lib/agent-tools/website-chat.ts` | `consult_advisor` tool: consults specialist advisors with foundation doc context |
+| `src/lib/agent-tools/website-chat.ts` | `consult_advisor` tool: mandatory advisor consultation at every copy-producing stage with foundation doc context |
+| `src/lib/copy-quality.ts` | AI slop blocklist: validates copy against filler openers, vague intensifiers, business jargon, em dashes |
+| `src/lib/parse-advisor-segments.ts` | `AdvisorStreamParser`: incremental streaming parser for advisor response bubbles |
 | `src/lib/editor-decision.ts` | Mechanical editor rubric for critique pipeline |
 
 ### Components

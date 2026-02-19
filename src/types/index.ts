@@ -188,7 +188,6 @@ export interface BrandIdentity {
     heroSubheadline: string;
     ctaText: string;
     valueProps: { title: string; description: string }[];
-    socialProofApproach: string;
     faqs: { question: string; answer: string }[];
   };
 }
@@ -360,7 +359,8 @@ export type FoundationDocType =
   | 'brand-voice'
   | 'design-principles'
   | 'seo-strategy'
-  | 'social-media-strategy';
+  | 'social-media-strategy'
+  | 'visual-identity';
 
 export const FOUNDATION_DOC_TYPES: FoundationDocType[] = [
   'strategy',
@@ -369,6 +369,7 @@ export const FOUNDATION_DOC_TYPES: FoundationDocType[] = [
   'design-principles',
   'seo-strategy',
   'social-media-strategy',
+  'visual-identity',
 ];
 
 export interface FoundationDocument {
@@ -515,30 +516,50 @@ export interface BuildStep {
 }
 
 export const WEBSITE_BUILD_STEPS: { name: string; checkpoint: boolean }[] = [
-  { name: 'Extract Ingredients', checkpoint: true },
-  { name: 'Design Brand Identity', checkpoint: false },
-  { name: 'Write Hero', checkpoint: true },
-  { name: 'Assemble Page', checkpoint: true },
-  { name: 'Pressure Test', checkpoint: false },
-  { name: 'Advisor Review', checkpoint: true },
-  { name: 'Build & Deploy', checkpoint: false },
-  { name: 'Verify', checkpoint: false },
+  { name: 'Extract & Validate Ingredients', checkpoint: true  },  // 0
+  { name: 'Write Hero',                     checkpoint: true  },  // 1
+  { name: 'Write Page Sections',            checkpoint: true  },  // 2 (5 substages: 2a-2e)
+  { name: 'Final Review',                   checkpoint: true  },  // 3
+  { name: 'Build & Deploy',                 checkpoint: false },  // 4
+  { name: 'Verify',                         checkpoint: false },  // 5
 ];
+
+/** Labels for the 5 substages within Step 2 (Write Page Sections). */
+export const SUBSTAGE_LABELS = ['Problem Awareness', 'Features', 'How It Works', 'Target Audience', 'Objection Handling'] as const;
+
+/** Advisor IDs that MUST be consulted before a copy-producing stage can advance.
+ *  Key format: step index, or "2a"-"2e" for substages within step 2. */
+export const REQUIRED_ADVISORS_PER_STAGE: Record<string, string[]> = {
+  '0': ['april-dunford', 'copywriter'],
+  '1': ['shirin-oreizy', 'copywriter'],
+  '2a': ['shirin-oreizy', 'copywriter'],
+  '2b': ['copywriter', 'oli-gardner'],
+  '2c': ['copywriter'],
+  '2d': ['shirin-oreizy', 'april-dunford'],
+  '2e': ['shirin-oreizy', 'joanna-wiebe'],
+};
 
 export interface BuildSession {
   ideaId: string;
   mode: BuildMode;
   currentStep: number;
+  currentSubstep: number;  // For step 2 (Write Page Sections): 0-4 maps to substages a-e. Defaults to 0.
   steps: BuildStep[];
   artifacts: {
     ingredients?: string;
-    brandIdentity?: string;
     heroContent?: string;
-    pageContent?: string;
-    pressureTestResults?: string;
-    reviewResults?: string;
+    substageContent?: {
+      problemAwareness?: string;
+      features?: string;
+      howItWorks?: string;
+      targetAudience?: string;
+      objectionHandling?: string;
+    };
+    finalReviewResult?: string;
     siteUrl?: string;
+    repoUrl?: string;
   };
+  advisorCallsThisRound?: string[];  // Track which advisor IDs were called in the current round
   createdAt: string;
   updatedAt: string;
 }
@@ -554,7 +575,7 @@ export interface ChatMessage {
 }
 
 export type StreamEndSignal =
-  | { action: 'checkpoint'; step: number; prompt: string }
+  | { action: 'checkpoint'; step: number; substep?: number; prompt: string }
   | { action: 'continue'; step: number }
   | { action: 'poll'; step: number; pollUrl: string }
   | { action: 'complete'; result: { siteUrl: string; repoUrl: string } };
@@ -564,4 +585,5 @@ export interface ChatRequestBody {
   mode?: BuildMode;
   content?: string;
   step?: number;
+  substep?: number;  // For advancing substages within step 2
 }

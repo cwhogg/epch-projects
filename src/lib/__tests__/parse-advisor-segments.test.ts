@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseStreamSegments, type StreamSegment } from '../parse-advisor-segments';
+import { parseStreamSegments, AdvisorStreamParser, type StreamSegment } from '../parse-advisor-segments';
 
 describe('parseStreamSegments', () => {
   it('returns single julian segment when no markers present', () => {
@@ -79,5 +79,112 @@ describe('parseStreamSegments', () => {
     // Should return the whole text as a single julian segment
     expect(segments).toHaveLength(1);
     expect(segments[0].type).toBe('julian');
+  });
+});
+
+describe('AdvisorStreamParser', () => {
+  it('emits julian segment for text without markers', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('Hello from Julian.');
+    parser.flush();
+
+    expect(segments).toHaveLength(1);
+    expect(segments[0].type).toBe('julian');
+    expect(segments[0].content).toBe('Hello from Julian.');
+  });
+
+  it('emits complete advisor segment in single chunk', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('Before advisor.\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}\nAdvisor response here.\n<<<ADVISOR_END>>>\nAfter advisor.');
+    parser.flush();
+
+    expect(segments).toHaveLength(3);
+    expect(segments[0]).toEqual({ type: 'julian', content: 'Before advisor.' });
+    expect(segments[1]).toEqual({
+      type: 'advisor',
+      content: 'Advisor response here.',
+      advisorId: 'shirin-oreizy',
+      advisorName: 'Shirin Oreizy',
+    });
+    expect(segments[2]).toEqual({ type: 'julian', content: 'After advisor.' });
+  });
+
+  it('handles marker split across two chunks', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('Text before\n<<<ADVISOR_STA');
+    parser.push('RT>>>:{"advisorId":"oli-gardner","advisorName":"Oli Gardner"}\nConversion advice.\n<<<ADVISOR_END>>>\n');
+    parser.flush();
+
+    expect(segments.some((s) => s.type === 'advisor' && s.advisorId === 'oli-gardner')).toBe(true);
+  });
+
+  it('collapses unclosed marker at stream end into julian text', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('Some text\n<<<ADVISOR_START>>>:{"advisorId":"copywriter","advisorName":"Copywriter"}\nPartial response without end marker');
+    parser.flush();
+
+    // Should fall back to single julian segment with the raw text
+    expect(segments).toHaveLength(1);
+    expect(segments[0].type).toBe('julian');
+    expect(segments[0].content).toContain('Partial response without end marker');
+  });
+
+  it('handles multiple advisor segments in sequence', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    const text = [
+      'Julian intro.',
+      '\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}',
+      '\nShirin says things.',
+      '\n<<<ADVISOR_END>>>',
+      '\n<<<ADVISOR_START>>>:{"advisorId":"copywriter","advisorName":"Copywriter"}',
+      '\nCopywriter says things.',
+      '\n<<<ADVISOR_END>>>',
+      '\nJulian synthesis.',
+    ].join('');
+
+    parser.push(text);
+    parser.flush();
+
+    const advisorSegs = segments.filter((s) => s.type === 'advisor');
+    expect(advisorSegs).toHaveLength(2);
+    expect(advisorSegs[0].advisorId).toBe('shirin-oreizy');
+    expect(advisorSegs[1].advisorId).toBe('copywriter');
+  });
+
+  it('handles JSON metadata split across chunks', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('\n<<<ADVISOR_START>>>:{"advisorId":"april');
+    parser.push('-dunford","advisorName":"April Dunford"}\nPositioning feedback.\n<<<ADVISOR_END>>>');
+    parser.flush();
+
+    expect(segments.some((s) => s.type === 'advisor' && s.advisorId === 'april-dunford')).toBe(true);
+  });
+
+  it('emits segments incrementally as complete markers are found', () => {
+    const segments: StreamSegment[] = [];
+    const parser = new AdvisorStreamParser((seg) => segments.push(seg));
+
+    parser.push('Julian text.\n<<<ADVISOR_START>>>:{"advisorId":"shirin-oreizy","advisorName":"Shirin Oreizy"}\nAdvisor text.\n<<<ADVISOR_END>>>');
+
+    // Before flush, completed segments should already be emitted
+    expect(segments.length).toBeGreaterThanOrEqual(2);
+
+    parser.push('\nMore Julian text.');
+    parser.flush();
+
+    expect(segments[segments.length - 1].type).toBe('julian');
+    expect(segments[segments.length - 1].content).toContain('More Julian text.');
   });
 });

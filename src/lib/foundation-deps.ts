@@ -8,4 +8,5 @@ export const DOC_DEPENDENCIES: Record<FoundationDocType, FoundationDocType[]> = 
   'design-principles': ['positioning', 'strategy'],
   'seo-strategy': ['positioning'],
   'social-media-strategy': ['positioning', 'brand-voice'],
+  'visual-identity': ['positioning', 'brand-voice'],
 };

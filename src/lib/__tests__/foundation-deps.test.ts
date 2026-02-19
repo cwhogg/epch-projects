@@ -9,6 +9,7 @@ const ALL_TYPES: FoundationDocType[] = [
   'design-principles',
   'seo-strategy',
   'social-media-strategy',
+  'visual-identity',
 ];
 
 describe('DOC_DEPENDENCIES', () => {

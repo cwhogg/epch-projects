@@ -95,15 +95,16 @@ describe('Foundation DB functions', () => {
   });
 
   describe('deleteAllFoundationDocs', () => {
-    it('deletes all 6 foundation doc keys for an idea', async () => {
+    it('deletes all 7 foundation doc keys for an idea', async () => {
       await deleteAllFoundationDocs('idea-123');
-      expect(mockRedis.del).toHaveBeenCalledTimes(6);
+      expect(mockRedis.del).toHaveBeenCalledTimes(7);
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:strategy');
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:positioning');
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:brand-voice');
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:design-principles');
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:seo-strategy');
       expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:social-media-strategy');
+      expect(mockRedis.del).toHaveBeenCalledWith('foundation:idea-123:visual-identity');
     });
   });
 
