@@ -1,0 +1,27 @@
+{
+  "name": "april-dunford-multi-turn",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation", "multi-turn"],
+  "config": {
+    "advisor": "april-dunford",
+    "docType": "positioning",
+    "currentContent": "# SecondLook Positioning\n\n## Category\nAI-powered inventory management for thrift retail\n\n## Competitive Alternatives\n- Manual sorting (status quo)\n- GoodSort (workflow optimization without AI)\n- Generic POS systems\n\n## Differentiators\n- Real-time CV identification\n- Regional pricing intelligence\n\n## Best Customer\nIndependent thrift store owners processing 100+ donations daily"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "I think our competitive alternatives list is too narrow. We're only comparing to other software, but most stores just use experienced staff. How should we think about that?" },
+    { "role": "assistant", "evaluate": true },
+    { "role": "user", "content": "That makes sense. Now update the competitive alternatives section to include what you just described, and adjust the differentiators to be more specific about why we win against each alternative." },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "instruction-following", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["disrupt", "innovative solution", "cutting-edge", "world-class"],
+      "signaturePhrases": ["competitive alternatives", "market category", "differentiated value", "best customer", "positioning"]
+    }
+  }
+}
