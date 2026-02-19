@@ -72,7 +72,7 @@ You are in interactive mode. Follow the 6-stage process. At every copy-producing
 
 When you finish a checkpoint step, end your message by describing what you've completed and what you'd like feedback on.`
     : `## Mode: Autonomous ("You've got this")
-You are in autonomous mode. Run through all 6 stages continuously without stopping. You MUST still call consult_advisor for the required advisors at each stage. Narrate your progress as you go.`;
+You are in autonomous mode. Complete ONLY the current stage. You will be automatically advanced to the next stage — do not attempt to work ahead. You MUST call consult_advisor for the required advisors at this stage before finishing. Narrate your progress as you go.`;
 
   // 7. Advisor roster
   const advisorsWithExpertise = advisorRegistry.filter((a) => a.evaluationExpertise);
@@ -209,9 +209,11 @@ export async function POST(
       timestamp: new Date().toISOString(),
     });
   } else if (body.type === 'continue') {
+    const stepIdx = body.step ?? session.currentStep;
+    const stepName = WEBSITE_BUILD_STEPS[stepIdx]?.name ?? `step ${stepIdx + 1}`;
     history.push({
       role: 'user',
-      content: `Continue to the next step (step ${(body.step ?? session.currentStep) + 1}).`,
+      content: `Continue. Now work on stage ${stepIdx + 1}: ${stepName}.`,
       timestamp: new Date().toISOString(),
     });
   }

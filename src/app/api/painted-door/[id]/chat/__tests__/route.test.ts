@@ -120,10 +120,15 @@ describe('assembleSystemPrompt', () => {
     expect(prompt).toContain('em dash');
   });
 
-  it('includes mode instruction for autonomous with 6 stages', async () => {
+  it('autonomous prompt scopes LLM to current stage only', async () => {
     const prompt = await assembleSystemPrompt('idea-1', 'autonomous');
-    expect(prompt).not.toContain('pause');
-    expect(prompt).toContain('6 stages');
+    // Must tell LLM to do ONLY the current stage
+    expect(prompt).toContain('current stage');
+    // Must NOT tell LLM to run through all stages continuously
+    expect(prompt).not.toContain('all 6 stages continuously');
+    expect(prompt).not.toContain('without stopping');
+    // Should still require advisor consultation
+    expect(prompt).toContain('consult_advisor');
     expect(prompt).toContain('Narrate');
   });
 
@@ -683,7 +688,7 @@ describe('Integration: full chat flow', () => {
     const saveCalls = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls;
     const lastSavedHistory = saveCalls[saveCalls.length - 1][1];
     const continueMsg = lastSavedHistory.find(
-      (m: { content: string }) => m.content.includes('Continue to the next step')
+      (m: { content: string }) => m.content.includes('Continue.')
     );
     expect(continueMsg).toBeDefined();
   });
@@ -801,6 +806,39 @@ describe('Integration: full chat flow', () => {
     } catch {
       // Expected — API failure propagates through stream
     }
+  });
+
+  it('continue message includes step name for LLM context', async () => {
+    // Setup mocks for step 1 (Write Hero)
+    await setupDefaultMocks();
+    const { getBuildSession, getConversationHistory, saveConversationHistory } = await import('@/lib/painted-door-db');
+    const steps = WEBSITE_BUILD_STEPS.map((s) => ({ name: s.name, status: 'pending' as const }));
+    steps[0].status = 'complete';
+    (getBuildSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ideaId: 'idea-1',
+      mode: 'autonomous',
+      currentStep: 0,
+      currentSubstep: 0,
+      steps,
+      artifacts: {},
+      advisorCallsThisRound: [],
+      createdAt: '2026-02-17T00:00:00Z',
+      updatedAt: '2026-02-17T00:00:00Z',
+    });
+    (getConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (saveConversationHistory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    mockStreamResponse('Hero content here.');
+
+    const request = makeRequest({ type: 'continue', step: 1 });
+    const response = await POST(request, paramsPromise);
+    await readStream(response);
+
+    // The history save should contain a user message with the step name
+    const saveCalls = (saveConversationHistory as ReturnType<typeof vi.fn>).mock.calls;
+    const savedHistory = saveCalls[saveCalls.length - 1][1];
+    const continueMsg = savedHistory.find((m: { role: string }) => m.role === 'user');
+    expect(continueMsg.content).toContain('Write Hero');
   });
 });
 

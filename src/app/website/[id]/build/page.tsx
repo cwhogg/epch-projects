@@ -62,6 +62,7 @@ export default function WebsiteBuilderPage() {
   const streamingRef = useRef(false);
   const lastSignalStepRef = useRef(0);
   const currentSubstepRef = useRef(0);
+  const continueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Derive current step from steps array instead of separate state (prevents desync)
   const derivedStep = useMemo(() => {
@@ -78,6 +79,7 @@ export default function WebsiteBuilderPage() {
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
     };
   }, []);
 
@@ -275,9 +277,25 @@ export default function WebsiteBuilderPage() {
           setClientState('waiting_for_user');
         }
       } else {
-        // No signal — move streaming content to permanent messages
+        // No signal — still parse advisor tags before storing as messages
+        const fallbackSegments: StreamSegment[] = [];
+        const fallbackParser = new AdvisorStreamParser((seg) => fallbackSegments.push(seg));
+        fallbackParser.push(fullText);
+        fallbackParser.flush();
+
+        const fallbackMessages = fallbackSegments.length > 0
+          ? fallbackSegments.map((seg) => ({
+              role: 'assistant' as const,
+              content: seg.content,
+              timestamp: new Date().toISOString(),
+              ...(seg.type === 'advisor' ? {
+                metadata: { advisorConsultation: { advisorId: seg.advisorId, advisorName: seg.advisorName } },
+              } : {}),
+            }))
+          : [{ role: 'assistant' as const, content: fullText, timestamp: new Date().toISOString() }];
+
         setStreamingSegments([]);
-        setMessages((prev) => [...prev, { role: 'assistant' as const, content: fullText, timestamp: new Date().toISOString() }]);
+        setMessages((prev) => [...prev, ...fallbackMessages]);
         setClientState('waiting_for_user');
       }
     } catch (err) {
@@ -310,10 +328,12 @@ export default function WebsiteBuilderPage() {
         if (signal.step === 2 && currentSubstepRef.current < 4) {
           currentSubstepRef.current += 1;
           updateStepStatus(signal.step, 'active');
-          streamResponse({ type: 'continue', step: 2, substep: currentSubstepRef.current });
+          // Defer: streamingRef.current is still true inside the try block.
+          // setTimeout lets the finally block reset it before the next stream starts.
+          continueTimerRef.current = setTimeout(() => streamResponse({ type: 'continue', step: 2, substep: currentSubstepRef.current }), 0);
         } else {
           updateStepStatus(signal.step, 'complete');
-          streamResponse({ type: 'continue', step: signal.step + 1 });
+          continueTimerRef.current = setTimeout(() => streamResponse({ type: 'continue', step: signal.step + 1 }), 0);
         }
         break;
       case 'poll':
