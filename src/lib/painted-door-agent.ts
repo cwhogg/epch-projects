@@ -154,12 +154,21 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     const brandPrompt = buildBrandIdentityPrompt(idea, ctx);
     const brandResponse = await getAnthropic().messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 2048,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: brandPrompt }],
     });
 
+    if (brandResponse.stop_reason === 'max_tokens') {
+      throw new Error('Brand identity response was truncated — LLM hit token limit');
+    }
+
     const brandText = brandResponse.content[0].type === 'text' ? brandResponse.content[0].text : '';
     const brand = parseLLMJson<BrandIdentity>(brandText);
+
+    if (!brand.landingPage) {
+      throw new Error('Brand identity is missing landingPage — LLM did not generate landing page copy');
+    }
+
     await updateStep(ideaId, progress, 0, 'complete', brand.siteName);
 
     // --- Step 2: Assemble Files ---
@@ -169,17 +178,22 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
 
     await updateStep(ideaId, progress, 1, 'complete', `${Object.keys(allFiles).length} files`);
 
-    // --- Step 3: Create GitHub Repo ---
+    // --- Step 3: Create GitHub Repo (or reuse existing) ---
     await updateStep(ideaId, progress, 2, 'running');
 
-    const repo = await createGitHubRepo(siteSlug, `${brand.siteName} — ${brand.tagline}`);
+    const existingSite = await getPaintedDoorSite(ideaId);
+    const isRebuild = !!(existingSite?.repoOwner && existingSite?.repoName);
+    const repo = isRebuild
+      ? { owner: existingSite.repoOwner, name: existingSite.repoName, url: existingSite.repoUrl }
+      : await createGitHubRepo(siteSlug, `${brand.siteName} — ${brand.tagline}`);
 
-    await updateStep(ideaId, progress, 2, 'complete', repo.url);
+    await updateStep(ideaId, progress, 2, 'complete', isRebuild ? `reused ${repo.name}` : repo.url);
 
     // --- Step 4: Push Files ---
     await updateStep(ideaId, progress, 3, 'running');
 
-    const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles);
+    const commitMessage = isRebuild ? 'Rebuild: updated site' : 'Initial commit: painted door test site';
+    const commitSha = await pushFilesToGitHub(repo.owner, repo.name, allFiles, commitMessage);
 
     await updateStep(ideaId, progress, 3, 'complete', commitSha.substring(0, 7));
 
@@ -192,24 +206,28 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
       repoOwner: repo.owner,
       repoName: repo.name,
       repoUrl: repo.url,
-      siteUrl: '',
-      vercelProjectId: '',
+      siteUrl: existingSite?.siteUrl || '',
+      vercelProjectId: existingSite?.vercelProjectId || '',
       status: 'pushing',
-      createdAt: new Date().toISOString(),
-      signupCount: 0,
+      createdAt: existingSite?.createdAt || new Date().toISOString(),
+      signupCount: existingSite?.signupCount || 0,
     };
     await savePaintedDoorSite(partialSite);
 
-    // --- Step 5: Create Vercel Project ---
+    // --- Step 5: Create Vercel Project (or reuse existing) ---
     await updateStep(ideaId, progress, 4, 'running');
 
-    const vercel = await createVercelProject(repo.owner, repo.name, siteId);
+    let vercelProjectId = existingSite?.vercelProjectId || '';
+    if (!vercelProjectId) {
+      const vercel = await createVercelProject(repo.owner, repo.name, siteId);
+      vercelProjectId = vercel.projectId;
+    }
 
-    partialSite.vercelProjectId = vercel.projectId;
+    partialSite.vercelProjectId = vercelProjectId;
     partialSite.status = 'deploying';
     await savePaintedDoorSite(partialSite);
 
-    await updateStep(ideaId, progress, 4, 'complete', vercel.projectId);
+    await updateStep(ideaId, progress, 4, 'complete', isRebuild ? `reused ${vercelProjectId}` : vercelProjectId);
 
     // --- Step 6: Wait for Deploy ---
     await updateStep(ideaId, progress, 5, 'running');
@@ -217,7 +235,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     // Push empty commit to trigger Vercel's GitHub webhook
     await triggerDeployViaGitPush(repo.owner, repo.name);
 
-    const siteUrl = await waitForDeployment(vercel.projectId, repo.name);
+    const siteUrl = await waitForDeployment(vercelProjectId, repo.name);
 
     partialSite.siteUrl = siteUrl;
     await savePaintedDoorSite(partialSite);

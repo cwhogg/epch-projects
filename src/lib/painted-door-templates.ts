@@ -420,7 +420,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 
 function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
-  if (!brand.landingPage) return '';
+  if (!brand.landingPage) {
+    throw new Error('Cannot render landing page: brand.landingPage is missing');
+  }
   const siteName = esc(brand.siteName);
   const lp = brand.landingPage;
   const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
