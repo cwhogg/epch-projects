@@ -16,7 +16,7 @@ import {
   saveConversationHistory,
 } from '@/lib/painted-door-db';
 import type { BuildMode, BuildSession, ChatMessage, ChatRequestBody, StreamEndSignal, ToolDefinition } from '@/types';
-import { WEBSITE_BUILD_STEPS } from '@/types';
+import { WEBSITE_BUILD_STEPS, REQUIRED_ADVISORS_PER_STAGE } from '@/types';
 
 export const maxDuration = 300;
 
@@ -151,11 +151,13 @@ export async function POST(
       ideaId,
       mode: body.mode,
       currentStep: 0,
+      currentSubstep: 0,
       steps: WEBSITE_BUILD_STEPS.map((s) => ({
         name: s.name,
         status: 'pending' as const,
       })),
       artifacts: {},
+      advisorCallsThisRound: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -171,13 +173,21 @@ export async function POST(
   }
 
   // Advance session from frontend continue signal
-  if (body.type === 'continue' && body.step !== undefined && body.step > session.currentStep) {
-    for (let i = 0; i <= body.step; i++) {
-      if (session.steps[i]) session.steps[i].status = 'complete';
-    }
-    session.currentStep = body.step;
-    if (body.step + 1 < session.steps.length && session.steps[body.step + 1]) {
-      session.steps[body.step + 1].status = 'active';
+  if (body.type === 'continue') {
+    // Handle substep advancement within step 2
+    if (body.substep !== undefined && session.currentStep === 2) {
+      session.currentSubstep = body.substep;
+      session.advisorCallsThisRound = [];
+    } else if (body.step !== undefined && body.step > session.currentStep) {
+      for (let i = 0; i <= body.step && i < session.steps.length; i++) {
+        session.steps[i].status = 'complete';
+      }
+      session.currentStep = body.step;
+      session.currentSubstep = 0;
+      session.advisorCallsThisRound = [];
+      if (body.step + 1 < session.steps.length) {
+        session.steps[body.step + 1].status = 'active';
+      }
     }
     await saveBuildSession(ideaId, session);
   }
@@ -261,6 +271,7 @@ async function runAgentStream(
   const MAX_TOOL_ROUNDS = 15;
   let currentMessages: Anthropic.MessageParam[] = [...messages];
   let assistantText = '';
+  let advisorEnforcementRetries = 0;
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const stream = getAnthropic().messages.stream({
@@ -330,13 +341,21 @@ async function runAgentStream(
 
     // Inject advisor markers for consult_advisor tool results
     for (let i = 0; i < toolUseBlocks.length; i++) {
-      if (toolUseBlocks[i].name === 'consult_advisor' && !toolResults[i].is_error) {
+      if (toolUseBlocks[i].name === 'consult_advisor') {
         const advisorId = toolUseBlocks[i].input.advisorId as string;
-        const advisor = advisorRegistry.find((a) => a.id === advisorId);
-        const advisorName = advisor?.name || advisorId;
-        const marker = `\n<<<ADVISOR_START>>>:${JSON.stringify({ advisorId, advisorName })}\n${toolResults[i].content}\n<<<ADVISOR_END>>>\n`;
-        controller.enqueue(encoder.encode(marker));
-        assistantText += marker;
+
+        if (!toolResults[i].is_error) {
+          trackAdvisorCall(session, advisorId);
+          const advisor = advisorRegistry.find((a) => a.id === advisorId);
+          const advisorName = advisor?.name || advisorId;
+          const marker = `\n<<<ADVISOR_START>>>:${JSON.stringify({ advisorId, advisorName })}\n${toolResults[i].content}\n<<<ADVISOR_END>>>\n`;
+          controller.enqueue(encoder.encode(marker));
+          assistantText += marker;
+        } else {
+          // Track as called (prevent enforcement loop) but skip marker injection.
+          trackAdvisorCall(session, advisorId);
+          console.warn(`Advisor ${advisorId} call failed. Proceeding without their input.`);
+        }
       }
     }
 
@@ -357,6 +376,19 @@ async function runAgentStream(
         ...(r.is_error ? { is_error: r.is_error } : {}),
       })) },
     ];
+
+    // Check if required advisors have been consulted before allowing stage to complete
+    const advisorCheck = checkAdvisorRequirements(session);
+    if (advisorCheck && session.currentStep <= 3 && advisorEnforcementRetries < 2) {
+      advisorEnforcementRetries++;
+      // Force another LLM turn with enforcement message
+      history.push({ role: 'user', content: advisorCheck, timestamp: new Date().toISOString() });
+      continue; // Continue the agent loop
+    }
+    // If enforcement retries exhausted, allow the stream to proceed with a warning
+    if (advisorCheck && advisorEnforcementRetries >= 2) {
+      console.warn(`Advisor enforcement exhausted after ${advisorEnforcementRetries} retries at step ${session.currentStep}. Proceeding without full advisor coverage.`);
+    }
   }
 
   // Save assistant text to history
@@ -379,20 +411,16 @@ async function runAgentStream(
 }
 
 const TOOL_COMPLETES_STEP: Record<string, number> = {
-  get_idea_context: 0,        // Extract Ingredients
-  design_brand: 1,            // Design Brand Identity
-  // Step 2 (Write Hero) has no tool — advances via frontend continue
-  assemble_site_files: 3,     // Assemble Page
-  evaluate_brand: 4,          // Pressure Test
-  validate_code: 4,           // Pressure Test
-  consult_advisor: 5,         // Advisor Review (gated: currentStep >= 4)
-  create_repo: 6,             // Build & Deploy
-  push_files: 6,              // Build & Deploy
-  create_vercel_project: 6,   // Build & Deploy
-  trigger_deploy: 6,          // Build & Deploy
-  check_deploy_status: 6,     // Build & Deploy
-  verify_site: 7,             // Verify
-  finalize_site: 7,           // Verify
+  get_idea_context: 0,        // Extract & Validate Ingredients
+  // Steps 0-3 are copy-producing — advanced via frontend continue signals + advisor enforcement
+  assemble_site_files: 4,     // Build & Deploy
+  create_repo: 4,             // Build & Deploy
+  push_files: 4,              // Build & Deploy
+  create_vercel_project: 4,   // Build & Deploy
+  trigger_deploy: 4,          // Build & Deploy
+  check_deploy_status: 4,     // Build & Deploy
+  verify_site: 5,             // Verify
+  finalize_site: 5,           // Verify
 };
 
 /**
@@ -403,23 +431,73 @@ export function advanceSessionStep(
   session: BuildSession,
   toolNames: string[],
 ): void {
-  let maxStep = session.currentStep;
+  let maxStep = -1;
+
   for (const name of toolNames) {
     const step = TOOL_COMPLETES_STEP[name];
     if (step === undefined) continue;
-    if (name === 'consult_advisor' && session.currentStep < 4) continue;
     if (step > maxStep) maxStep = step;
   }
 
   if (maxStep > session.currentStep) {
-    for (let i = 0; i <= maxStep; i++) {
-      if (session.steps[i]) session.steps[i].status = 'complete';
+    // Mark all intermediate steps complete
+    for (let i = 0; i <= maxStep && i < session.steps.length; i++) {
+      session.steps[i].status = 'complete';
     }
     session.currentStep = maxStep;
-    if (maxStep + 1 < session.steps.length && session.steps[maxStep + 1]) {
+    // Mark next step active if it exists
+    if (maxStep + 1 < session.steps.length) {
       session.steps[maxStep + 1].status = 'active';
     }
   }
+}
+
+/** Track which advisors were called in this round */
+export function trackAdvisorCall(session: BuildSession, advisorId: string): void {
+  if (!session.advisorCallsThisRound) {
+    session.advisorCallsThisRound = [];
+  }
+  if (!session.advisorCallsThisRound.includes(advisorId)) {
+    session.advisorCallsThisRound.push(advisorId);
+  }
+}
+
+/** Check if required advisors have been consulted for the current stage.
+ *  Returns null if requirements met, or a message string if not. */
+export function checkAdvisorRequirements(session: BuildSession): string | null {
+  const stageKey = session.currentStep === 2
+    ? `2${String.fromCharCode(97 + session.currentSubstep)}` // "2a", "2b", etc.
+    : String(session.currentStep);
+
+  const required = REQUIRED_ADVISORS_PER_STAGE[stageKey];
+  if (!required) return null; // No requirements for this stage
+
+  const called = session.advisorCallsThisRound || [];
+  const missing = required.filter((id) => !called.includes(id));
+
+  if (missing.length === 0) return null;
+  return `You must consult the required advisors before presenting your recommendation. Missing: ${missing.join(', ')}.`;
+}
+
+/** Advance substep within step 2 (Write Page Sections).
+ *  Returns true if all substeps are complete and step 2 should advance. */
+export function advanceSubstep(session: BuildSession): boolean {
+  if (session.currentStep !== 2) return false;
+
+  session.currentSubstep += 1;
+  session.advisorCallsThisRound = []; // Reset for new substep
+
+  if (session.currentSubstep >= 5) {
+    // All 5 substages complete — advance to step 3
+    session.steps[2].status = 'complete';
+    session.currentStep = 3;
+    session.currentSubstep = 0;
+    if (session.steps[3]) {
+      session.steps[3].status = 'active';
+    }
+    return true;
+  }
+  return false;
 }
 
 export function determineStreamEndSignal(session: BuildSession): StreamEndSignal {
