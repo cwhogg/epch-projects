@@ -15,6 +15,7 @@ export const EVAL_CONFIG = {
     paragraphs: { max: 10, warn: 15 },
   },
   llmSurfacePatterns: [
+    // Prompt templates (existing)
     { glob: 'src/lib/advisors/prompts/*.md', tags: ['advisor'] },
     { glob: 'src/lib/frameworks/prompts/*/prompt.md', tags: ['framework'] },
     { glob: 'src/lib/research-agent-prompts.ts', tags: ['research'] },
@@ -25,5 +26,17 @@ export const EVAL_CONFIG = {
     { glob: 'src/lib/seo-knowledge.ts', tags: ['research', 'seo'] },
     { glob: 'src/lib/critique-service.ts', tags: ['content'] },
     { glob: 'src/lib/frameworks/framework-loader.ts', tags: ['framework'] },
+    // Chat routes with inline LLM calls (KB-100)
+    { glob: 'src/app/api/painted-door/*/chat/route.ts', tags: ['website-chat', 'painted-door'] },
+    { glob: 'src/app/api/foundation/*/chat/route.ts', tags: ['foundation'] },
+    // Agent libraries with inline LLM calls (KB-100)
+    { glob: 'src/lib/seo-analysis.ts', tags: ['research', 'seo'] },
+    { glob: 'src/lib/content-agent-v2.ts', tags: ['content'] },
+    { glob: 'src/lib/foundation-agent.ts', tags: ['foundation'] },
+    { glob: 'src/lib/content-critique-agent.ts', tags: ['content'] },
+    { glob: 'src/lib/analytics-agent.ts', tags: ['analytics'] },
+    { glob: 'src/lib/validation-canvas.ts', tags: ['validation'] },
+    { glob: 'src/lib/content-recipes.ts', tags: ['content'] },
+    { glob: 'src/lib/painted-door-agent.ts', tags: ['painted-door'] },
   ] as SurfacePattern[],
 };

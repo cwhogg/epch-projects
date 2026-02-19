@@ -1,0 +1,24 @@
+{
+  "name": "seth-godin-foundation-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "seth-godin",
+    "docType": "strategy",
+    "currentContent": "# SecondLook Strategy\n\n## Diagnosis\nThrift stores face a critical operational bottleneck: donated item intake requires identification, quality assessment, categorization, and pricing.\n\n## Guiding Policy\nBuild the definitive AI-powered intake system for secondhand retail, starting with clothing (highest volume).\n\n## Coherent Actions\n1. Launch with clothing categorization\n2. Price anchoring against eBay sold listings\n3. Partner with 5 pilot stores\n4. Expand to books and electronics in Q2"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Our strategy feels too operational. How do we reframe it around who we're serving and why they'd care enough to switch from manual sorting?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["disrupt", "leverage", "synergy", "best-in-class", "game-changer"],
+      "signaturePhrases": ["smallest viable audience", "remarkable", "tribe", "permission", "purple cow", "tension"]
+    }
+  }
+}

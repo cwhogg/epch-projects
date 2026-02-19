@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Fix loadFixture path bug
+### ✅ Task 1: Fix loadFixture path bug
 
 The `loadFixture` function in `e2e/prompt-adapter.ts` resolves fixture paths to `e2e/<filename>`, but all fixture files live in `e2e/fixtures/`. This bug prevents any fixture-dependent scenario from running. No eval log exists (`e2e/eval-log.jsonl` is absent), confirming the runner has never successfully executed fixture-dependent scenarios.
 
@@ -110,7 +110,7 @@ git commit -m "fix: loadFixture reads from e2e/fixtures/ directory"
 
 ---
 
-### Task 2: Register missing LLM surfaces in eval-config.ts
+### ✅ Task 2: Register missing LLM surfaces in eval-config.ts
 
 Add the 11 files identified by KB-100 to `llmSurfacePatterns` so the auto-trigger mechanism detects changes to these surfaces.
 
@@ -208,7 +208,7 @@ git commit -m "feat: register 11 missing LLM surfaces in eval-config (KB-100)"
 
 ---
 
-### Task 3: Write failing test for website-chat prompt adapter surface
+### ✅ Task 3: Write failing test for website-chat prompt adapter surface
 
 **Files:**
 - Modify: `e2e/__tests__/prompt-adapter.test.ts` (add website-chat describe block)
@@ -290,7 +290,7 @@ git commit -m "test: add failing tests for website-chat prompt adapter surface"
 
 ---
 
-### Task 4: Implement website-chat surface in prompt-adapter
+### ✅ Task 4: Implement website-chat surface in prompt-adapter
 
 **Files:**
 - Modify: `e2e/prompt-adapter.ts:14-72` (add new case in switch)
@@ -370,7 +370,7 @@ git commit -m "feat: add website-chat surface to eval prompt adapter (KB-099)"
 
 ---
 
-### Task 5: Create autonomous-mode-scoping scenario
+### ✅ Task 5: Create autonomous-mode-scoping scenario
 
 Tests that the website builder in autonomous mode scopes its response to the current stage only, per the fix-autonomous-mode-chain changes.
 
@@ -421,7 +421,7 @@ git commit -m "feat: add autonomous mode scoping eval scenario (KB-099)"
 
 ---
 
-### Task 6: Create continue-message scenario
+### ✅ Task 6: Create continue-message scenario
 
 Tests that the LLM responds correctly to the stage-specific continue message format ("Continue. Now work on stage N: Step Name."), which was changed in the fix-autonomous-mode-chain branch.
 
@@ -481,7 +481,7 @@ git commit -m "feat: add continue message eval scenario (KB-099)"
 
 ---
 
-### Task 7: Create foundation-chat scenario
+### ✅ Task 7: Create foundation-chat scenario
 
 Creates a scenario for the foundation document editing surface. Uses the existing `advisor-chat` prompt adapter surface (which already mirrors the foundation chat route's prompt construction) rather than creating a duplicate surface.
 
@@ -528,7 +528,7 @@ git commit -m "feat: add seth-godin foundation-chat eval scenario (KB-101)"
 
 ---
 
-### Task 8: Create multi-turn advisor-chat scenario
+### ✅ Task 8: Create multi-turn advisor-chat scenario
 
 The first multi-turn scenario in the eval suite. Tests that the LLM maintains context and voice across multiple conversation turns.
 
@@ -580,7 +580,7 @@ git commit -m "feat: add multi-turn advisor-chat eval scenario (KB-101)"
 
 ---
 
-### Task 9: Create julian-shapiro advisor-chat scenario
+### ✅ Task 9: Create julian-shapiro advisor-chat scenario
 
 Julian Shapiro is the website builder's default advisor but has zero eval scenarios. This scenario tests his voice in a foundation document editing context (brand-voice doc type, since he's listed with `contextDocs: ['positioning', 'brand-voice', 'seo-strategy']` in the registry).
 
@@ -628,7 +628,7 @@ git commit -m "feat: add julian-shapiro advisor-chat eval scenario (KB-101)"
 
 ---
 
-### Task 10: Run full test suite and build verification
+### ✅ Task 10: Run full test suite and build verification
 
 **Step 1: Run the full test suite**
 

@@ -15,6 +15,16 @@ const patterns: SurfacePattern[] = [
   { glob: 'src/lib/frameworks/prompts/*/prompt.md', tags: ['framework'] },
   { glob: 'src/lib/research-agent-prompts.ts', tags: ['research'] },
   { glob: 'src/lib/content-prompts.ts', tags: ['content'] },
+  { glob: 'src/app/api/painted-door/*/chat/route.ts', tags: ['website-chat', 'painted-door'] },
+  { glob: 'src/app/api/foundation/*/chat/route.ts', tags: ['foundation'] },
+  { glob: 'src/lib/seo-analysis.ts', tags: ['research', 'seo'] },
+  { glob: 'src/lib/content-agent-v2.ts', tags: ['content'] },
+  { glob: 'src/lib/foundation-agent.ts', tags: ['foundation'] },
+  { glob: 'src/lib/content-critique-agent.ts', tags: ['content'] },
+  { glob: 'src/lib/analytics-agent.ts', tags: ['analytics'] },
+  { glob: 'src/lib/validation-canvas.ts', tags: ['validation'] },
+  { glob: 'src/lib/content-recipes.ts', tags: ['content'] },
+  { glob: 'src/lib/painted-door-agent.ts', tags: ['painted-door'] },
 ];
 
 function makeScenario(name: string, tags: string[]): EvalScenario {
@@ -53,6 +63,20 @@ describe('getTriggeredTags', () => {
     ], patterns);
     expect(tags).toContain('advisor');
     expect(tags).toContain('content');
+  });
+
+  it('matches website builder chat route', () => {
+    expect(getTriggeredTags(
+      ['src/app/api/painted-door/abc/chat/route.ts'],
+      patterns
+    )).toContain('website-chat');
+  });
+
+  it('matches foundation chat route', () => {
+    expect(getTriggeredTags(
+      ['src/app/api/foundation/abc/chat/route.ts'],
+      patterns
+    )).toContain('foundation');
   });
 });
 
