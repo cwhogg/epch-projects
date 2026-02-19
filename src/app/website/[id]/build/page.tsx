@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BuildMode, BuildStep, ChatMessage, ChatRequestBody, StreamEndSignal } from '@/types';
 import { WEBSITE_BUILD_STEPS } from '@/types';
-import { parseStreamSegments } from '@/lib/parse-advisor-segments';
+import { AdvisorStreamParser, type StreamSegment } from '@/lib/parse-advisor-segments';
+import { validateCopyQuality } from '@/lib/copy-quality';
 
 type ClientState = 'loading' | 'mode_select' | 'streaming' | 'waiting_for_user' | 'polling' | 'done';
 
@@ -204,8 +205,18 @@ export default function WebsiteBuilderPage() {
       if (signalMatch) {
         const cleanText = fullText.replace(/\n__SIGNAL__:.+$/, '');
 
-        // Split into advisor segments for distinct bubbles
-        const segments = parseStreamSegments(cleanText);
+        // Use AdvisorStreamParser for incremental segment detection with copy quality validation
+        const segments: StreamSegment[] = [];
+        const parser = new AdvisorStreamParser((seg) => {
+          const flags = validateCopyQuality(seg.content);
+          if (flags.length > 0) {
+            console.warn(`Copy quality flags in ${seg.type} segment:`, flags.map(f => f.category));
+          }
+          segments.push(seg);
+        });
+        parser.push(cleanText);
+        parser.flush();
+
         if (segments.length > 1) {
           // Replace the single assistant message with multiple messages
           setMessages((prev) => {
