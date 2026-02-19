@@ -52,7 +52,7 @@ export function createConsultAdvisorTool(ideaId: string): ToolDefinition {
 
       const response = await getAnthropic().messages.create({
         model: CLAUDE_MODEL,
-        max_tokens: 2048,
+        max_tokens: 1024,
         system: advisorPrompt,
         messages: [{ role: 'user', content: userMessage }],
       });
