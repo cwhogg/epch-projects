@@ -1,0 +1,25 @@
+{
+  "name": "julian-shapiro-advisor-chat",
+  "surface": "advisor-chat",
+  "tags": ["advisor", "foundation"],
+  "config": {
+    "advisor": "julian-shapiro",
+    "docType": "brand-voice",
+    "currentContent": "# SecondLook Brand Voice\n\n## Voice Attributes\n- Practical over theoretical\n- Confident but not arrogant\n- Direct, minimal jargon\n\n## Tone\nHelpful expert who respects the reader's time. Like a knowledgeable friend, not a salesperson.\n\n## Vocabulary\nPrefer: sort, price, identify, speed, accuracy\nAvoid: leverage, synergy, disrupt, revolutionary"
+  },
+  "fixtures": {
+    "analysis": "sample-analysis-context.json",
+    "foundationDocs": "sample-foundation-docs.json"
+  },
+  "conversation": [
+    { "role": "user", "content": "Our brand voice doc feels generic. How should we sharpen it to sound more like us and less like every other SaaS?" },
+    { "role": "assistant", "evaluate": true }
+  ],
+  "dimensions": ["voice", "output-length"],
+  "dimensionConfig": {
+    "voice": {
+      "antiPatterns": ["leverage", "synergy", "disrupt", "game-changer", "best-in-class", "innovative"],
+      "signaturePhrases": ["hook", "value prop", "objection", "landing page", "conversion", "copy"]
+    }
+  }
+}
