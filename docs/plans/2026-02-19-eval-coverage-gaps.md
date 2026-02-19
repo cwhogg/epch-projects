@@ -481,7 +481,7 @@ git commit -m "feat: add continue message eval scenario (KB-099)"
 
 ---
 
-### Task 7: Create foundation-chat scenario
+### ✅ Task 7: Create foundation-chat scenario
 
 Creates a scenario for the foundation document editing surface. Uses the existing `advisor-chat` prompt adapter surface (which already mirrors the foundation chat route's prompt construction) rather than creating a duplicate surface.
 
@@ -528,7 +528,7 @@ git commit -m "feat: add seth-godin foundation-chat eval scenario (KB-101)"
 
 ---
 
-### Task 8: Create multi-turn advisor-chat scenario
+### ✅ Task 8: Create multi-turn advisor-chat scenario
 
 The first multi-turn scenario in the eval suite. Tests that the LLM maintains context and voice across multiple conversation turns.
 
@@ -580,7 +580,7 @@ git commit -m "feat: add multi-turn advisor-chat eval scenario (KB-101)"
 
 ---
 
-### Task 9: Create julian-shapiro advisor-chat scenario
+### ✅ Task 9: Create julian-shapiro advisor-chat scenario
 
 Julian Shapiro is the website builder's default advisor but has zero eval scenarios. This scenario tests his voice in a foundation document editing context (brand-voice doc type, since he's listed with `contextDocs: ['positioning', 'brand-voice', 'seo-strategy']` in the registry).
 
@@ -628,7 +628,7 @@ git commit -m "feat: add julian-shapiro advisor-chat eval scenario (KB-101)"
 
 ---
 
-### Task 10: Run full test suite and build verification
+### ✅ Task 10: Run full test suite and build verification
 
 **Step 1: Run the full test suite**
 
