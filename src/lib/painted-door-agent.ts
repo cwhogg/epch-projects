@@ -154,7 +154,7 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     const brandPrompt = buildBrandIdentityPrompt(idea, ctx);
     const brandResponse = await getAnthropic().messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 4096,
+      max_tokens: 16384,
       messages: [{ role: 'user', content: brandPrompt }],
     });
 
