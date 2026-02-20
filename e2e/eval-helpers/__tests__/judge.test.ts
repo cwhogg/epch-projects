@@ -59,10 +59,10 @@ describe('judge', () => {
     expect(result.score).toBe(0);
   });
 
-  it('truncates system prompt to 3000 chars', async () => {
+  it('truncates system prompt to MAX_PROMPT_LEN', async () => {
     mockCreate.mockResolvedValue(toolResponse(4, 'OK'));
-    await runJudge({ ...input, systemPrompt: 'x'.repeat(5000) });
+    await runJudge({ ...input, systemPrompt: 'x'.repeat(20000) });
     const userContent = mockCreate.mock.calls[0][0].messages[0].content;
-    expect(userContent.length).toBeLessThan(5000);
+    expect(userContent.length).toBeLessThan(20000);
   });
 });
