@@ -17,6 +17,7 @@ import { slugify } from '../utils';
 import { getAnthropic } from '../anthropic';
 import { CLAUDE_MODEL } from '../config';
 import { createGitHubRepo, pushFilesToGitHub, createVercelProject, triggerDeployViaGitPush } from '../github-api';
+import { hexToLuminance, contrastRatio } from '../contrast-utils';
 
 // ---------------------------------------------------------------------------
 // Validation helpers — each checks allFiles and returns { issues, suggestions }
@@ -473,23 +474,6 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         }
 
         // Check color contrast (basic: ensure text and background differ significantly)
-        const hexToLuminance = (hex: string): number => {
-          const rgb = hex.replace('#', '').match(/.{2}/g);
-          if (!rgb || rgb.length < 3) return 0;
-          const [r, g, b] = rgb.map((c) => {
-            const v = parseInt(c, 16) / 255;
-            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-          });
-          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        };
-        const contrastRatio = (hex1: string, hex2: string): number => {
-          const l1 = hexToLuminance(hex1);
-          const l2 = hexToLuminance(hex2);
-          const lighter = Math.max(l1, l2);
-          const darker = Math.min(l1, l2);
-          return (lighter + 0.05) / (darker + 0.05);
-        };
-
         if (brand.colors.textPrimary && brand.colors.background) {
           const ratio = contrastRatio(brand.colors.textPrimary, brand.colors.background);
           const passes = ratio >= 4.5; // WCAG AA for normal text
