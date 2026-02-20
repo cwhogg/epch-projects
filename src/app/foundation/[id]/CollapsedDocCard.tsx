@@ -109,16 +109,26 @@ export default function CollapsedDocCard({
             <button className="btn btn-ghost btn-sm" onClick={() => onExpand(type)}>View</button>
           )}
           {state === 'generated' || state === 'edited' ? (
-            <Link
-              href={`/foundation/${ideaId}/edit/${type}`}
-              className="btn btn-secondary btn-sm"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-                textDecoration: 'none',
-              }}
-            >
-              <ChatIcon size={14} /> Update
-            </Link>
+            <>
+              <Link
+                href={`/foundation/${ideaId}/edit/${type}`}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <ChatIcon size={14} /> Update
+              </Link>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onGenerate(type)}
+                disabled={generating || isRunning}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+              >
+                <RetryIcon /> Regenerate
+              </button>
+            </>
           ) : state === 'ready' ? (
             <button
               className="btn btn-primary btn-sm"
