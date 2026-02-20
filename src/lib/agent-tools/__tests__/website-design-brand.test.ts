@@ -89,15 +89,15 @@ function setupIdea() {
       text: JSON.stringify({
         siteName: 'Test Site',
         tagline: 'A tagline',
+        siteUrl: '',
         seoDescription: 'A test site for developers',
-        targetDemographic: 'testers',
-        voice: { tone: 'casual', personality: 'friendly', examples: ['hi'] },
         colors: {
           primary: '#000', primaryLight: '#333', background: '#111',
-          backgroundElevated: '#222', textPrimary: '#fff', textSecondary: '#ccc',
+          backgroundElevated: '#222', text: '#fff', textSecondary: '#ccc',
           textMuted: '#999', accent: '#0ff', border: '#444',
         },
-        typography: { headingFont: 'Inter', bodyFont: 'Inter', monoFont: 'Fira Code' },
+        fonts: { heading: 'Inter', body: 'Inter', mono: 'Fira Code' },
+        theme: 'dark',
         landingPage: {
           heroHeadline: 'Welcome',
           heroSubheadline: 'Sub',

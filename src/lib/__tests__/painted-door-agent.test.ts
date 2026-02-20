@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { BrandIdentity, PaintedDoorSite, ContentContext } from '@/types';
+import type { PaintedDoorSite, ContentContext } from '@/types';
 
 // --- Mocks ---
 
@@ -75,18 +75,19 @@ import { runPaintedDoorAgent } from '../painted-door-agent';
 
 // --- Helpers ---
 
-function makeBrand(overrides?: Partial<BrandIdentity>): BrandIdentity {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeBrand(overrides?: Record<string, any>): any {
   return {
     siteName: 'Test Site',
     tagline: 'A tagline',
-    targetDemographic: 'testers',
-    voice: { tone: 'casual', personality: 'friendly', examples: ['hi'] },
+    siteUrl: '',
     colors: {
       primary: '#000', primaryLight: '#333', background: '#111',
-      backgroundElevated: '#222', textPrimary: '#fff', textSecondary: '#ccc',
+      backgroundElevated: '#222', text: '#fff', textSecondary: '#ccc',
       textMuted: '#999', accent: '#0ff', border: '#444',
     },
-    typography: { headingFont: 'Inter', bodyFont: 'Inter', monoFont: 'Fira Code' },
+    fonts: { heading: 'Inter', body: 'Inter', mono: 'Fira Code' },
+    theme: 'dark' as const,
     landingPage: {
       heroHeadline: 'Welcome', heroSubheadline: 'Sub', ctaText: 'Go',
       valueProps: [{ title: 'Fast', description: 'Very fast' }],

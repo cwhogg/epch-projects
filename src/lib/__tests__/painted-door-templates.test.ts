@@ -1,25 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { assembleAllFiles } from '../painted-door-templates';
-import type { BrandIdentity, ContentContext } from '@/types';
+import type { ContentContext } from '@/types';
 
-function makeBrand(overrides?: Partial<BrandIdentity>): BrandIdentity {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeBrand(overrides?: Record<string, any>): any {
   return {
     siteName: 'Test Site',
     tagline: 'A test tagline',
-    targetDemographic: 'testers',
-    voice: { tone: 'casual', personality: 'friendly', examples: ['hi'] },
+    siteUrl: 'https://test.vercel.app',
     colors: {
       primary: '#000',
       primaryLight: '#333',
       background: '#111',
       backgroundElevated: '#222',
-      textPrimary: '#fff',
+      text: '#fff',
       textSecondary: '#ccc',
       textMuted: '#999',
       accent: '#0ff',
       border: '#444',
     },
-    typography: { headingFont: 'Inter', bodyFont: 'Inter', monoFont: 'Fira Code' },
+    fonts: { heading: 'Inter', body: 'Inter', mono: 'Fira Code' },
+    theme: 'dark' as const,
     landingPage: {
       heroHeadline: 'Welcome',
       heroSubheadline: 'A great product',

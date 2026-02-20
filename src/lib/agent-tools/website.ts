@@ -375,12 +375,14 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
         brand = parseLLMJson<BrandIdentity>(text);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const brandAny = brand as any;
         return {
           success: true,
           siteName: brand.siteName,
           tagline: brand.tagline,
-          seoDescription: brand.seoDescription,
-          heroHeadline: brand.landingPage?.heroHeadline,
+          seoDescription: brandAny.seoDescription,
+          heroHeadline: brandAny.landingPage?.heroHeadline,
           mode: visualOnly ? 'visual-only' : 'full',
         };
       },
@@ -436,18 +438,20 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
       execute: async () => {
         if (!brand || !ctx) return { error: 'Call design_brand first' };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const brandAny = brand as any;
         const evals: Evaluation[] = [];
         const primaryKeyword = ctx.topKeywords[0]?.keyword || '';
 
         // Check seoDescription
-        if (primaryKeyword && brand.seoDescription) {
-          evals.push(checkMetaDescription(brand.seoDescription, primaryKeyword));
+        if (primaryKeyword && brandAny.seoDescription) {
+          evals.push(checkMetaDescription(brandAny.seoDescription, primaryKeyword));
         }
 
-        if (brand.landingPage) {
+        if (brandAny.landingPage) {
           // Check heroHeadline contains primary keyword
           if (primaryKeyword) {
-            const headlineLower = brand.landingPage.heroHeadline.toLowerCase();
+            const headlineLower = brandAny.landingPage.heroHeadline.toLowerCase();
             const kwLower = primaryKeyword.toLowerCase();
             const hasKeyword = headlineLower.includes(kwLower);
             evals.push({
@@ -460,7 +464,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
 
           // Check heroSubheadline includes at least one secondary keyword
           if (ctx.topKeywords.length > 1) {
-            const subLower = brand.landingPage.heroSubheadline.toLowerCase();
+            const subLower = brandAny.landingPage.heroSubheadline.toLowerCase();
             const secondaryHit = ctx.topKeywords.slice(1, 4).some(
               (k) => subLower.includes(k.keyword.toLowerCase()),
             );
@@ -474,8 +478,8 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         }
 
         // Check color contrast (basic: ensure text and background differ significantly)
-        if (brand.colors.textPrimary && brand.colors.background) {
-          const ratio = contrastRatio(brand.colors.textPrimary, brand.colors.background);
+        if (brand.colors.text && brand.colors.background) {
+          const ratio = contrastRatio(brand.colors.text, brand.colors.background);
           const passes = ratio >= 4.5; // WCAG AA for normal text
           evals.push({
             pass: passes,
@@ -487,10 +491,10 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
 
         // Check value props target different keywords
         let vpKeywordHitCount = 0;
-        if (brand.landingPage) {
-          const vpTitles = brand.landingPage.valueProps.map((vp) => vp.title.toLowerCase());
+        if (brandAny.landingPage) {
+          const vpTitles = brandAny.landingPage.valueProps.map((vp: { title: string }) => vp.title.toLowerCase());
           const vpKeywordHits = ctx.topKeywords.slice(0, 6).filter(
-            (k) => vpTitles.some((t) => t.includes(k.keyword.toLowerCase())),
+            (k) => vpTitles.some((t: string) => t.includes(k.keyword.toLowerCase())),
           );
           vpKeywordHitCount = vpKeywordHits.length;
           evals.push({
@@ -506,7 +510,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         return {
           ...combined,
           primaryKeyword,
-          seoDescriptionLength: brand.seoDescription?.length ?? 0,
+          seoDescriptionLength: brandAny.seoDescription?.length ?? 0,
           headlineHasKeyword: evals[1]?.pass ?? null,
           valuePropsWithKeywords: vpKeywordHitCount,
         };

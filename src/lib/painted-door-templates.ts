@@ -19,7 +19,7 @@ function escAttr(s: string): string {
 // ---------------------------------------------------------------------------
 
 function googleFontsUrl(brand: BrandIdentity): string {
-  const fonts = [brand.typography.headingFont, brand.typography.bodyFont, brand.typography.monoFont];
+  const fonts = [brand.fonts.heading, brand.fonts.body, brand.fonts.mono];
   const unique = [...new Set(fonts)];
   const params = unique
     .map((f) => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700`)
@@ -35,7 +35,7 @@ function navFragment(brand: BrandIdentity): string {
   const siteName = esc(brand.siteName);
   return `      <header className="border-b border-border bg-background-elevated">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <a href="/" className="text-xl font-bold text-primary" style={{ fontFamily: "'${escAttr(brand.typography.headingFont)}', sans-serif" }}>
+          <a href="/" className="text-xl font-bold text-primary" style={{ fontFamily: "'${escAttr(brand.fonts.heading)}', sans-serif" }}>
             ${siteName}
           </a>
           <div className="flex items-center gap-6 text-sm">
@@ -338,7 +338,7 @@ function renderGlobalsCss(brand: BrandIdentity): string {
   --color-primary-light: ${brand.colors.primaryLight};
   --color-background: ${brand.colors.background};
   --color-background-elevated: ${brand.colors.backgroundElevated};
-  --color-text: ${brand.colors.textPrimary};
+  --color-text: ${brand.colors.text};
   --color-text-secondary: ${brand.colors.textSecondary};
   --color-text-muted: ${brand.colors.textMuted};
   --color-accent: ${brand.colors.accent};
@@ -348,15 +348,15 @@ function renderGlobalsCss(brand: BrandIdentity): string {
 body {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: '${brand.typography.bodyFont}', system-ui, sans-serif;
+  font-family: '${brand.fonts.body}', system-ui, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: '${brand.typography.headingFont}', system-ui, sans-serif;
+  font-family: '${brand.fonts.heading}', system-ui, sans-serif;
 }
 
 code, pre {
-  font-family: '${brand.typography.monoFont}', ui-monospace, monospace;
+  font-family: '${brand.fonts.mono}', ui-monospace, monospace;
 }
 `;
 }
@@ -365,7 +365,7 @@ function renderLayout(brand: BrandIdentity): string {
   const fontsUrl = googleFontsUrl(brand);
   const siteName = esc(brand.siteName);
   const tagline = esc(brand.tagline);
-  const seoDesc = esc(brand.seoDescription || '');
+  const seoDesc = esc((brand as any).seoDescription || '');
 
   return `import type { Metadata } from 'next';
 import './globals.css';
@@ -403,8 +403,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 `;
 }
 
-function renderSitemap(brand: BrandIdentity, ctx: ContentContext): string {
-  const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
+function renderSitemap(brand: BrandIdentity): string {
+  const siteUrl = brand.siteUrl || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
   return `import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -420,17 +420,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 
 function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
-  if (!brand.landingPage) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const brandAny = brand as any;
+  if (!brandAny.landingPage) {
     throw new Error('Cannot render landing page: brand.landingPage is missing');
   }
   const siteName = esc(brand.siteName);
-  const lp = brand.landingPage;
-  const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
+  const lp = brandAny.landingPage;
+  const siteUrl = brand.siteUrl || ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
 
   // Build value props JSX
   const valuePropCards = lp.valueProps
     .map(
-      (vp) => `          <section aria-label="${escAttr(vp.title)}" className="bg-background-elevated border border-border rounded-xl p-6">
+      (vp: { title: string; description: string }) => `          <section aria-label="${escAttr(vp.title)}" className="bg-background-elevated border border-border rounded-xl p-6">
             <h3 className="text-lg font-semibold text-text mb-2">${esc(vp.title)}</h3>
             <p className="text-text-secondary text-sm leading-relaxed">${esc(vp.description)}</p>
           </section>`,
@@ -441,7 +443,7 @@ function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
   const faqs = lp.faqs || [];
   const faqItems = faqs
     .map(
-      (faq) => `            <div className="border-b border-border pb-4">
+      (faq: { question: string; answer: string }) => `            <div className="border-b border-border pb-4">
               <h3 className="text-text font-medium mb-2">${esc(faq.question)}</h3>
               <p className="text-text-secondary text-sm leading-relaxed">${esc(faq.answer)}</p>
             </div>`,
@@ -453,7 +455,7 @@ function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
     ? JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
-        mainEntity: faqs.map((faq) => ({
+        mainEntity: faqs.map((faq: { question: string; answer: string }) => ({
           '@type': 'Question',
           name: faq.question,
           acceptedAnswer: { '@type': 'Answer', text: faq.answer },
@@ -886,7 +888,8 @@ ${footerFragment(brand)}
 // ---------------------------------------------------------------------------
 
 export interface ApprovedCopy {
-  landingPage: NonNullable<BrandIdentity['landingPage']>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  landingPage: any;
   seoDescription: string;
 }
 
@@ -896,7 +899,8 @@ export function assembleAllFiles(
   approvedCopy?: ApprovedCopy,
 ): Record<string, string> {
   // Merge approved copy into brand for template rendering
-  const resolvedBrand: BrandIdentity = approvedCopy
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resolvedBrand: any = approvedCopy
     ? { ...brand, landingPage: approvedCopy.landingPage, seoDescription: approvedCopy.seoDescription }
     : brand;
 
@@ -920,7 +924,7 @@ export function assembleAllFiles(
     'app/layout.tsx': renderLayout(resolvedBrand),
     'app/page.tsx': renderLandingPage(resolvedBrand, ctx),
     'app/robots.ts': ROBOTS_TS,
-    'app/sitemap.ts': renderSitemap(resolvedBrand, ctx),
+    'app/sitemap.ts': renderSitemap(resolvedBrand),
     'app/api/signup/route.ts': SIGNUP_ROUTE_TS,
 
     // App — blog

@@ -94,7 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       id: siteId,
       ideaId: id,
       ideaName: idea.name,
-      brand: site?.brand || { siteName: idea.name, tagline: 'test', targetDemographic: 'test', voice: { tone: 'test', personality: 'test', examples: [] }, colors: { primary: '#000', primaryLight: '#333', background: '#111', backgroundElevated: '#222', textPrimary: '#fff', textSecondary: '#ccc', textMuted: '#999', accent: '#0ff', border: '#444' }, typography: { headingFont: 'Inter', bodyFont: 'Inter', monoFont: 'Fira Code' } },
+      brand: site?.brand || { siteName: idea.name, tagline: 'test', siteUrl: '', colors: { primary: '#000', primaryLight: '#333', background: '#111', backgroundElevated: '#222', text: '#fff', textSecondary: '#ccc', textMuted: '#999', accent: '#0ff', border: '#444' }, fonts: { heading: 'Inter', body: 'Inter', mono: 'Fira Code' }, theme: 'dark' as const },
       repoOwner,
       repoName,
       repoUrl: `https://github.com/${repoOwner}/${repoName}`,

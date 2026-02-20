@@ -165,7 +165,8 @@ export async function runPaintedDoorAgent(ideaId: string): Promise<void> {
     const brandText = brandResponse.content[0].type === 'text' ? brandResponse.content[0].text : '';
     const brand = parseLLMJson<BrandIdentity>(brandText);
 
-    if (!brand.landingPage) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(brand as any).landingPage) {
       throw new Error('Brand identity is missing landingPage — LLM did not generate landing page copy');
     }
 
