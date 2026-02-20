@@ -2,11 +2,10 @@ import type { ToolDefinition, BrandIdentity, PaintedDoorSite, ProductIdea, Evalu
 import { ContentContext } from '@/lib/content-prompts';
 import { buildContentContext, generateContentCalendar } from '@/lib/content-agent';
 import { detectVertical } from '@/lib/seo-knowledge';
-import { getIdeaFromDb, getFoundationDoc } from '@/lib/db';
+import { getIdeaFromDb } from '@/lib/db';
 import { assembleFromSpec } from '@/lib/painted-door-templates';
 import { validateSectionCopy, validatePageMeta, getMissingSectionTypes } from '@/lib/painted-door-page-spec';
 import type { SectionType, PageSection, PageSpec } from '@/lib/painted-door-page-spec';
-import { extractBrandFromDesignPrinciples } from '@/lib/foundation-tokens';
 import {
   savePaintedDoorSite,
   saveDynamicPublishTarget,
@@ -694,13 +693,8 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
           const session = await getBuildSession(ideaId);
           const pageSpec = session?.artifacts?.pageSpec;
 
-          // Read brand from design-principles
-          const designDoc = await getFoundationDoc(ideaId, 'design-principles');
-          let extractedBrand: BrandIdentity | null = null;
-          if (designDoc) {
-            const extraction = extractBrandFromDesignPrinciples(designDoc.content, '');
-            if (extraction.ok) extractedBrand = extraction.brand as BrandIdentity;
-          }
+          // Read brand from session (set by lock_brand)
+          const extractedBrand: BrandIdentity | null = session?.artifacts?.brand ?? null;
 
           const evals: Evaluation[] = [];
           const primaryKeyword = ctx.topKeywords[0]?.keyword || '';

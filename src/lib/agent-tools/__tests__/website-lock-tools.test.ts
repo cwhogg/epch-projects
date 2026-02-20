@@ -379,16 +379,9 @@ describe('evaluate_brand tool (PageSpec-based)', () => {
       { type: 'hero', copy: { headline: 'Test your ideas fast', subheadline: 'Testing tools for startups.', ctaText: 'Start testing' } },
       { type: 'features', copy: { sectionHeadline: 'Features', features: [{ title: 'T1', description: 'D1' }, { title: 'T2', description: 'D2' }, { title: 'T3', description: 'D3' }] } },
       { type: 'faq', copy: { sectionHeadline: 'FAQ', faqs: [{ question: 'Q?', answer: 'A.' }] } },
-    ]);
+    ], VALID_BRAND);
     session.artifacts.pageSpec!.metaDescription = 'A great test platform for developers that helps them build faster apps and ship more often.';
     mockGetBuildSession.mockResolvedValue(session);
-
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const getCtx = findTool(tools, 'get_idea_context');
@@ -403,16 +396,9 @@ describe('evaluate_brand tool (PageSpec-based)', () => {
       { type: 'hero', copy: { headline: 'Build things fast', subheadline: 'No testing keywords here.', ctaText: 'Get started now' } },
       { type: 'features', copy: { sectionHeadline: 'Features', features: [{ title: 'T1', description: 'D1' }, { title: 'T2', description: 'D2' }, { title: 'T3', description: 'D3' }] } },
       { type: 'faq', copy: { sectionHeadline: 'FAQ', faqs: [{ question: 'Q?', answer: 'A.' }] } },
-    ]);
+    ], VALID_BRAND);
     session.artifacts.pageSpec!.metaDescription = 'A great platform for building.';
     mockGetBuildSession.mockResolvedValue(session);
-
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const getCtx = findTool(tools, 'get_idea_context');
@@ -427,16 +413,9 @@ describe('evaluate_brand tool (PageSpec-based)', () => {
       { type: 'hero', copy: { headline: 'Test platform here', subheadline: 'Sub.', ctaText: 'Go test now' } },
       { type: 'features', copy: { sectionHeadline: 'Features', features: [{ title: 'T1', description: 'D1' }, { title: 'T2', description: 'D2' }, { title: 'T3', description: 'D3' }] } },
       { type: 'faq', copy: { sectionHeadline: 'FAQ', faqs: [{ question: 'Q?', answer: 'A.' }] } },
-    ]);
+    ], VALID_BRAND);
     session.artifacts.pageSpec!.metaDescription = 'A great test description for testing.';
     mockGetBuildSession.mockResolvedValue(session);
-
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const getCtx = findTool(tools, 'get_idea_context');
@@ -451,16 +430,9 @@ describe('evaluate_brand tool (PageSpec-based)', () => {
       { type: 'hero', copy: { headline: 'Test stuff here', subheadline: 'Sub.', ctaText: 'Go test now' } },
       { type: 'features', copy: { sectionHeadline: 'Features', features: [{ title: 'T1', description: 'D1' }, { title: 'T2', description: 'D2' }, { title: 'T3', description: 'D3' }] } },
       { type: 'faq', copy: { sectionHeadline: 'FAQ', faqs: [{ question: 'Q1?', answer: 'A1.' }, { question: 'Q2?', answer: 'A2.' }, { question: 'Q3?', answer: 'A3.' }] } },
-    ]);
+    ], VALID_BRAND);
     session.artifacts.pageSpec!.metaDescription = 'A test site.';
     mockGetBuildSession.mockResolvedValue(session);
-
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const getCtx = findTool(tools, 'get_idea_context');
