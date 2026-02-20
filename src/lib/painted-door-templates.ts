@@ -1,5 +1,8 @@
 import { BrandIdentity } from '@/types';
 import { ContentContext } from './content-prompts';
+import { renderLandingPage as renderLandingPageFromSpec } from './painted-door-sections';
+import { getMissingSectionTypes } from './painted-door-page-spec';
+import type { PageSpec } from './painted-door-page-spec';
 
 // ---------------------------------------------------------------------------
 // String escaping helper — safely embed brand values in JS template literals
@@ -361,11 +364,11 @@ code, pre {
 `;
 }
 
-function renderLayout(brand: BrandIdentity): string {
+function renderLayout(brand: BrandIdentity, pageSpec?: PageSpec): string {
   const fontsUrl = googleFontsUrl(brand);
   const siteName = esc(brand.siteName);
   const tagline = esc(brand.tagline);
-  const seoDesc = esc((brand as any).seoDescription || '');
+  const seoDesc = pageSpec ? esc(pageSpec.metaDescription) : esc((brand as any).seoDescription || '');
 
   return `import type { Metadata } from 'next';
 import './globals.css';
@@ -945,6 +948,47 @@ export function assembleAllFiles(
     'content/faq/.gitkeep': '',
 
     // Google Search Console verification (tied to account, same for all sites)
+    'public/google8016c4ca2d4b4091.html': 'google-site-verification: google8016c4ca2d4b4091.html',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// PageSpec-driven assembly — replaces assembleAllFiles
+// ---------------------------------------------------------------------------
+
+export function assembleFromSpec(
+  pageSpec: PageSpec,
+  brand: BrandIdentity,
+): Record<string, string> {
+  const missing = getMissingSectionTypes(pageSpec.sections);
+  if (missing.length > 0) {
+    throw new Error(`Cannot assemble: missing section types: ${missing.join(', ')}`);
+  }
+
+  return {
+    'package.json': PACKAGE_JSON,
+    'tsconfig.json': TSCONFIG_JSON,
+    'next.config.ts': NEXT_CONFIG_TS,
+    'postcss.config.mjs': POSTCSS_CONFIG_MJS,
+    '.gitignore': GITIGNORE,
+    'lib/content.ts': LIB_CONTENT_TS,
+    'components/content/MarkdownRenderer.tsx': MARKDOWN_RENDERER_TSX,
+    'components/content/JsonLd.tsx': JSONLD_TSX,
+    'app/globals.css': renderGlobalsCss(brand),
+    'app/layout.tsx': renderLayout(brand, pageSpec),
+    'app/page.tsx': renderLandingPageFromSpec(pageSpec, brand),
+    'app/robots.ts': ROBOTS_TS,
+    'app/sitemap.ts': renderSitemap(brand),
+    'app/api/signup/route.ts': SIGNUP_ROUTE_TS,
+    'app/blog/page.tsx': renderBlogListing(brand),
+    'app/blog/[slug]/page.tsx': renderBlogDetail(brand),
+    'app/compare/page.tsx': renderCompareListing(brand),
+    'app/compare/[slug]/page.tsx': renderCompareDetail(brand),
+    'app/faq/page.tsx': renderFaqListing(brand),
+    'app/faq/[slug]/page.tsx': renderFaqDetail(brand),
+    'content/blog/.gitkeep': '',
+    'content/comparison/.gitkeep': '',
+    'content/faq/.gitkeep': '',
     'public/google8016c4ca2d4b4091.html': 'google-site-verification: google8016c4ca2d4b4091.html',
   };
 }
