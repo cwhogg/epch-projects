@@ -36,7 +36,7 @@ graph TB
         API_CONTENT_PROGS["/api/content/programs<br/>Program management"]
         API_FOUNDATION["/api/foundation/[ideaId]<br/>POST triggers, GET polls, PATCH saves"]
         API_FOUNDATION_CHAT["/api/foundation/[ideaId]/chat<br/>POST streaming chat"]
-        API_PD["/api/painted-door/[id]<br/>Site generation"]
+        API_PD["/api/painted-door/[id]<br/>Site CRUD"]
         API_PD_CHAT["/api/painted-door/[id]/chat<br/>POST streaming chat builder"]
         API_PD_SITES["/api/painted-door/sites<br/>List sites"]
         API_PUBLISH["/api/publish/status<br/>Publish log"]
@@ -51,7 +51,7 @@ graph TB
         RESEARCH["Research Agent<br/>research-agent.ts"]
         CONTENT_AGENT["Content Agent<br/>content-agent.ts"]
         FOUNDATION["Foundation Agent<br/>foundation-agent.ts"]
-        PAINTED_DOOR["Website Agent<br/>painted-door-agent.ts"]
+        PAINTED_DOOR["Website Chat Pipeline<br/>chat route + agent-tools/website.ts"]
         ANALYTICS_AGENT["Analytics Agent<br/>analytics-agent.ts"]
         CRITIQUE["Content Critique Agent<br/>content-critique-agent.ts"]
         RUNTIME["Agent Runtime<br/>agent-runtime.ts"]
@@ -125,7 +125,7 @@ graph TB
         A_RESEARCH["research-agent"]
         A_CONTENT["content-agent"]
         A_FOUNDATION["foundation-agent"]
-        A_PAINTED_DOOR["painted-door-agent"]
+        A_PAINTED_DOOR["website chat pipeline"]
         A_ANALYTICS["analytics-agent"]
         A_CRITIQUE["content-critique-agent"]
     end
@@ -146,7 +146,7 @@ graph TB
         S_SERP["serp-search"]
         S_PUBLISH["publish-pipeline,<br/>github-publish,<br/>publish-targets"]
         S_PD_DB["painted-door-db"]
-        S_PD_TMPL["painted-door-templates,<br/>painted-door-prompts"]
+        S_PD_TMPL["painted-door-templates,<br/>painted-door-page-spec,<br/>painted-door-sections,<br/>foundation-tokens,<br/>contrast-utils"]
         S_CONTENT["content-prompts,<br/>content-context, content-vault"]
         S_ANALYTICS_DB["analytics-db"]
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
@@ -250,8 +250,11 @@ graph TB
 
     subgraph Prompts["Prompt Engineering"]
         content_prompts["content-prompts.ts<br/>Content generation prompts per type<br/>buildCalendarPrompt(), buildBlogPostPrompt(),<br/>buildComparisonPrompt(), buildFAQPrompt()"]
-        painted_door_prompts["painted-door-prompts.ts<br/>Brand identity generation prompt"]
-        painted_door_templates["painted-door-templates.ts<br/>Next.js site templates (~21 files)<br/>assembleAllFiles()"]
+        painted_door_templates["painted-door-templates.ts<br/>Next.js site templates (~21 files)<br/>assembleFromSpec()"]
+        painted_door_page_spec["painted-door-page-spec.ts<br/>PageSpec types + section copy validation"]
+        painted_door_sections["painted-door-sections.ts<br/>8 section renderers + wrapInPage"]
+        foundation_tokens["foundation-tokens.ts<br/>Extract BrandIdentity from design-principles<br/>json:design-tokens block"]
+        contrast_utils["contrast-utils.ts<br/>WCAG luminance + contrast ratio"]
     end
 
     subgraph Frameworks["Frameworks"]
@@ -270,7 +273,7 @@ graph TB
         frameworks_registry["frameworks/registry.ts<br/>Framework definitions and metadata"]
         frameworks_loader["frameworks/framework-loader.ts<br/>Load prompt.md, examples.md, anti-examples.md"]
         frameworks_types["frameworks/types.ts<br/>Framework type definitions"]
-        frameworks_prompts["frameworks/prompts/<br/>4 frameworks: content-inc-model,<br/>forever-promise, value-metric,<br/>landing-page-assembly"]
+        frameworks_prompts["frameworks/prompts/<br/>5 frameworks: content-inc-model,<br/>forever-promise, value-metric,<br/>landing-page-assembly, design-principles"]
     end
 
     subgraph Utilities["Utilities"]
@@ -311,9 +314,8 @@ graph LR
     subgraph Website
         B7 --> D1["User clicks Build Website"]
         D1 --> D1a["/website/[id]/build"]
-        D1a --> D1b["Mode selection:<br/>Interactive or Autonomous"]
-        D1b --> D1c["Chat-driven agent loop<br/>Julian Shapiro leads 6-stage build<br/>with mandatory consult_advisor"]
-        D1c --> D4["Live site on Vercel<br/>with email signup"]
+        D1a --> D1b["Chat-driven pipeline<br/>lock_section_copy accumulates PageSpec<br/>assembleFromSpec renders deterministically"]
+        D1b --> D4["Live site on Vercel<br/>with email signup"]
     end
 
     subgraph Content
@@ -640,7 +642,7 @@ stateDiagram-v2
 flowchart LR
     STRATEGY["strategy<br/>(Seth Godin)"] --> POSITIONING["positioning<br/>(April Dunford)"]
     POSITIONING --> VOICE["brand-voice<br/>(Copywriter)"]
-    POSITIONING --> DESIGN["design-principles<br/>(Richard Rumelt)"]
+    POSITIONING --> DESIGN["design-principles<br/>(Oli Gardner)"]
     STRATEGY --> DESIGN
     POSITIONING --> VISUAL["visual-identity<br/>(Copywriter)"]
     VOICE --> VISUAL
@@ -713,7 +715,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Content Programs | `/api/content/programs` | GET, PATCH | List/toggle content programs |
 | Foundation | `/api/foundation/[ideaId]` | POST, GET, PATCH | POST triggers generation; GET returns docs + progress; PATCH saves edits |
 | Foundation Chat | `/api/foundation/[ideaId]/chat` | POST | Streaming advisor conversation for document editing |
-| Painted Door | `/api/painted-door/[id]` | POST, GET | POST triggers site build; GET returns status + build session |
+| Painted Door | `/api/painted-door/[id]` | GET, PATCH, PUT, DELETE | Site CRUD + build session management |
 | Painted Door Chat | `/api/painted-door/[id]/chat` | POST | Streaming chat with agent loop for interactive website building |
 | Painted Door Sites | `/api/painted-door/sites` | GET | List all painted door sites |
 | Publish Targets | `/api/publish-targets` | GET | List all publish targets (static + dynamic) |
@@ -738,11 +740,11 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Research | `src/lib/research-agent.ts` | `agent-tools/research.ts` | Market research: competitors, SEO pipeline, WTP, scoring |
 | Content | `src/lib/content-agent.ts` | `agent-tools/content.ts` | Content calendar generation and piece writing |
 | Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 7 strategic foundation documents |
-| Website | `src/lib/painted-door-agent.ts` | `agent-tools/website.ts` | 6-stage build with substages, code-level advisor enforcement, copy quality validation → GitHub repo → Vercel deploy |
+| Website | Chat-driven pipeline (no standalone agent) | `agent-tools/website.ts` | PageSpec accumulator via `lock_section_copy`, deterministic rendering via `assembleFromSpec` → GitHub repo → Vercel deploy |
 | Analytics | `src/lib/analytics-agent.ts` | `agent-tools/analytics.ts` | Weekly GSC data collection and performance reports |
 | Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Goal-oriented critique pipeline with framework injection, named critics, and agent-controlled critique selection |
 
-Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` env var. The Website Agent uses v1 (sequential pipeline) as fallback and the new chat-driven agent loop as the primary flow. All share `agent-tools/common.ts` (plan, scratchpad, evaluation helpers).
+Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` env var. The Website builder uses a chat-driven pipeline only (no standalone agent). All share `agent-tools/common.ts` (plan, scratchpad, evaluation helpers).
 
 ### Core Library
 
@@ -766,14 +768,17 @@ Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` 
 | `src/lib/content-context.ts` | Content context builder: loads analysis, SEO data, expertise for content generation |
 | `src/lib/content-vault.ts` | Content vault: reads/writes generated content pieces to experiments/ filesystem |
 | `src/lib/content-agent-v2.ts` | V2 agentic content generation with evaluate/revise loop |
-| `src/lib/painted-door-prompts.ts` | Brand identity generation prompt |
-| `src/lib/painted-door-templates.ts` | Next.js site templates (~21 files) for painted door sites |
+| `src/lib/painted-door-templates.ts` | Next.js site scaffold templates (~21 files), `assembleFromSpec()` |
+| `src/lib/painted-door-page-spec.ts` | `PageSpec` types, per-section copy validation, section type helpers |
+| `src/lib/painted-door-sections.ts` | 8 section renderers (hero, problem, features, etc.) + `wrapInPage` + `renderLandingPage` |
+| `src/lib/foundation-tokens.ts` | Extract `BrandIdentity` from design-principles Foundation doc `json:design-tokens` block |
+| `src/lib/contrast-utils.ts` | WCAG 2.0 luminance calculation and contrast ratio |
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets + build sessions + conversation history |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
 | `src/lib/expertise-profile.ts` | Owner expertise profile for scoring calibration |
 | `src/lib/advisors/registry.ts` | 14-advisor virtual board registry |
 | `src/lib/advisors/prompt-loader.ts` | Per-advisor system prompt loader |
-| `src/lib/frameworks/` | Framework library: registry, loader, 4 prompt sets (content-inc-model, forever-promise, value-metric, landing-page-assembly) |
+| `src/lib/frameworks/` | Framework library: registry, loader, 5 prompt sets (content-inc-model, forever-promise, value-metric, landing-page-assembly, design-principles) |
 | `src/lib/research-agent-parsers.ts` | Research result parsers: competitor, SEO, WTP, scoring extraction |
 | `src/lib/research-agent-prompts.ts` | Research agent prompt templates |
 | `src/lib/github-api.ts` | Shared GitHub/Vercel API helpers for website agent tools |
