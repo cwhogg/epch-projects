@@ -5,12 +5,12 @@ import { ContentContext } from './content-prompts';
 // String escaping helper — safely embed brand values in JS template literals
 // ---------------------------------------------------------------------------
 
-function esc(s: string): string {
+export function esc(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
 }
 
 /** Escape for embedding inside JSX string attributes (single-quoted) */
-function escAttr(s: string): string {
+export function escAttr(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
 }
 
@@ -31,7 +31,7 @@ function googleFontsUrl(brand: BrandIdentity): string {
 // Shared fragments
 // ---------------------------------------------------------------------------
 
-function navFragment(brand: BrandIdentity): string {
+export function navFragment(brand: BrandIdentity): string {
   const siteName = esc(brand.siteName);
   return `      <header className="border-b border-border bg-background-elevated">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -47,7 +47,7 @@ function navFragment(brand: BrandIdentity): string {
       </header>`;
 }
 
-function footerFragment(brand: BrandIdentity): string {
+export function footerFragment(brand: BrandIdentity): string {
   const siteName = esc(brand.siteName);
   const year = new Date().getFullYear();
   return `      <footer className="border-t border-border bg-background-elevated mt-auto">
