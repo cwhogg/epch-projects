@@ -8,15 +8,15 @@ import { buildContentContext } from '@/lib/content-agent';
 import { getAdvisorSystemPrompt } from '@/lib/advisors/prompt-loader';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
-import { designPrinciplesSeed } from '@/lib/advisors/design-seed';
 import { DOC_DEPENDENCIES } from '@/lib/foundation-deps';
+import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 
 // Advisor assignments per doc type
 export const DOC_ADVISOR_MAP: Record<FoundationDocType, string> = {
   'strategy': 'seth-godin',
   'positioning': 'april-dunford',
   'brand-voice': 'copywriter',
-  'design-principles': 'richard-rumelt',
+  'design-principles': 'oli-gardner',
   'seo-strategy': 'seo-expert',
   'social-media-strategy': 'april-dunford',
   'visual-identity': 'copywriter',
@@ -26,7 +26,6 @@ function buildGenerationPrompt(
   docType: FoundationDocType,
   ideaContext: string,
   upstreamDocs: Record<string, string>,
-  designSeed?: string,
 ): string {
   let prompt = `Generate a ${docType.replace(/-/g, ' ')} document for this product.\n\n`;
   prompt += `PRODUCT CONTEXT:\n${ideaContext}\n\n`;
@@ -37,10 +36,6 @@ function buildGenerationPrompt(
       prompt += `\n## ${type.replace(/-/g, ' ').toUpperCase()}\n${content}\n`;
     }
     prompt += '\n';
-  }
-
-  if (docType === 'design-principles' && designSeed) {
-    prompt += `DESIGN SEED (adapt for this specific product):\n${designSeed}\n\n`;
   }
 
   switch (docType) {
@@ -85,13 +80,15 @@ Ground every claim in the strategy document. Don't invent new positioning — de
 5. SELF-CHECK — Verify each example is stylistically distinct and serves its context`;
       break;
 
-    case 'design-principles':
-      prompt += `Adapt the design seed for this specific product. Keep the general design system but customize:
-1. Color palette that reflects the brand positioning
-2. Typography choices that match the brand voice
-3. Spacing and layout principles appropriate for the product's audience
-4. Any product-specific UI patterns`;
+    case 'design-principles': {
+      const frameworkPrompt = getFrameworkPrompt('design-principles');
+      if (frameworkPrompt) {
+        prompt += frameworkPrompt;
+      } else {
+        prompt += 'Generate a design principles document with a json:design-tokens block.';
+      }
       break;
+    }
 
     case 'seo-strategy':
       prompt += `Write an SEO strategy document covering:
@@ -235,14 +232,8 @@ export function createFoundationTools(
             }
           }
 
-          // Load design seed for design-principles
-          let designSeed: string | undefined;
-          if (docType === 'design-principles') {
-            designSeed = designPrinciplesSeed;
-          }
-
           // Build prompt and call Claude
-          const userPrompt = buildGenerationPrompt(docType, ideaContext, upstreamDocs, designSeed);
+          const userPrompt = buildGenerationPrompt(docType, ideaContext, upstreamDocs);
           const advisorId = DOC_ADVISOR_MAP[docType];
           const systemPrompt = getAdvisorSystemPrompt(advisorId);
 
