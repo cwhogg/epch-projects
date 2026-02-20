@@ -6,7 +6,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { buildContentContext } from '@/lib/content-context';
-import { getAllFoundationDocs, getIdeaFromDb } from '@/lib/db';
+import { getAllFoundationDocs, getFoundationDoc, getIdeaFromDb } from '@/lib/db';
+import { extractBrandFromDesignPrinciples } from '@/lib/foundation-tokens';
 import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 import {
   getBuildSession,
@@ -15,6 +16,7 @@ import {
   saveBuildSession,
   saveConversationHistory,
 } from '@/lib/painted-door-db';
+import type { PageSection } from '@/lib/painted-door-page-spec';
 import type { BuildMode, BuildSession, ChatMessage, ChatRequestBody, StreamEndSignal, ToolDefinition } from '@/types';
 import { WEBSITE_BUILD_STEPS, REQUIRED_ADVISORS_PER_STAGE, SUBSTAGE_LABELS } from '@/types';
 
@@ -111,7 +113,9 @@ You MUST use the consult_advisor tool for the required advisors at each stage.
 ${advisorRoster}
 
 ## Build Tools
-You have access to all website build tools (assemble_site_files, create_repo, push_files, etc.) plus consult_advisor. Use them when you reach the appropriate step.
+You have access to all website build tools plus consult_advisor. Use them when you reach the appropriate step.
+
+**Copy Locking:** After each copy-producing stage, call \`lock_section_copy({ type, copy })\` to lock the section into the PageSpec accumulator. The accumulator builds the full page spec incrementally. All 8 section types must be locked before \`assemble_site_files\` can run. At Stage 4 (Final Review), use \`lock_page_meta({ metaTitle, metaDescription, ogDescription })\` to lock page metadata. Use \`overwrite: true\` in lock_section_copy only during final review to revise previously locked copy.
 
 ## Output
 Respond conversationally. When you use a tool, explain what you're doing and why. When consulting an advisor, do NOT paraphrase their response. Their response appears as a separate message bubble.`;
@@ -145,6 +149,22 @@ export async function POST(
   if (body.type === 'mode_select') {
     if (!body.mode) {
       return Response.json({ error: 'Missing mode for mode_select' }, { status: 400 });
+    }
+
+    // Prerequisite: validate design-principles Foundation doc has valid tokens
+    const designDoc = await getFoundationDoc(ideaId, 'design-principles');
+    if (!designDoc) {
+      return Response.json(
+        { error: 'Missing design-principles Foundation document. Generate it first before starting the website build.' },
+        { status: 400 },
+      );
+    }
+    const tokenCheck = extractBrandFromDesignPrinciples(designDoc.content, '');
+    if (!tokenCheck.ok) {
+      return Response.json(
+        { error: `Design-principles doc has invalid tokens: ${tokenCheck.error}. Regenerate the design-principles Foundation document to fix this.` },
+        { status: 400 },
+      );
     }
 
     const session: BuildSession = {
@@ -341,6 +361,18 @@ async function runAgentStream(
     const toolNamesCalled = toolUseBlocks.map((t) => t.name);
     advanceSessionStep(session, toolNamesCalled);
 
+    // Section-based step advancement for lock_section_copy / lock_page_meta
+    if (toolNamesCalled.includes('lock_section_copy') || toolNamesCalled.includes('lock_page_meta')) {
+      const updatedSession = await getBuildSession(ideaId);
+      if (updatedSession?.artifacts?.pageSpec) {
+        Object.assign(session.artifacts, updatedSession.artifacts);
+        const lockedTypes = new Set(
+          (session.artifacts.pageSpec?.sections || []).map((s: PageSection) => s.type),
+        );
+        advanceSectionBasedStep(session, lockedTypes, toolNamesCalled.includes('lock_page_meta'));
+      }
+    }
+
     // Inject advisor markers for consult_advisor tool results
     for (let i = 0; i < toolUseBlocks.length; i++) {
       if (toolUseBlocks[i].name === 'consult_advisor') {
@@ -466,6 +498,67 @@ export function advanceSessionStep(
     if (maxStep + 1 < session.steps.length) {
       session.steps[maxStep + 1].status = 'active';
     }
+  }
+}
+
+/**
+ * Advance session step based on which sections are locked in the PageSpec.
+ * This handles steps 1-3 which are driven by lock_section_copy / lock_page_meta.
+ * Mutates session in place. Only moves forward, never backward.
+ */
+export function advanceSectionBasedStep(
+  session: BuildSession,
+  lockedTypes: Set<string>,
+  metaLocked: boolean,
+): void {
+  // Step 1 (Write Hero) completes when hero is locked
+  if (session.currentStep === 1 && lockedTypes.has('hero')) {
+    session.steps[1].status = 'complete';
+    session.currentStep = 2;
+    session.currentSubstep = 0;
+    session.advisorCallsThisRound = [];
+    if (session.steps[2]) session.steps[2].status = 'active';
+  }
+
+  // Step 2 substep advancement based on locked sections
+  if (session.currentStep === 2) {
+    // Substep 0: Problem
+    if (session.currentSubstep === 0 && lockedTypes.has('problem')) {
+      session.currentSubstep = 1;
+      session.advisorCallsThisRound = [];
+    }
+    // Substep 1: Features
+    if (session.currentSubstep === 1 && lockedTypes.has('features')) {
+      session.currentSubstep = 2;
+      session.advisorCallsThisRound = [];
+    }
+    // Substep 2: How It Works
+    if (session.currentSubstep === 2 && lockedTypes.has('how-it-works')) {
+      session.currentSubstep = 3;
+      session.advisorCallsThisRound = [];
+    }
+    // Substep 3: Audience
+    if (session.currentSubstep === 3 && lockedTypes.has('audience')) {
+      session.currentSubstep = 4;
+      session.advisorCallsThisRound = [];
+    }
+    // Substep 4: Objections + Final CTA
+    if (session.currentSubstep === 4 && lockedTypes.has('objections') && lockedTypes.has('final-cta')) {
+      session.steps[2].status = 'complete';
+      session.currentStep = 3;
+      session.currentSubstep = 0;
+      session.advisorCallsThisRound = [];
+      if (session.steps[3]) session.steps[3].status = 'active';
+    }
+  }
+
+  // Step 3 (Final Review) completes when page meta is locked
+  if (session.currentStep === 3 && metaLocked) {
+    session.steps[3].status = 'complete';
+    session.currentStep = 4;
+    session.currentSubstep = 0;
+    session.advisorCallsThisRound = [];
+    if (session.steps[4]) session.steps[4].status = 'active';
   }
 }
 
