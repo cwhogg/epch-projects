@@ -555,6 +555,7 @@ export interface BuildSession {
     siteUrl?: string;
     repoUrl?: string;
     pageSpec?: import('../lib/painted-door-page-spec').PageSpec;
+    brand?: BrandIdentity;
   };
   advisorCallsThisRound?: string[];  // Track which advisor IDs were called in the current round
   createdAt: string;

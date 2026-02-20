@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Add `brand` to `BuildSession.artifacts` type
+### ✅ Task 1: Add `brand` to `BuildSession.artifacts` type
 
 **Files:**
 - Modify: `src/types/index.ts:544-558`
