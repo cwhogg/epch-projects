@@ -20,7 +20,9 @@ export const EVAL_CONFIG = {
     { glob: 'src/lib/frameworks/prompts/*/prompt.md', tags: ['framework'] },
     { glob: 'src/lib/research-agent-prompts.ts', tags: ['research'] },
     { glob: 'src/lib/content-prompts.ts', tags: ['content'] },
-    { glob: 'src/lib/painted-door-prompts.ts', tags: ['painted-door'] },
+    { glob: 'src/lib/painted-door-page-spec.ts', tags: ['painted-door'] },
+    { glob: 'src/lib/painted-door-sections.ts', tags: ['painted-door'] },
+    { glob: 'src/lib/foundation-tokens.ts', tags: ['painted-door', 'foundation'] },
     { glob: 'src/lib/agent-tools/*.ts', tags: ['agent-tools'] },
     { glob: 'src/lib/expertise-profile.ts', tags: ['research'] },
     { glob: 'src/lib/seo-knowledge.ts', tags: ['research', 'seo'] },
@@ -37,6 +39,5 @@ export const EVAL_CONFIG = {
     { glob: 'src/lib/analytics-agent.ts', tags: ['analytics'] },
     { glob: 'src/lib/validation-canvas.ts', tags: ['validation'] },
     { glob: 'src/lib/content-recipes.ts', tags: ['content'] },
-    { glob: 'src/lib/painted-door-agent.ts', tags: ['painted-door'] },
   ] as SurfacePattern[],
 };
