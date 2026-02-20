@@ -31,16 +31,33 @@ export async function GET(request: NextRequest) {
       const sites: { [siteName: string]: number } = {};
       let totalImpressions = 0;
 
-      // Group by ideaId (as "site" name)
+      // Use unmatchedPages which contain site-level data with actual impressions
+      // The query field contains the page URL like "https://carecircle-six.vercel.app/"
+      for (const page of report.unmatchedPages) {
+        if (page.impressions === 0) continue;
+
+        // Extract domain from URL for grouping
+        let siteName: string;
+        try {
+          const url = new URL(page.query);
+          siteName = url.hostname.replace('www.', '');
+        } catch {
+          // If not a URL, use the query as-is (truncated)
+          siteName = page.query.length > 25 ? page.query.slice(0, 22) + '...' : page.query;
+        }
+
+        sites[siteName] = (sites[siteName] || 0) + page.impressions;
+        totalImpressions += page.impressions;
+        allSites.add(siteName);
+      }
+
+      // Also include matched pieces with impressions
       for (const piece of report.pieces) {
-        // If ideaId filter is set, skip pieces from other ideas
+        if (piece.current.impressions === 0) continue;
         if (ideaId && piece.ideaId !== ideaId) continue;
 
-        // Use piece title or a short slug as the site name for stacking
-        const siteName = piece.title.length > 30
-          ? piece.title.slice(0, 27) + '...'
-          : piece.title;
-
+        // Use a site identifier based on piece slug domain if available
+        const siteName = piece.slug.split('/')[0] || 'content';
         sites[siteName] = (sites[siteName] || 0) + piece.current.impressions;
         totalImpressions += piece.current.impressions;
         allSites.add(siteName);
