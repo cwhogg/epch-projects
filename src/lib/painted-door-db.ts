@@ -1,6 +1,37 @@
 import { getRedis, parseValue } from './redis';
-import { PaintedDoorSite, PaintedDoorProgress, BuildSession, ChatMessage } from '@/types';
+import type { BrandIdentity, PaintedDoorSite, PaintedDoorProgress, BuildSession, ChatMessage } from '@/types';
 import { PublishTarget } from './publish-targets';
+
+// ---------- Brand Normalization ----------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeBrandIdentity(raw: any): BrandIdentity {
+  const colors = raw.colors || {};
+  const fonts = raw.fonts || raw.typography || {};
+
+  return {
+    siteName: raw.siteName || '',
+    tagline: raw.tagline || '',
+    siteUrl: raw.siteUrl || '',
+    colors: {
+      primary: colors.primary || '',
+      primaryLight: colors.primaryLight || '',
+      background: colors.background || '',
+      backgroundElevated: colors.backgroundElevated || '',
+      text: colors.text || colors.textPrimary || '',
+      textSecondary: colors.textSecondary || '',
+      textMuted: colors.textMuted || '',
+      accent: colors.accent || '',
+      border: colors.border || '',
+    },
+    fonts: {
+      heading: fonts.heading || fonts.headingFont || '',
+      body: fonts.body || fonts.bodyFont || '',
+      mono: fonts.mono || fonts.monoFont || '',
+    },
+    theme: raw.theme === 'dark' ? 'dark' : 'light',
+  };
+}
 
 // ---------- Painted Door Sites ----------
 
@@ -11,13 +42,19 @@ export async function savePaintedDoorSite(site: PaintedDoorSite): Promise<void> 
 export async function getPaintedDoorSite(ideaId: string): Promise<PaintedDoorSite | null> {
   const data = await getRedis().hget('painted_door_sites', ideaId);
   if (!data) return null;
-  return parseValue<PaintedDoorSite>(data);
+  const site = parseValue<PaintedDoorSite>(data);
+  if (site?.brand) site.brand = normalizeBrandIdentity(site.brand);
+  return site;
 }
 
 export async function getAllPaintedDoorSites(): Promise<PaintedDoorSite[]> {
   const data = await getRedis().hgetall('painted_door_sites');
   if (!data) return [];
-  return Object.values(data).map((v) => parseValue<PaintedDoorSite>(v));
+  return Object.values(data).map((v) => {
+    const site = parseValue<PaintedDoorSite>(v);
+    if (site?.brand) site.brand = normalizeBrandIdentity(site.brand);
+    return site;
+  }).filter((s): s is PaintedDoorSite => s != null);
 }
 
 // ---------- Progress Tracking ----------
