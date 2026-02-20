@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { WeeklyReport } from '@/types';
+import dynamic from 'next/dynamic';
 import PerformanceTable from '@/components/PerformanceTable';
 import AlertsList from '@/components/AlertsList';
+
+const ImpressionsChart = dynamic(() => import('@/components/ImpressionsChart'), { ssr: false });
 
 interface ReportResponse {
   report: WeeklyReport;
@@ -232,6 +235,9 @@ export default function TestingAnalytics() {
               format="percent"
             />
           </div>
+
+          {/* Impressions by Week Chart */}
+          <ImpressionsChart />
 
           {/* Alerts */}
           {report.alerts.length > 0 && (
