@@ -1479,7 +1479,7 @@ git commit -m "feat: update chat route for PageSpec-driven step advancement"
 
 ---
 
-## Task 10: Create design-principles framework
+## ✅ Task 10: Create design-principles framework
 
 **Files:**
 - Create: `src/lib/frameworks/prompts/design-principles/prompt.md`
@@ -1571,7 +1571,7 @@ git commit -m "feat: add design-principles framework with token schema"
 
 ---
 
-## Task 11: Update Foundation agent for design-principles
+## ✅ Task 11: Update Foundation agent for design-principles
 
 **Files:**
 - Modify: `src/lib/agent-tools/foundation.ts:15-23` (DOC_ADVISOR_MAP)
@@ -1628,7 +1628,7 @@ git commit -m "feat: assign Oli Gardner to design-principles, use framework prom
 
 ---
 
-## Task 12: Delete autonomous agent path
+## ✅ Task 12: Delete autonomous agent path
 
 **Files:**
 - Delete: `src/lib/painted-door-agent.ts`
@@ -1683,7 +1683,7 @@ git commit -m "chore: delete autonomous agent path and brand identity prompt"
 
 ---
 
-## Task 13: Update website status page
+## ✅ Task 13: Update website status page
 
 **Files:**
 - Modify: `src/app/website/[id]/page.tsx` (remove triggerGeneration callback, update BrandIdentity display)
@@ -1710,7 +1710,7 @@ git commit -m "fix: update website status page for new BrandIdentity shape"
 
 ---
 
-## Task 14: Update design-seed.ts and clean up
+## ✅ Task 14: Update design-seed.ts and clean up
 
 **Files:**
 - Modify or delete: `src/lib/advisors/design-seed.ts` (content moved to framework examples.md in Task 10)
