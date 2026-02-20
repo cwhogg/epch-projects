@@ -28,7 +28,10 @@ async function checkAndUpdateDeployment(site: PaintedDoorSite): Promise<'complet
     const state = deployment.state || deployment.readyState;
 
     if (state === 'READY') {
-      site.siteUrl = `https://${deployment.url}`;
+      // Prefer production alias over deployment-specific URL
+      const aliases: string[] = deployment.alias || [];
+      const productionAlias = aliases.find((a: string) => !a.includes('-' + deployment.uid.slice(0, 9)));
+      site.siteUrl = `https://${productionAlias || deployment.url}`;
       site.status = 'live';
       site.deployedAt = new Date().toISOString();
       await savePaintedDoorSite(site);
