@@ -16,7 +16,6 @@ export default function PaintedDoorProgressPage() {
 
   const [progress, setProgress] = useState<PaintedDoorProgress | null>(null);
   const [loading, setLoading] = useState(true);
-  const [triggered, setTriggered] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testDeployStatus, setTestDeployStatus] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -26,9 +25,7 @@ export default function PaintedDoorProgressPage() {
       const res = await fetch(`/api/painted-door/${analysisId}`);
       if (!res.ok) return;
       const data = await res.json();
-      if (data.status === 'not_started' && !triggered) {
-        return; // Haven't triggered yet
-      }
+      if (data.status === 'not_started') return;
       setProgress(data as PaintedDoorProgress);
 
       // Stop polling when complete or error
@@ -41,24 +38,7 @@ export default function PaintedDoorProgressPage() {
     } catch (err) {
       console.error('Failed to poll progress:', err);
     }
-  }, [analysisId, triggered]);
-
-  const triggerGeneration = useCallback(async () => {
-    try {
-      setTriggered(true);
-      setError(null);
-      const res = await fetch(`/api/painted-door/${analysisId}`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to start site generation');
-        return;
-      }
-      // Start polling
-      pollRef.current = setInterval(pollProgress, 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start');
-    }
-  }, [analysisId, pollProgress]);
+  }, [analysisId]);
 
   const resetProgress = useCallback(async () => {
     try {
@@ -68,7 +48,6 @@ export default function PaintedDoorProgressPage() {
       }
       await fetch(`/api/painted-door/${analysisId}`, { method: 'DELETE' });
       setProgress(null);
-      setTriggered(false);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reset');
@@ -90,7 +69,6 @@ export default function PaintedDoorProgressPage() {
           return;
         }
         setProgress(data as PaintedDoorProgress);
-        setTriggered(true);
         setLoading(false);
 
         // If still running, start polling
@@ -236,7 +214,7 @@ export default function PaintedDoorProgressPage() {
       ) : null}
 
       {/* Build Site button for not-started or failed state */}
-      {((!progress && !triggered) || progress?.status === 'error') && (
+      {((!progress) || progress?.status === 'error') && (
         <div className="card-static p-8 text-center animate-slide-up stagger-2">
           <h2 className="font-display text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
             {progress?.status === 'error' ? 'Build Failed' : 'Ready to Build'}
@@ -256,7 +234,7 @@ export default function PaintedDoorProgressPage() {
       )}
 
       {/* Temporary: Test Deploy button to verify pipeline without LLM */}
-      {((!progress && !triggered) || progress?.status === 'error') && (
+      {((!progress) || progress?.status === 'error') && (
         <div className="card-static p-5 animate-slide-up stagger-3">
           <div className="flex items-center justify-between">
             <div>
@@ -448,12 +426,12 @@ export default function PaintedDoorProgressPage() {
       {/* Retry on error */}
       {progress?.status === 'error' && (
         <div className="flex justify-center gap-3">
-          <button
-            onClick={() => triggerGeneration()}
+          <Link
+            href={`/website/${analysisId}/build?fresh=1`}
             className="btn btn-primary"
           >
             Retry
-          </button>
+          </Link>
           <button
             onClick={resetProgress}
             className="btn btn-ghost"
