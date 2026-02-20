@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// GitHub & Vercel API helpers (shared between painted-door-agent and website tools)
+// GitHub & Vercel API helpers (shared by website builder tools)
 // ---------------------------------------------------------------------------
 
 export async function createGitHubRepo(

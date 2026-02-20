@@ -1,6 +1,16 @@
 # Landing Page Assembly Framework (6 Stages)
 
-Build a high-converting landing page through structured advisor collaboration. Every copy-producing stage (1, 2, 3a-3e) follows the advisor collaboration protocol. Decisions lock at each stage and are never revisited.
+Build a high-converting landing page through structured advisor collaboration. Every copy-producing stage (1, 2, 3a-3e) follows the advisor collaboration protocol. Decisions lock at each stage via the `lock_section_copy` tool and are never revisited.
+
+## Copy Accumulator (PageSpec)
+
+Copy decisions are persisted incrementally via `lock_section_copy` tool calls. Each call validates the copy against the section schema and locks it into the PageSpec accumulator in Redis. All 8 section types must be locked before `assemble_site_files` can run.
+
+**Rules:**
+- Call `lock_section_copy` immediately after user approval at each stage
+- Each section can only be locked once per stage. To revise during Stage 4 (Final Review), pass `overwrite: true`
+- If validation fails, fix the copy and retry (max 3 attempts per section)
+- The tool echoes back the locked copy and reports remaining unlocked sections
 
 ## Stage 1: Extract & Validate Ingredients (checkpoint)
 
@@ -19,36 +29,52 @@ Draft headline, subheader, and CTA. Consult Shirin Oreizy (behavioral science) a
 
 Output: Locked headline, subheader, CTA. Never revisited.
 
+**Lock:** `lock_section_copy({ type: 'hero', copy: { headline, subheadline, ctaText } })`
+
 ## Stage 3: Write Page Sections (5 substages, each a checkpoint)
 
 Each substage follows the advisor collaboration protocol.
 
 ### 3a: Problem Awareness
 Required advisors: Shirin Oreizy, Copywriter. Optional: Joanna Wiebe.
+**Lock:** `lock_section_copy({ type: 'problem', copy: { headline, body } })`
 
 ### 3b: Features (3-6 blocks)
 Required advisors: Copywriter, Oli Gardner.
+**Lock:** `lock_section_copy({ type: 'features', copy: { sectionHeadline, features: [{ title, description }, ...] } })`
 
 ### 3c: How It Works
 Required advisors: Copywriter. Optional: Oli Gardner.
+**Lock:** `lock_section_copy({ type: 'how-it-works', copy: { sectionHeadline, steps: [{ label, description }, ...] } })`
 
 ### 3d: Target Audience
 Required advisors: Shirin Oreizy, April Dunford.
+**Lock:** `lock_section_copy({ type: 'audience', copy: { sectionHeadline, body } })`
 
 ### 3e: Objection Handling + Final CTA
 Required advisors: Shirin Oreizy, Joanna Wiebe. Optional: Copywriter.
+**Lock (two calls):**
+- `lock_section_copy({ type: 'objections', copy: { sectionHeadline, objections: [{ question, answer }, ...] } })`
+- `lock_section_copy({ type: 'final-cta', copy: { headline, body, ctaText } })`
+
+### FAQ
+Generate FAQ entries based on common objections and positioning. No advisor consultation required.
+**Lock:** `lock_section_copy({ type: 'faq', copy: { sectionHeadline, faqs: [{ question, answer }, ...] } })`
 
 Output: All page sections locked individually per substage.
 
 ## Stage 4: Final Review (checkpoint)
 
-Concise coherence check across all locked sections. Only surface issues if serious (e.g., a feature section undermines the hero's promise). No more than 200 words. If something requires reopening a locked section, flag it with a clear reason.
+Concise coherence check across all locked sections. Only surface issues if serious (e.g., a feature section undermines the hero's promise). No more than 200 words. If something requires reopening a locked section, flag it with a clear reason and use `lock_section_copy` with `overwrite: true` to replace it.
 
-Output: Either "looks coherent, ready to build" or a specific concern.
+After coherence check, lock page metadata:
+**Lock:** `lock_page_meta({ metaTitle, metaDescription, ogDescription })`
+
+Output: Either "looks coherent, ready to build" or a specific concern. All 8 sections + page meta must be locked before proceeding.
 
 ## Stage 5: Build & Deploy
 
-Generate code from locked copy + visual design tokens from foundation docs. Deploy to Vercel. No interactive checkpoints.
+Call `assemble_site_files` which reads the locked PageSpec and design-principles Foundation doc to render all files deterministically (zero LLM calls). Then push to GitHub and deploy to Vercel. No interactive checkpoints.
 
 ## Stage 6: Verify
 

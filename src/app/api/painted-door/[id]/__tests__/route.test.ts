@@ -19,19 +19,6 @@ vi.mock('@/lib/painted-door-db', () => ({
   deletePaintedDoorSite: (...args: unknown[]) => mockDeletePaintedDoorSite(...args),
 }));
 
-vi.mock('@/lib/painted-door-agent', () => ({
-  runPaintedDoorAgent: vi.fn(),
-}));
-
-// next/server mock
-vi.mock('next/server', async () => {
-  const actual = await vi.importActual('next/server');
-  return {
-    ...actual,
-    after: vi.fn((fn: () => Promise<void>) => fn()),
-  };
-});
-
 import { GET } from '../route';
 
 function makeGetRequest(id: string) {

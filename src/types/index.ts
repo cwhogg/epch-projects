@@ -168,28 +168,24 @@ export interface GSCAnalyticsSummary {
 export interface BrandIdentity {
   siteName: string;
   tagline: string;
-  seoDescription?: string;
-  targetDemographic: string;
-  voice: { tone: string; personality: string; examples: string[] };
+  siteUrl: string;
   colors: {
     primary: string;
     primaryLight: string;
     background: string;
     backgroundElevated: string;
-    textPrimary: string;
+    text: string;
     textSecondary: string;
     textMuted: string;
     accent: string;
     border: string;
   };
-  typography: { headingFont: string; bodyFont: string; monoFont: string };
-  landingPage?: {
-    heroHeadline: string;
-    heroSubheadline: string;
-    ctaText: string;
-    valueProps: { title: string; description: string }[];
-    faqs: { question: string; answer: string }[];
+  fonts: {
+    heading: string;
+    body: string;
+    mono: string;
   };
+  theme: 'light' | 'dark';
 }
 
 export interface PaintedDoorSite {
@@ -558,6 +554,7 @@ export interface BuildSession {
     finalReviewResult?: string;
     siteUrl?: string;
     repoUrl?: string;
+    pageSpec?: import('../lib/painted-door-page-spec').PageSpec;
   };
   advisorCallsThisRound?: string[];  // Track which advisor IDs were called in the current round
   createdAt: string;

@@ -23,6 +23,17 @@ vi.mock('@/lib/frameworks/framework-loader', () => ({
   getFrameworkPrompt: vi.fn().mockReturnValue('## Landing Page Assembly\nPhase 1: Extract...'),
 }));
 
+const { VALID_DESIGN_TOKENS, VALID_DESIGN_DOC } = vi.hoisted(() => {
+  const tokens = JSON.stringify({
+    siteName: 'TestBrand', tagline: 'Test all the things',
+    colors: { primary: '#2563EB', primaryLight: '#3B82F6', background: '#FFFFFF', backgroundElevated: '#F9FAFB', text: '#111827', textSecondary: '#4B5563', textMuted: '#9CA3AF', accent: '#10B981', border: '#E5E7EB' },
+    fonts: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' },
+    theme: 'light',
+  });
+  const doc = `# Design Principles\n\nSome prose.\n\n\`\`\`json:design-tokens\n${tokens}\n\`\`\`\n\nMore prose.`;
+  return { VALID_DESIGN_TOKENS: tokens, VALID_DESIGN_DOC: doc };
+});
+
 vi.mock('@/lib/db', () => ({
   getIdeaFromDb: vi.fn().mockResolvedValue({
     id: 'idea-1',
@@ -37,6 +48,12 @@ vi.mock('@/lib/db', () => ({
     'brand-voice': { type: 'brand-voice', content: 'Brand voice content', generatedAt: '2026-02-17' },
     'design-principles': { type: 'design-principles', content: 'Design principles content', generatedAt: '2026-02-17' },
     'seo-strategy': { type: 'seo-strategy', content: 'SEO strategy content', generatedAt: '2026-02-17' },
+  }),
+  getFoundationDoc: vi.fn().mockResolvedValue({
+    type: 'design-principles',
+    content: VALID_DESIGN_DOC,
+    generatedAt: '2026-02-17',
+    editedAt: null,
   }),
 }));
 
@@ -246,6 +263,43 @@ describe('POST /api/painted-door/[id]/chat', () => {
 
     const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 for mode_select when design-principles doc is missing', async () => {
+    const { getFoundationDoc } = await import('@/lib/db');
+    (getFoundationDoc as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'mode_select', mode: 'interactive' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain('Missing design-principles');
+  });
+
+  it('returns 400 for mode_select when design-principles has invalid tokens', async () => {
+    const { getFoundationDoc } = await import('@/lib/db');
+    (getFoundationDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      type: 'design-principles',
+      content: '# Design Principles\n\nNo tokens block here.',
+      generatedAt: '2026-02-17',
+      editedAt: null,
+    });
+
+    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'mode_select', mode: 'interactive' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain('invalid tokens');
   });
 
   it('handles request body parse failure', async () => {
@@ -541,9 +595,15 @@ describe('Integration: full chat flow', () => {
   beforeEach(() => vi.clearAllMocks());
 
   async function setupDefaultMocks() {
-    const { getIdeaFromDb } = await import('@/lib/db');
+    const { getIdeaFromDb, getFoundationDoc } = await import('@/lib/db');
     (getIdeaFromDb as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 'idea-1', name: 'Test', description: 'Test', targetUser: 'devs', problemSolved: 'testing',
+    });
+    (getFoundationDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      type: 'design-principles',
+      content: VALID_DESIGN_DOC,
+      generatedAt: '2026-02-17',
+      editedAt: null,
     });
   }
 
@@ -842,7 +902,7 @@ describe('Integration: full chat flow', () => {
   });
 });
 
-import { advanceSessionStep, determineStreamEndSignal, trackAdvisorCall, checkAdvisorRequirements, advanceSubstep } from '../route';
+import { advanceSessionStep, advanceSectionBasedStep, determineStreamEndSignal, trackAdvisorCall, checkAdvisorRequirements, advanceSubstep } from '../route';
 import { WEBSITE_BUILD_STEPS } from '@/types';
 
 function makeBuildSession(overrides: Partial<BuildSession> = {}): BuildSession {
@@ -1227,6 +1287,83 @@ describe('out-of-order substep handling', () => {
     const result = advanceSubstep(session);
     expect(result).toBe(false);
     expect(session.currentStep).toBe(1); // unchanged
+  });
+});
+
+describe('advanceSectionBasedStep', () => {
+  it('advances step 1 → 2 when hero is locked', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    session.steps[1].status = 'active';
+    advanceSectionBasedStep(session, new Set(['hero']), false);
+    expect(session.currentStep).toBe(2);
+    expect(session.steps[1].status).toBe('complete');
+    expect(session.steps[2].status).toBe('active');
+    expect(session.currentSubstep).toBe(0);
+  });
+
+  it('does not advance step 1 when hero is not locked', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    advanceSectionBasedStep(session, new Set(['problem']), false);
+    expect(session.currentStep).toBe(1);
+  });
+
+  it('advances step 2 substeps based on section locks', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 0 });
+    session.steps[2].status = 'active';
+
+    // Lock problem → substep 0 → 1
+    advanceSectionBasedStep(session, new Set(['problem']), false);
+    expect(session.currentSubstep).toBe(1);
+
+    // Lock features → substep 1 → 2
+    advanceSectionBasedStep(session, new Set(['problem', 'features']), false);
+    expect(session.currentSubstep).toBe(2);
+
+    // Lock how-it-works → substep 2 → 3
+    advanceSectionBasedStep(session, new Set(['problem', 'features', 'how-it-works']), false);
+    expect(session.currentSubstep).toBe(3);
+
+    // Lock audience → substep 3 → 4
+    advanceSectionBasedStep(session, new Set(['problem', 'features', 'how-it-works', 'audience']), false);
+    expect(session.currentSubstep).toBe(4);
+  });
+
+  it('completes step 2 when objections and final-cta are locked at substep 4', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 4 });
+    session.steps[2].status = 'active';
+    advanceSectionBasedStep(session, new Set(['objections', 'final-cta']), false);
+    expect(session.currentStep).toBe(3);
+    expect(session.steps[2].status).toBe('complete');
+    expect(session.steps[3].status).toBe('active');
+  });
+
+  it('does not complete step 2 at substep 4 without final-cta', () => {
+    const session = makeBuildSession({ currentStep: 2, currentSubstep: 4 });
+    session.steps[2].status = 'active';
+    advanceSectionBasedStep(session, new Set(['objections']), false);
+    expect(session.currentStep).toBe(2);
+  });
+
+  it('advances step 3 → 4 when meta is locked', () => {
+    const session = makeBuildSession({ currentStep: 3 });
+    session.steps[3].status = 'active';
+    advanceSectionBasedStep(session, new Set(), true);
+    expect(session.currentStep).toBe(4);
+    expect(session.steps[3].status).toBe('complete');
+    expect(session.steps[4].status).toBe('active');
+  });
+
+  it('does not advance step 3 when meta is not locked', () => {
+    const session = makeBuildSession({ currentStep: 3 });
+    advanceSectionBasedStep(session, new Set(), false);
+    expect(session.currentStep).toBe(3);
+  });
+
+  it('resets advisorCallsThisRound on step advancement', () => {
+    const session = makeBuildSession({ currentStep: 1 });
+    session.advisorCallsThisRound = ['shirin-oreizy', 'copywriter'];
+    advanceSectionBasedStep(session, new Set(['hero']), false);
+    expect(session.advisorCallsThisRound).toEqual([]);
   });
 });
 

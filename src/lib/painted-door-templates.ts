@@ -1,16 +1,18 @@
 import { BrandIdentity } from '@/types';
-import { ContentContext } from './content-prompts';
+import { renderLandingPage as renderLandingPageFromSpec } from './painted-door-sections';
+import { getMissingSectionTypes } from './painted-door-page-spec';
+import type { PageSpec } from './painted-door-page-spec';
 
 // ---------------------------------------------------------------------------
 // String escaping helper — safely embed brand values in JS template literals
 // ---------------------------------------------------------------------------
 
-function esc(s: string): string {
+export function esc(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
 }
 
 /** Escape for embedding inside JSX string attributes (single-quoted) */
-function escAttr(s: string): string {
+export function escAttr(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
 }
 
@@ -19,7 +21,7 @@ function escAttr(s: string): string {
 // ---------------------------------------------------------------------------
 
 function googleFontsUrl(brand: BrandIdentity): string {
-  const fonts = [brand.typography.headingFont, brand.typography.bodyFont, brand.typography.monoFont];
+  const fonts = [brand.fonts.heading, brand.fonts.body, brand.fonts.mono];
   const unique = [...new Set(fonts)];
   const params = unique
     .map((f) => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700`)
@@ -31,11 +33,11 @@ function googleFontsUrl(brand: BrandIdentity): string {
 // Shared fragments
 // ---------------------------------------------------------------------------
 
-function navFragment(brand: BrandIdentity): string {
+export function navFragment(brand: BrandIdentity): string {
   const siteName = esc(brand.siteName);
   return `      <header className="border-b border-border bg-background-elevated">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <a href="/" className="text-xl font-bold text-primary" style={{ fontFamily: "'${escAttr(brand.typography.headingFont)}', sans-serif" }}>
+          <a href="/" className="text-xl font-bold text-primary" style={{ fontFamily: "'${escAttr(brand.fonts.heading)}', sans-serif" }}>
             ${siteName}
           </a>
           <div className="flex items-center gap-6 text-sm">
@@ -47,7 +49,7 @@ function navFragment(brand: BrandIdentity): string {
       </header>`;
 }
 
-function footerFragment(brand: BrandIdentity): string {
+export function footerFragment(brand: BrandIdentity): string {
   const siteName = esc(brand.siteName);
   const year = new Date().getFullYear();
   return `      <footer className="border-t border-border bg-background-elevated mt-auto">
@@ -338,7 +340,7 @@ function renderGlobalsCss(brand: BrandIdentity): string {
   --color-primary-light: ${brand.colors.primaryLight};
   --color-background: ${brand.colors.background};
   --color-background-elevated: ${brand.colors.backgroundElevated};
-  --color-text: ${brand.colors.textPrimary};
+  --color-text: ${brand.colors.text};
   --color-text-secondary: ${brand.colors.textSecondary};
   --color-text-muted: ${brand.colors.textMuted};
   --color-accent: ${brand.colors.accent};
@@ -348,24 +350,24 @@ function renderGlobalsCss(brand: BrandIdentity): string {
 body {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: '${brand.typography.bodyFont}', system-ui, sans-serif;
+  font-family: '${brand.fonts.body}', system-ui, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: '${brand.typography.headingFont}', system-ui, sans-serif;
+  font-family: '${brand.fonts.heading}', system-ui, sans-serif;
 }
 
 code, pre {
-  font-family: '${brand.typography.monoFont}', ui-monospace, monospace;
+  font-family: '${brand.fonts.mono}', ui-monospace, monospace;
 }
 `;
 }
 
-function renderLayout(brand: BrandIdentity): string {
+function renderLayout(brand: BrandIdentity, pageSpec?: PageSpec): string {
   const fontsUrl = googleFontsUrl(brand);
   const siteName = esc(brand.siteName);
   const tagline = esc(brand.tagline);
-  const seoDesc = esc(brand.seoDescription || '');
+  const seoDesc = pageSpec ? esc(pageSpec.metaDescription) : esc((brand as any).seoDescription || '');
 
   return `import type { Metadata } from 'next';
 import './globals.css';
@@ -403,8 +405,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 `;
 }
 
-function renderSitemap(brand: BrandIdentity, ctx: ContentContext): string {
-  const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
+function renderSitemap(brand: BrandIdentity): string {
+  const siteUrl = brand.siteUrl || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
   return `import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -415,169 +417,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: \`\${baseUrl}/compare\`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: \`\${baseUrl}/faq\`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
   ];
-}
-`;
-}
-
-function renderLandingPage(brand: BrandIdentity, ctx: ContentContext): string {
-  if (!brand.landingPage) {
-    throw new Error('Cannot render landing page: brand.landingPage is missing');
-  }
-  const siteName = esc(brand.siteName);
-  const lp = brand.landingPage;
-  const siteUrl = ctx.url || `https://${brand.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.vercel.app`;
-
-  // Build value props JSX
-  const valuePropCards = lp.valueProps
-    .map(
-      (vp) => `          <section aria-label="${escAttr(vp.title)}" className="bg-background-elevated border border-border rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-text mb-2">${esc(vp.title)}</h3>
-            <p className="text-text-secondary text-sm leading-relaxed">${esc(vp.description)}</p>
-          </section>`,
-    )
-    .join('\n');
-
-  // Build FAQ items JSX
-  const faqs = lp.faqs || [];
-  const faqItems = faqs
-    .map(
-      (faq) => `            <div className="border-b border-border pb-4">
-              <h3 className="text-text font-medium mb-2">${esc(faq.question)}</h3>
-              <p className="text-text-secondary text-sm leading-relaxed">${esc(faq.answer)}</p>
-            </div>`,
-    )
-    .join('\n');
-
-  // FAQ JSON-LD data
-  const faqJsonLd = faqs.length > 0
-    ? JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faqs.map((faq) => ({
-          '@type': 'Question',
-          name: faq.question,
-          acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-        })),
-      })
-    : null;
-
-  const orgJsonLd = JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: brand.siteName,
-    url: siteUrl,
-  });
-
-  const webSiteJsonLd = JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: brand.siteName,
-    url: siteUrl,
-  });
-
-  return `'use client';
-
-import { useState, FormEvent } from 'react';
-import JsonLd from '../components/content/JsonLd';
-
-export default function Home() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setStatus('loading');
-    setErrorMsg('');
-    try {
-      const res = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatus('success');
-        setEmail('');
-      } else {
-        setStatus('error');
-        setErrorMsg(data.error || 'Something went wrong');
-      }
-    } catch {
-      setStatus('error');
-      setErrorMsg('Network error — please try again');
-    }
-  }
-
-  return (
-    <>
-      <JsonLd data={${orgJsonLd}} />
-      <JsonLd data={${webSiteJsonLd}} />${faqJsonLd ? `\n      <JsonLd data={${faqJsonLd}} />` : ''}
-
-${navFragment(brand)}
-
-      <main className="flex-1">
-        {/* Hero */}
-        <section aria-label="Hero" className="mx-auto max-w-5xl px-6 py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-text mb-4 leading-tight">
-            ${esc(lp.heroHeadline)}
-          </h1>
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-8">
-            ${esc(lp.heroSubheadline)}
-          </p>
-
-          {/* Email Signup */}
-          <div className="max-w-md mx-auto">
-            {status === 'success' ? (
-              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-                <p className="text-primary font-medium">Thanks for signing up! We&apos;ll be in touch.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-3 rounded-lg bg-background-elevated border border-border text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className="px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {status === 'loading' ? 'Sending...' : \`${esc(lp.ctaText)}\`}
-                </button>
-              </form>
-            )}
-            {status === 'error' && (
-              <p className="text-red-400 text-sm mt-2">{errorMsg}</p>
-            )}
-          </div>
-        </section>
-
-        {/* Value Props */}
-        <section aria-label="Features" className="mx-auto max-w-5xl px-6 py-12">
-          <h2 className="text-2xl font-bold text-text text-center mb-8">Why ${siteName}?</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-${valuePropCards}
-          </div>
-        </section>
-
-${faqs.length > 0 ? `        {/* FAQ */}
-        <section aria-label="Frequently Asked Questions" className="mx-auto max-w-3xl px-6 py-12">
-          <h2 className="text-2xl font-bold text-text text-center mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-4">
-${faqItems}
-          </div>
-        </section>
-` : ''}
-      </main>
-
-${footerFragment(brand)}
-    </>
-  );
 }
 `;
 }
@@ -882,65 +721,42 @@ ${footerFragment(brand)}
 }
 
 // ---------------------------------------------------------------------------
-// Master function — assembles all ~21 files
+// PageSpec-driven assembly
 // ---------------------------------------------------------------------------
 
-export interface ApprovedCopy {
-  landingPage: NonNullable<BrandIdentity['landingPage']>;
-  seoDescription: string;
-}
-
-export function assembleAllFiles(
+export function assembleFromSpec(
+  pageSpec: PageSpec,
   brand: BrandIdentity,
-  ctx: ContentContext,
-  approvedCopy?: ApprovedCopy,
 ): Record<string, string> {
-  // Merge approved copy into brand for template rendering
-  const resolvedBrand: BrandIdentity = approvedCopy
-    ? { ...brand, landingPage: approvedCopy.landingPage, seoDescription: approvedCopy.seoDescription }
-    : brand;
+  const missing = getMissingSectionTypes(pageSpec.sections);
+  if (missing.length > 0) {
+    throw new Error(`Cannot assemble: missing section types: ${missing.join(', ')}`);
+  }
 
   return {
-    // Static config files
     'package.json': PACKAGE_JSON,
     'tsconfig.json': TSCONFIG_JSON,
     'next.config.ts': NEXT_CONFIG_TS,
     'postcss.config.mjs': POSTCSS_CONFIG_MJS,
     '.gitignore': GITIGNORE,
-
-    // Lib
     'lib/content.ts': LIB_CONTENT_TS,
-
-    // Components
     'components/content/MarkdownRenderer.tsx': MARKDOWN_RENDERER_TSX,
     'components/content/JsonLd.tsx': JSONLD_TSX,
-
-    // App — core
-    'app/globals.css': renderGlobalsCss(resolvedBrand),
-    'app/layout.tsx': renderLayout(resolvedBrand),
-    'app/page.tsx': renderLandingPage(resolvedBrand, ctx),
+    'app/globals.css': renderGlobalsCss(brand),
+    'app/layout.tsx': renderLayout(brand, pageSpec),
+    'app/page.tsx': renderLandingPageFromSpec(pageSpec, brand),
     'app/robots.ts': ROBOTS_TS,
-    'app/sitemap.ts': renderSitemap(resolvedBrand, ctx),
+    'app/sitemap.ts': renderSitemap(brand),
     'app/api/signup/route.ts': SIGNUP_ROUTE_TS,
-
-    // App — blog
-    'app/blog/page.tsx': renderBlogListing(resolvedBrand),
-    'app/blog/[slug]/page.tsx': renderBlogDetail(resolvedBrand),
-
-    // App — compare
-    'app/compare/page.tsx': renderCompareListing(resolvedBrand),
-    'app/compare/[slug]/page.tsx': renderCompareDetail(resolvedBrand),
-
-    // App — faq
-    'app/faq/page.tsx': renderFaqListing(resolvedBrand),
-    'app/faq/[slug]/page.tsx': renderFaqDetail(resolvedBrand),
-
-    // Content directories
+    'app/blog/page.tsx': renderBlogListing(brand),
+    'app/blog/[slug]/page.tsx': renderBlogDetail(brand),
+    'app/compare/page.tsx': renderCompareListing(brand),
+    'app/compare/[slug]/page.tsx': renderCompareDetail(brand),
+    'app/faq/page.tsx': renderFaqListing(brand),
+    'app/faq/[slug]/page.tsx': renderFaqDetail(brand),
     'content/blog/.gitkeep': '',
     'content/comparison/.gitkeep': '',
     'content/faq/.gitkeep': '',
-
-    // Google Search Console verification (tied to account, same for all sites)
     'public/google8016c4ca2d4b4091.html': 'google-site-verification: google8016c4ca2d4b4091.html',
   };
 }

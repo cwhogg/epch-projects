@@ -41,6 +41,14 @@ export const FRAMEWORK_REGISTRY: FrameworkEntry[] = [
       'Build conversion-focused landing pages in 4 phases: Extract Core Ingredients, Write the Hero (50% of effort), Assemble Full Page, and Pressure-Test. Treats landing page copy as an engineering problem where Purchase Rate = Desire − (Labor + Confusion).',
     contextDocs: ['positioning', 'brand-voice', 'seo-strategy'],
   },
+  {
+    id: 'design-principles',
+    displayName: 'Design Principles',
+    advisors: ['oli-gardner'],
+    description:
+      'Generate visual design principles with implementation-ready tokens for deterministic site rendering.',
+    contextDocs: ['positioning', 'brand-voice', 'strategy'],
+  },
 ];
 
 export function getFrameworkEntry(id: string): FrameworkEntry | undefined {

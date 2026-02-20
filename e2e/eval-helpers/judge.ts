@@ -2,7 +2,7 @@ import { getAnthropic } from '@/lib/anthropic';
 import type { JudgeResult } from '../types';
 
 const JUDGE_CALLS = 3;
-const MAX_PROMPT_LEN = 3000;
+const MAX_PROMPT_LEN = 12000;
 
 interface JudgeInput {
   rubric: string;

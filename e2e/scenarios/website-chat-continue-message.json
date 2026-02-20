@@ -19,6 +19,11 @@
   "dimensionConfig": {
     "voice": {
       "antiPatterns": ["game-changer", "revolutionary", "cutting-edge", "world-class", "innovative solution"]
+    },
+    "output-length": {
+      "words": { "max": 2000, "warn": 3000 },
+      "sentences": { "max": 150, "warn": 250 },
+      "paragraphs": { "max": 100, "warn": 150 }
     }
   }
 }
