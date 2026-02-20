@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse, after } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { isRedisConfigured } from '@/lib/db';
-import { runPaintedDoorAgent } from '@/lib/painted-door-agent';
 import { getBuildSession, getPaintedDoorProgress, getPaintedDoorSite, savePaintedDoorSite, deletePaintedDoorProgress, deletePaintedDoorSite, deleteBuildSession, deleteConversationHistory } from '@/lib/painted-door-db';
 import type { BuildSession, PaintedDoorSite } from '@/types';
 
@@ -46,68 +45,6 @@ async function checkAndUpdateDeployment(site: PaintedDoorSite): Promise<'complet
   } catch {
     return 'deploying';
   }
-}
-
-// POST — trigger painted door site generation
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-
-  if (!isRedisConfigured()) {
-    return NextResponse.json(
-      { error: 'Database not configured. Please add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.' },
-      { status: 500 },
-    );
-  }
-
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY not configured.' },
-      { status: 500 },
-    );
-  }
-
-  if (!process.env.GITHUB_TOKEN) {
-    return NextResponse.json(
-      { error: 'GITHUB_TOKEN not configured.' },
-      { status: 500 },
-    );
-  }
-
-  if (!process.env.VERCEL_TOKEN) {
-    return NextResponse.json(
-      { error: 'VERCEL_TOKEN not configured.' },
-      { status: 500 },
-    );
-  }
-
-  // Check if already running
-  const existing = await getPaintedDoorProgress(id);
-  if (existing && existing.status === 'running') {
-    return NextResponse.json(
-      { message: 'Already running', progress: existing },
-      { status: 200 },
-    );
-  }
-
-  // Don't re-trigger if a live site already exists (progress TTL may have expired)
-  const existingSite = await getPaintedDoorSite(id);
-  if (existingSite?.status === 'live') {
-    return NextResponse.json({ message: 'Site already exists', site: existingSite });
-  }
-
-  // Run agent in background after response
-  after(async () => {
-    try {
-      await runPaintedDoorAgent(id);
-    } catch (error) {
-      console.error('Painted door agent failed:', error);
-    }
-  });
-
-  return NextResponse.json({ message: 'Site generation started', ideaId: id });
 }
 
 // GET — poll progress
