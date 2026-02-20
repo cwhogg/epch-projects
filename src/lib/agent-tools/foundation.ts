@@ -83,7 +83,11 @@ Ground every claim in the strategy document. Don't invent new positioning — de
     case 'design-principles': {
       const frameworkPrompt = getFrameworkPrompt('design-principles');
       if (frameworkPrompt) {
-        prompt += frameworkPrompt;
+        // The framework prompt has multi-phase WAIT instructions for interactive use.
+        // For one-shot generation, strip WAITs and instruct complete output.
+        const stripped = frameworkPrompt.replace(/\*\*WAIT for the user's response before continuing\.\*\*/g, '');
+        prompt += stripped;
+        prompt += '\n\nIMPORTANT: This is a one-shot generation. Complete ALL phases in a single response. You MUST include the ```json:design-tokens``` code block with all required fields. Do not stop early or ask for feedback.';
       } else {
         prompt += 'Generate a design principles document with a json:design-tokens block.';
       }
