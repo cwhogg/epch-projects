@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const AnalyticsChart = dynamic(() => import('@/components/AnalyticsChart'), { ssr: false });
+const ImpressionsChart = dynamic(() => import('@/components/ImpressionsChart'), { ssr: false });
 import KeywordPerformance from '@/components/KeywordPerformance';
 import PerformanceTable from '@/components/PerformanceTable';
 import AlertsList from '@/components/AlertsList';
@@ -474,6 +475,9 @@ export default function AnalyticsPage() {
               </button>
             </div>
           </div>
+
+          {/* Impressions by Week Chart */}
+          <ImpressionsChart ideaId={ideaId} />
 
           {/* Weekly Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

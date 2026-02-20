@@ -37,7 +37,10 @@ export default function PerformanceTable({ pieces }: { pieces: PieceRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>('clicks');
   const [sortAsc, setSortAsc] = useState(false);
 
-  const sorted = [...pieces].sort((a, b) => {
+  // Filter to only show pieces with impressions > 0
+  const withImpressions = pieces.filter((p) => p.current.impressions > 0);
+
+  const sorted = [...withImpressions].sort((a, b) => {
     const aVal = a.current[sortKey];
     const bVal = b.current[sortKey];
     return sortAsc ? aVal - bVal : bVal - aVal;
@@ -65,10 +68,12 @@ export default function PerformanceTable({ pieces }: { pieces: PieceRow[] }) {
     );
   }
 
-  if (pieces.length === 0) {
+  if (withImpressions.length === 0) {
     return (
       <div className="card-static p-8 text-center">
-        <p style={{ color: 'var(--text-muted)' }}>No piece data available yet.</p>
+        <p style={{ color: 'var(--text-muted)' }}>
+          {pieces.length === 0 ? 'No piece data available yet.' : 'No pieces with impressions yet.'}
+        </p>
       </div>
     );
   }
