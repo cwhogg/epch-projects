@@ -12,7 +12,7 @@
 
 ---
 
-## Task 1: Add PageSpec types and per-section copy interfaces
+## ✅ Task 1: Add PageSpec types and per-section copy interfaces
 
 **Files:**
 - Create: `src/lib/painted-door-page-spec.ts`
@@ -454,7 +454,7 @@ git commit -m "feat: add PageSpec types and validation for section copy accumula
 
 ---
 
-## Task 2: Extract contrast utilities to shared module
+## ✅ Task 2: Extract contrast utilities to shared module
 
 **Files:**
 - Create: `src/lib/contrast-utils.ts`
@@ -572,7 +572,7 @@ git commit -m "refactor: extract contrast utils to shared module"
 
 ---
 
-## Task 3: Add foundation token extraction
+## ✅ Task 3: Add foundation token extraction
 
 **Files:**
 - Create: `src/lib/foundation-tokens.ts`
@@ -824,7 +824,7 @@ git commit -m "feat: add foundation token extraction from design-principles doc"
 
 ---
 
-## Task 4: Update BrandIdentity type and add normalizeBrandIdentity
+## ✅ Task 4: Update BrandIdentity type and add normalizeBrandIdentity
 
 **Files:**
 - Modify: `src/types/index.ts:168-193` (slim BrandIdentity, add `siteUrl`, rename fields)
@@ -1041,7 +1041,7 @@ git commit -m "feat: slim BrandIdentity, rename fields, add normalizeBrandIdenti
 
 ---
 
-## Task 5: Fix all TypeScript compilation errors from BrandIdentity changes
+## ✅ Task 5: Fix all TypeScript compilation errors from BrandIdentity changes
 
 **Files:**
 - Modify: `src/lib/painted-door-templates.ts` (update all `typography.*` → `fonts.*`, `textPrimary` → `text`)
@@ -1102,7 +1102,7 @@ git commit -m "fix: update all BrandIdentity field references for renamed/remove
 
 ---
 
-## Task 6: Build section renderer library
+## ✅ Task 6: Build section renderer library
 
 **Files:**
 - Create: `src/lib/painted-door-sections.ts`
@@ -1249,7 +1249,7 @@ git commit -m "feat: add section renderer library with 8 renderers + wrapInPage"
 
 ---
 
-## Task 7: Replace assembleAllFiles with assembleFromSpec
+## ✅ Task 7: Replace assembleAllFiles with assembleFromSpec
 
 **Files:**
 - Modify: `src/lib/painted-door-templates.ts:893-946` (replace `assembleAllFiles` with `assembleFromSpec`)
@@ -1334,7 +1334,7 @@ git commit -m "feat: replace assembleAllFiles with assembleFromSpec using PageSp
 
 ---
 
-## Task 8: Add lock_section_copy and lock_page_meta tools, remove design_brand
+## ✅ Task 8: Add lock_section_copy and lock_page_meta tools, remove design_brand
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts` (delete design_brand, add lock_section_copy, lock_page_meta, update assemble_site_files, update evaluate_brand)
@@ -1412,7 +1412,7 @@ git commit -m "feat: add lock_section_copy/lock_page_meta tools, remove design_b
 
 ---
 
-## Task 9: Update chat route for PageSpec-driven step advancement
+## Task 9: Update chat route for PageSpec-driven step advancement ✅
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts`
