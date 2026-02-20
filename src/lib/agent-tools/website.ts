@@ -469,6 +469,157 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     },
 
     // -----------------------------------------------------------------------
+    // Lock brand identity into session
+    // -----------------------------------------------------------------------
+    {
+      name: 'lock_brand',
+      description:
+        'Validate and lock the brand identity (colors, fonts, theme) into the build session. Call this at Stage 0 after reading the design-principles Foundation document. The brand feeds directly into site rendering.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          siteName: { type: 'string', description: 'The product/site name' },
+          tagline: { type: 'string', description: 'Short tagline for the product' },
+          theme: { type: 'string', enum: ['light', 'dark'], description: 'Light or dark theme' },
+          colors: {
+            type: 'object',
+            description: 'All 9 color fields as 6-digit hex codes (#RRGGBB)',
+            properties: {
+              primary: { type: 'string', description: 'Primary/CTA color' },
+              primaryLight: { type: 'string', description: 'Lighter variant for hover states' },
+              background: { type: 'string', description: 'Page background color' },
+              backgroundElevated: { type: 'string', description: 'Card/elevated surface background' },
+              text: { type: 'string', description: 'Primary text color' },
+              textSecondary: { type: 'string', description: 'Secondary text color' },
+              textMuted: { type: 'string', description: 'Muted/placeholder text color' },
+              accent: { type: 'string', description: 'Accent color for highlights (distinct from primary)' },
+              border: { type: 'string', description: 'Subtle border color' },
+            },
+            required: ['primary', 'primaryLight', 'background', 'backgroundElevated', 'text', 'textSecondary', 'textMuted', 'accent', 'border'],
+          },
+          fonts: {
+            type: 'object',
+            description: 'Font family names from Google Fonts',
+            properties: {
+              heading: { type: 'string', description: 'Heading font' },
+              body: { type: 'string', description: 'Body font' },
+              mono: { type: 'string', description: 'Monospace font' },
+            },
+            required: ['heading', 'body', 'mono'],
+          },
+          overwrite: {
+            type: 'boolean',
+            description: 'Set to true to replace previously locked brand (e.g. during final review)',
+          },
+        },
+        required: ['siteName', 'tagline', 'theme', 'colors', 'fonts'],
+      },
+      execute: async (input) => {
+        const overwrite = (input.overwrite as boolean) || false;
+        const errors: string[] = [];
+        const warnings: string[] = [];
+
+        // Validate required string fields
+        if (!input.siteName || typeof input.siteName !== 'string') errors.push('siteName is required');
+        if (!input.tagline || typeof input.tagline !== 'string') errors.push('tagline is required');
+        if (!input.theme || (input.theme !== 'light' && input.theme !== 'dark')) {
+          errors.push('theme must be "light" or "dark"');
+        }
+
+        // Validate colors
+        const colors = input.colors as Record<string, string> | undefined;
+        if (!colors || typeof colors !== 'object') {
+          errors.push('colors object is required');
+        } else {
+          const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+          const colorFields = ['primary', 'primaryLight', 'background', 'backgroundElevated', 'text', 'textSecondary', 'textMuted', 'accent', 'border'];
+          for (const field of colorFields) {
+            if (!colors[field] || !hexPattern.test(colors[field])) {
+              errors.push(`colors.${field} must be a valid 6-digit hex code (#RRGGBB)`);
+            }
+          }
+        }
+
+        // Validate fonts
+        const fonts = input.fonts as Record<string, string> | undefined;
+        if (!fonts || typeof fonts !== 'object') {
+          errors.push('fonts object is required');
+        } else {
+          for (const field of ['heading', 'body', 'mono']) {
+            if (!fonts[field] || typeof fonts[field] !== 'string' || fonts[field].trim() === '') {
+              errors.push(`fonts.${field} must be a non-empty string`);
+            }
+          }
+        }
+
+        if (errors.length > 0) {
+          return { error: `Brand validation failed: ${errors.join('; ')}` };
+        }
+
+        // WCAG contrast check (warning only)
+        if (colors) {
+          const ratio = contrastRatio(colors.text, colors.background);
+          if (ratio < 4.5) {
+            warnings.push(`WCAG AA contrast warning: text (${colors.text}) on background (${colors.background}) has ratio ${ratio.toFixed(1)}:1, minimum recommended is 4.5:1`);
+          }
+        }
+
+        try {
+          const session = await getBuildSession(ideaId);
+          if (!session) return { error: 'No build session found — start a build first' };
+
+          // Check for existing brand
+          if (session.artifacts.brand && !overwrite) {
+            return { error: 'Brand is already locked. Pass overwrite: true to replace it.' };
+          }
+
+          const lockedBrand: BrandIdentity = {
+            siteName: input.siteName as string,
+            tagline: input.tagline as string,
+            siteUrl: '', // Resolved later by assemble_site_files from the site record
+            colors: {
+              primary: colors!.primary,
+              primaryLight: colors!.primaryLight,
+              background: colors!.background,
+              backgroundElevated: colors!.backgroundElevated,
+              text: colors!.text,
+              textSecondary: colors!.textSecondary,
+              textMuted: colors!.textMuted,
+              accent: colors!.accent,
+              border: colors!.border,
+            },
+            fonts: {
+              heading: fonts!.heading,
+              body: fonts!.body,
+              mono: fonts!.mono,
+            },
+            theme: input.theme as 'light' | 'dark',
+          };
+
+          session.artifacts.brand = lockedBrand;
+          session.updatedAt = new Date().toISOString();
+          await saveBuildSession(ideaId, session);
+
+          // Also set the closure variable for downstream tools (create_repo, push_files, finalize_site)
+          brand = lockedBrand;
+
+          return {
+            success: true,
+            siteName: lockedBrand.siteName,
+            tagline: lockedBrand.tagline,
+            theme: lockedBrand.theme,
+            colorCount: 9,
+            fonts: lockedBrand.fonts,
+            warnings,
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { error: `Failed to save brand: ${msg}` };
+        }
+      },
+    },
+
+    // -----------------------------------------------------------------------
     // Assemble all site files from PageSpec + design tokens
     // -----------------------------------------------------------------------
     {

@@ -51,7 +51,7 @@ git commit -m "feat: add brand to BuildSession.artifacts type"
 
 ---
 
-### Task 2: Add `lock_brand` tool to website.ts
+### ✅ Task 2: Add `lock_brand` tool to website.ts
 
 **Files:**
 - Create: `src/lib/agent-tools/__tests__/website-lock-brand.test.ts`
