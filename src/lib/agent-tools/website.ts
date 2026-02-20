@@ -2,22 +2,23 @@ import type { ToolDefinition, BrandIdentity, PaintedDoorSite, ProductIdea, Evalu
 import { ContentContext } from '@/lib/content-prompts';
 import { buildContentContext, generateContentCalendar } from '@/lib/content-agent';
 import { detectVertical } from '@/lib/seo-knowledge';
-import { getIdeaFromDb, getAllFoundationDocs } from '@/lib/db';
-import { buildBrandIdentityPrompt } from '@/lib/painted-door-prompts';
-import { assembleAllFiles, ApprovedCopy } from '@/lib/painted-door-templates';
+import { getIdeaFromDb, getFoundationDoc } from '@/lib/db';
+import { assembleFromSpec } from '@/lib/painted-door-templates';
+import { validateSectionCopy, validatePageMeta, getMissingSectionTypes } from '@/lib/painted-door-page-spec';
+import type { SectionType, PageSection, PageSpec } from '@/lib/painted-door-page-spec';
+import { extractBrandFromDesignPrinciples } from '@/lib/foundation-tokens';
 import {
   savePaintedDoorSite,
   saveDynamicPublishTarget,
   getPaintedDoorSite,
+  getBuildSession,
+  saveBuildSession,
 } from '@/lib/painted-door-db';
 import { PublishTarget } from '@/lib/publish-targets';
 import { checkMetaDescription, combineEvaluations } from './common';
-import { parseLLMJson } from '../llm-utils';
 import { slugify } from '../utils';
-import { getAnthropic } from '../anthropic';
-import { CLAUDE_MODEL } from '../config';
 import { createGitHubRepo, pushFilesToGitHub, createVercelProject, triggerDeployViaGitPush } from '../github-api';
-import { hexToLuminance, contrastRatio } from '../contrast-utils';
+import { contrastRatio } from '../contrast-utils';
 
 // ---------------------------------------------------------------------------
 // Validation helpers — each checks allFiles and returns { issues, suggestions }
@@ -338,182 +339,305 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     },
 
     // -----------------------------------------------------------------------
-    // Design brand identity
+    // Lock section copy into PageSpec accumulator
     // -----------------------------------------------------------------------
     {
-      name: 'design_brand',
+      name: 'lock_section_copy',
       description:
-        'Generate the brand identity (colors, typography, voice, landing page copy) using an LLM. Requires get_idea_context to have been called first.',
+        'Validate and lock a section\'s copy into the PageSpec accumulator. Call this after each copy-producing stage. All 8 sections must be locked before assemble_site_files can run.',
       input_schema: {
         type: 'object',
         properties: {
-          visualOnly: {
+          type: {
+            type: 'string',
+            description: 'Section type: hero, problem, features, how-it-works, audience, objections, final-cta, or faq',
+          },
+          copy: {
+            type: 'object',
+            description: 'Section copy matching the schema for the given type',
+          },
+          overwrite: {
             type: 'boolean',
-            description: 'If true, generates only visual identity (no copy). Used when critique pipeline provides copy.',
+            description: 'Set to true to replace an already-locked section (e.g. during final review)',
           },
         },
-        required: [],
+        required: ['type', 'copy'],
       },
       execute: async (input) => {
-        if (!idea || !ctx) return { error: 'Call get_idea_context first' };
+        const sectionType = input.type as SectionType;
+        const copy = input.copy as Record<string, unknown>;
+        const overwrite = (input.overwrite as boolean) || false;
 
-        const visualOnly = (input.visualOnly as boolean) || false;
+        // Validate the copy
+        const validation = validateSectionCopy(sectionType, copy);
+        if (!validation.valid) {
+          return { error: `Validation failed for ${sectionType}: ${validation.errors.join('; ')}` };
+        }
 
-        // Load Foundation documents so brand identity reflects design principles
-        const foundationDocsRecord = await getAllFoundationDocs(ideaId);
-        const foundationDocs = Object.values(foundationDocsRecord)
-          .filter((d): d is NonNullable<typeof d> => d != null)
-          .map((d) => ({ type: d.type, content: d.content }));
+        try {
+          // Read current session
+          const session = await getBuildSession(ideaId);
+          if (!session) return { error: 'No build session found — start a build first' };
 
-        const prompt = buildBrandIdentityPrompt(idea, ctx, visualOnly, foundationDocs.length > 0 ? foundationDocs : undefined);
-        const response = await getAnthropic().messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 2048,
-          messages: [{ role: 'user', content: prompt }],
-        });
+          // Initialize pageSpec if missing
+          if (!session.artifacts.pageSpec) {
+            session.artifacts.pageSpec = { sections: [], metaTitle: '', metaDescription: '', ogDescription: '' };
+          }
 
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        brand = parseLLMJson<BrandIdentity>(text);
+          const pageSpec = session.artifacts.pageSpec;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const brandAny = brand as any;
-        return {
-          success: true,
-          siteName: brand.siteName,
-          tagline: brand.tagline,
-          seoDescription: brandAny.seoDescription,
-          heroHeadline: brandAny.landingPage?.heroHeadline,
-          mode: visualOnly ? 'visual-only' : 'full',
-        };
+          // Check for duplicate
+          const existingIdx = pageSpec.sections.findIndex((s) => s.type === sectionType);
+          if (existingIdx >= 0 && !overwrite) {
+            return { error: `Section "${sectionType}" is already locked. Pass overwrite: true to replace it.` };
+          }
+
+          // Build the section entry — cast through unknown because copy is validated but typed as Record
+          const section = { type: sectionType, copy } as unknown as PageSection;
+
+          if (existingIdx >= 0) {
+            pageSpec.sections[existingIdx] = section;
+          } else {
+            pageSpec.sections.push(section);
+          }
+
+          session.updatedAt = new Date().toISOString();
+          await saveBuildSession(ideaId, session);
+
+          return {
+            success: true,
+            lockedSection: sectionType,
+            copy,
+            totalLocked: pageSpec.sections.length,
+            remaining: getMissingSectionTypes(pageSpec.sections),
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { error: `Failed to save section: ${msg}` };
+        }
       },
     },
 
     // -----------------------------------------------------------------------
-    // Assemble all site files from templates
+    // Lock page meta into PageSpec accumulator
+    // -----------------------------------------------------------------------
+    {
+      name: 'lock_page_meta',
+      description:
+        'Validate and lock page metadata (metaTitle, metaDescription, ogDescription) into the PageSpec. Call this during final review.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          metaTitle: { type: 'string', description: 'Page meta title' },
+          metaDescription: { type: 'string', description: 'Page meta description' },
+          ogDescription: { type: 'string', description: 'Open Graph description' },
+        },
+        required: ['metaTitle', 'metaDescription', 'ogDescription'],
+      },
+      execute: async (input) => {
+        const meta = input as Record<string, unknown>;
+        const validation = validatePageMeta(meta);
+        if (!validation.valid) {
+          return { error: `Validation failed: ${validation.errors.join('; ')}` };
+        }
+
+        try {
+          const session = await getBuildSession(ideaId);
+          if (!session) return { error: 'No build session found — start a build first' };
+
+          if (!session.artifacts.pageSpec) {
+            session.artifacts.pageSpec = { sections: [], metaTitle: '', metaDescription: '', ogDescription: '' };
+          }
+
+          session.artifacts.pageSpec.metaTitle = input.metaTitle as string;
+          session.artifacts.pageSpec.metaDescription = input.metaDescription as string;
+          session.artifacts.pageSpec.ogDescription = input.ogDescription as string;
+          session.updatedAt = new Date().toISOString();
+          await saveBuildSession(ideaId, session);
+
+          return {
+            success: true,
+            metaTitle: session.artifacts.pageSpec.metaTitle,
+            metaDescription: session.artifacts.pageSpec.metaDescription,
+            ogDescription: session.artifacts.pageSpec.ogDescription,
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { error: `Failed to save page meta: ${msg}` };
+        }
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    // Assemble all site files from PageSpec + design tokens
     // -----------------------------------------------------------------------
     {
       name: 'assemble_site_files',
       description:
-        'Assemble all site files from templates using the brand identity. Instant — no LLM call needed. Requires design_brand to have been called first.',
-      input_schema: {
-        type: 'object',
-        properties: {
-          approvedCopy: {
-            type: 'object',
-            description: 'Optional approved copy from critique pipeline. When provided, overrides brand copy.',
-            properties: {
-              landingPage: { type: 'object' },
-              seoDescription: { type: 'string' },
-            },
-          },
-        },
-        required: [],
-      },
-      execute: async (input) => {
-        if (!brand || !ctx) return { error: 'Call design_brand first' };
-
-        const approvedCopy = input.approvedCopy as ApprovedCopy | undefined;
-        allFiles = assembleAllFiles(brand, ctx, approvedCopy);
-
-        return {
-          success: true,
-          totalFileCount: Object.keys(allFiles).length,
-          files: Object.keys(allFiles),
-        };
-      },
-    },
-
-    // -----------------------------------------------------------------------
-    // Evaluate brand identity against SEO requirements
-    // -----------------------------------------------------------------------
-    {
-      name: 'evaluate_brand',
-      description:
-        'Evaluate the generated brand identity against SEO requirements. Checks keyword placement in headlines, meta description length, and color contrast. Call this after design_brand to catch issues before code generation.',
+        'Assemble all site files from the locked PageSpec and design-principles Foundation doc. Deterministic — no LLM call. Requires all 8 sections to be locked via lock_section_copy.',
       input_schema: {
         type: 'object',
         properties: {},
         required: [],
       },
       execute: async () => {
-        if (!brand || !ctx) return { error: 'Call design_brand first' };
+        try {
+          // Read build session for PageSpec
+          const session = await getBuildSession(ideaId);
+          if (!session?.artifacts?.pageSpec) {
+            return { error: 'No PageSpec found — lock all sections first' };
+          }
+          const pageSpec = session.artifacts.pageSpec as PageSpec;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const brandAny = brand as any;
-        const evals: Evaluation[] = [];
-        const primaryKeyword = ctx.topKeywords[0]?.keyword || '';
+          // Check for missing sections
+          const missing = getMissingSectionTypes(pageSpec.sections);
+          if (missing.length > 0) {
+            return { error: `Cannot assemble: missing section types: ${missing.join(', ')}` };
+          }
 
-        // Check seoDescription
-        if (primaryKeyword && brandAny.seoDescription) {
-          evals.push(checkMetaDescription(brandAny.seoDescription, primaryKeyword));
+          // Extract brand from design-principles Foundation doc
+          const designDoc = await getFoundationDoc(ideaId, 'design-principles');
+          if (!designDoc) {
+            return { error: 'No design-principles Foundation doc found. Generate one first.' };
+          }
+
+          // Determine siteUrl from existing site record
+          let existingSiteUrl = '';
+          try {
+            const existingSite = await getPaintedDoorSite(ideaId);
+            if (existingSite?.siteUrl) existingSiteUrl = existingSite.siteUrl;
+          } catch { /* ignore */ }
+
+          const extraction = extractBrandFromDesignPrinciples(designDoc.content, existingSiteUrl);
+          if (!extraction.ok) {
+            return { error: `Brand extraction failed: ${extraction.error}` };
+          }
+
+          brand = extraction.brand as BrandIdentity;
+          allFiles = assembleFromSpec(pageSpec, brand);
+
+          return {
+            success: true,
+            totalFileCount: Object.keys(allFiles).length,
+            files: Object.keys(allFiles),
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { error: `Assembly failed: ${msg}` };
         }
+      },
+    },
 
-        if (brandAny.landingPage) {
-          // Check heroHeadline contains primary keyword
-          if (primaryKeyword) {
-            const headlineLower = brandAny.landingPage.heroHeadline.toLowerCase();
-            const kwLower = primaryKeyword.toLowerCase();
-            const hasKeyword = headlineLower.includes(kwLower);
+    // -----------------------------------------------------------------------
+    // Evaluate locked PageSpec against SEO requirements
+    // -----------------------------------------------------------------------
+    {
+      name: 'evaluate_brand',
+      description:
+        'Evaluate the locked PageSpec and extracted brand against SEO requirements. Checks keyword placement in hero headline, meta description, feature count, FAQ count, and color contrast. Call after locking sections.',
+      input_schema: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+      execute: async () => {
+        if (!ctx) return { error: 'Call get_idea_context first' };
+
+        try {
+          // Read PageSpec from session
+          const session = await getBuildSession(ideaId);
+          const pageSpec = session?.artifacts?.pageSpec;
+
+          // Read brand from design-principles
+          const designDoc = await getFoundationDoc(ideaId, 'design-principles');
+          let extractedBrand: BrandIdentity | null = null;
+          if (designDoc) {
+            const extraction = extractBrandFromDesignPrinciples(designDoc.content, '');
+            if (extraction.ok) extractedBrand = extraction.brand as BrandIdentity;
+          }
+
+          const evals: Evaluation[] = [];
+          const primaryKeyword = ctx.topKeywords[0]?.keyword || '';
+          let headlineHasKeyword: boolean | null = null;
+          let featureCount = 0;
+          let faqCount = 0;
+
+          if (pageSpec) {
+            // Check hero headline for primary keyword
+            const heroSection = pageSpec.sections.find((s: PageSection) => s.type === 'hero');
+            if (heroSection && primaryKeyword) {
+              const heroCopy = heroSection.copy as { headline: string; subheadline: string };
+              const headlineLower = heroCopy.headline.toLowerCase();
+              const kwLower = primaryKeyword.toLowerCase();
+              headlineHasKeyword = headlineLower.includes(kwLower);
+              evals.push({
+                pass: headlineHasKeyword,
+                score: headlineHasKeyword ? 10 : 3,
+                issues: headlineHasKeyword ? [] : [`Hero headline does not contain primary keyword "${primaryKeyword}"`],
+                suggestions: headlineHasKeyword ? [] : [`Rewrite headline to naturally include "${primaryKeyword}"`],
+              });
+            }
+
+            // Check meta description
+            if (primaryKeyword && pageSpec.metaDescription) {
+              evals.push(checkMetaDescription(pageSpec.metaDescription, primaryKeyword));
+            }
+
+            // Check feature count
+            const featuresSection = pageSpec.sections.find((s: PageSection) => s.type === 'features');
+            if (featuresSection) {
+              const featuresCopy = featuresSection.copy as { features: unknown[] };
+              featureCount = featuresCopy.features?.length || 0;
+              const inRange = featureCount >= 3 && featureCount <= 6;
+              evals.push({
+                pass: inRange,
+                score: inRange ? 10 : 5,
+                issues: inRange ? [] : [`Feature count ${featureCount} is outside recommended range (3-6)`],
+                suggestions: inRange ? [] : ['Aim for 3-6 features for optimal landing page layout'],
+              });
+            }
+
+            // Check FAQ count
+            const faqSection = pageSpec.sections.find((s: PageSection) => s.type === 'faq');
+            if (faqSection) {
+              const faqCopy = faqSection.copy as { faqs: unknown[] };
+              faqCount = faqCopy.faqs?.length || 0;
+              const inRange = faqCount >= 3 && faqCount <= 10;
+              evals.push({
+                pass: inRange,
+                score: inRange ? 10 : 5,
+                issues: inRange ? [] : [`FAQ count ${faqCount} is outside recommended range (3-10)`],
+                suggestions: inRange ? [] : ['Aim for 3-10 FAQs for good SEO coverage'],
+              });
+            }
+          }
+
+          // Check color contrast from extracted brand
+          if (extractedBrand?.colors.text && extractedBrand?.colors.background) {
+            const ratio = contrastRatio(extractedBrand.colors.text, extractedBrand.colors.background);
+            const passes = ratio >= 4.5;
             evals.push({
-              pass: hasKeyword,
-              score: hasKeyword ? 10 : 3,
-              issues: hasKeyword ? [] : [`Hero headline does not contain primary keyword "${primaryKeyword}"`],
-              suggestions: hasKeyword ? [] : [`Rewrite headline to naturally include "${primaryKeyword}"`],
+              pass: passes,
+              score: passes ? 10 : Math.round(ratio),
+              issues: passes ? [] : [`Text/background contrast ratio ${ratio.toFixed(1)}:1 is below WCAG AA minimum (4.5:1)`],
+              suggestions: passes ? [] : ['Lighten text color or darken background for better readability'],
             });
           }
 
-          // Check heroSubheadline includes at least one secondary keyword
-          if (ctx.topKeywords.length > 1) {
-            const subLower = brandAny.landingPage.heroSubheadline.toLowerCase();
-            const secondaryHit = ctx.topKeywords.slice(1, 4).some(
-              (k) => subLower.includes(k.keyword.toLowerCase()),
-            );
-            evals.push({
-              pass: secondaryHit,
-              score: secondaryHit ? 10 : 5,
-              issues: secondaryHit ? [] : ['Hero subheadline does not contain any secondary keywords'],
-              suggestions: secondaryHit ? [] : [`Incorporate one of: ${ctx.topKeywords.slice(1, 4).map((k) => `"${k.keyword}"`).join(', ')}`],
-            });
-          }
+          const combined = combineEvaluations(evals);
+
+          return {
+            ...combined,
+            primaryKeyword,
+            metaDescriptionLength: pageSpec?.metaDescription?.length ?? 0,
+            headlineHasKeyword,
+            featureCount,
+            faqCount,
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { error: `Evaluation failed: ${msg}` };
         }
-
-        // Check color contrast (basic: ensure text and background differ significantly)
-        if (brand.colors.text && brand.colors.background) {
-          const ratio = contrastRatio(brand.colors.text, brand.colors.background);
-          const passes = ratio >= 4.5; // WCAG AA for normal text
-          evals.push({
-            pass: passes,
-            score: passes ? 10 : Math.round(ratio),
-            issues: passes ? [] : [`Text/background contrast ratio ${ratio.toFixed(1)}:1 is below WCAG AA minimum (4.5:1)`],
-            suggestions: passes ? [] : ['Lighten text color or darken background for better readability'],
-          });
-        }
-
-        // Check value props target different keywords
-        let vpKeywordHitCount = 0;
-        if (brandAny.landingPage) {
-          const vpTitles = brandAny.landingPage.valueProps.map((vp: { title: string }) => vp.title.toLowerCase());
-          const vpKeywordHits = ctx.topKeywords.slice(0, 6).filter(
-            (k) => vpTitles.some((t: string) => t.includes(k.keyword.toLowerCase())),
-          );
-          vpKeywordHitCount = vpKeywordHits.length;
-          evals.push({
-            pass: vpKeywordHits.length >= 2,
-            score: Math.min(10, vpKeywordHits.length * 3),
-            issues: vpKeywordHits.length < 2 ? [`Only ${vpKeywordHits.length} value props incorporate target keywords`] : [],
-            suggestions: vpKeywordHits.length < 2 ? ['Rewrite value prop titles to naturally include secondary keywords'] : [],
-          });
-        }
-
-        const combined = combineEvaluations(evals);
-
-        return {
-          ...combined,
-          primaryKeyword,
-          seoDescriptionLength: brandAny.seoDescription?.length ?? 0,
-          headlineHasKeyword: evals[1]?.pass ?? null,
-          valuePropsWithKeywords: vpKeywordHitCount,
-        };
       },
     },
 
@@ -579,7 +703,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
         required: [],
       },
       execute: async () => {
-        if (!brand) return { error: 'Call design_brand first' };
+        if (!brand) return { error: 'Call assemble_site_files first' };
 
         // Reuse existing repo if preloaded or found in DB
         if (repo) {
