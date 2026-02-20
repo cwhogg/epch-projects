@@ -23,16 +23,9 @@ vi.mock('@/lib/frameworks/framework-loader', () => ({
   getFrameworkPrompt: vi.fn().mockReturnValue('## Landing Page Assembly\nPhase 1: Extract...'),
 }));
 
-const { VALID_DESIGN_TOKENS, VALID_DESIGN_DOC } = vi.hoisted(() => {
-  const tokens = JSON.stringify({
-    siteName: 'TestBrand', tagline: 'Test all the things',
-    colors: { primary: '#2563EB', primaryLight: '#3B82F6', background: '#FFFFFF', backgroundElevated: '#F9FAFB', text: '#111827', textSecondary: '#4B5563', textMuted: '#9CA3AF', accent: '#10B981', border: '#E5E7EB' },
-    fonts: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' },
-    theme: 'light',
-  });
-  const doc = `# Design Principles\n\nSome prose.\n\n\`\`\`json:design-tokens\n${tokens}\n\`\`\`\n\nMore prose.`;
-  return { VALID_DESIGN_TOKENS: tokens, VALID_DESIGN_DOC: doc };
-});
+const VALID_DESIGN_DOC = vi.hoisted(() =>
+  '# Design Principles\n\nWarm tones with coral primary (#FF6B5B). Inter for headings, DM Sans for body.',
+);
 
 vi.mock('@/lib/db', () => ({
   getIdeaFromDb: vi.fn().mockResolvedValue({
@@ -263,43 +256,6 @@ describe('POST /api/painted-door/[id]/chat', () => {
 
     const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
     expect(response.status).toBe(400);
-  });
-
-  it('returns 400 for mode_select when design-principles doc is missing', async () => {
-    const { getFoundationDoc } = await import('@/lib/db');
-    (getFoundationDoc as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-
-    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'mode_select', mode: 'interactive' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
-    expect(response.status).toBe(400);
-    const body = await response.json();
-    expect(body.error).toContain('Missing design-principles');
-  });
-
-  it('returns 400 for mode_select when design-principles has invalid tokens', async () => {
-    const { getFoundationDoc } = await import('@/lib/db');
-    (getFoundationDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
-      type: 'design-principles',
-      content: '# Design Principles\n\nNo tokens block here.',
-      generatedAt: '2026-02-17',
-      editedAt: null,
-    });
-
-    const request = new Request('http://localhost/api/painted-door/idea-1/chat', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'mode_select', mode: 'interactive' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const response = await POST(request, { params: Promise.resolve({ id: 'idea-1' }) });
-    expect(response.status).toBe(400);
-    const body = await response.json();
-    expect(body.error).toContain('invalid tokens');
   });
 
   it('handles request body parse failure', async () => {

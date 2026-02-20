@@ -904,7 +904,7 @@ git commit -m "refactor: evaluate_brand reads from session, remove foundation-to
 
 ---
 
-### Task 5: Remove prerequisite gate from chat route
+### ✅ Task 5: Remove prerequisite gate from chat route
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:10,154-168`

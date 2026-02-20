@@ -6,8 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropic } from '@/lib/anthropic';
 import { CLAUDE_MODEL } from '@/lib/config';
 import { buildContentContext } from '@/lib/content-context';
-import { getAllFoundationDocs, getFoundationDoc, getIdeaFromDb } from '@/lib/db';
-import { extractBrandFromDesignPrinciples } from '@/lib/foundation-tokens';
+import { getAllFoundationDocs, getIdeaFromDb } from '@/lib/db';
 import { getFrameworkPrompt } from '@/lib/frameworks/framework-loader';
 import {
   getBuildSession,
@@ -149,22 +148,6 @@ export async function POST(
   if (body.type === 'mode_select') {
     if (!body.mode) {
       return Response.json({ error: 'Missing mode for mode_select' }, { status: 400 });
-    }
-
-    // Prerequisite: validate design-principles Foundation doc has valid tokens
-    const designDoc = await getFoundationDoc(ideaId, 'design-principles');
-    if (!designDoc) {
-      return Response.json(
-        { error: 'Missing design-principles Foundation document. Generate it first before starting the website build.' },
-        { status: 400 },
-      );
-    }
-    const tokenCheck = extractBrandFromDesignPrinciples(designDoc.content, '');
-    if (!tokenCheck.ok) {
-      return Response.json(
-        { error: `Design-principles doc has invalid tokens: ${tokenCheck.error}. Regenerate the design-principles Foundation document to fix this.` },
-        { status: 400 },
-      );
     }
 
     const session: BuildSession = {
