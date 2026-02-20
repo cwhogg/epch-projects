@@ -66,7 +66,23 @@ import { assembleFromSpec } from '../../painted-door-templates';
 
 // --- Helpers ---
 
-function makeSession(sections: { type: string; copy: Record<string, unknown> }[] = []) {
+const VALID_BRAND = {
+  siteName: 'TestBrand',
+  tagline: 'Test all the things',
+  siteUrl: '',
+  colors: {
+    primary: '#2563EB', primaryLight: '#3B82F6', background: '#FFFFFF',
+    backgroundElevated: '#F9FAFB', text: '#111827', textSecondary: '#4B5563',
+    textMuted: '#9CA3AF', accent: '#10B981', border: '#E5E7EB',
+  },
+  fonts: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' },
+  theme: 'light' as const,
+};
+
+function makeSession(
+  sections: { type: string; copy: Record<string, unknown> }[] = [],
+  brand?: typeof VALID_BRAND,
+) {
   return {
     ideaId: 'idea-1',
     mode: 'chat',
@@ -80,6 +96,7 @@ function makeSession(sections: { type: string; copy: Record<string, unknown> }[]
         metaDescription: '',
         ogDescription: '',
       },
+      ...(brand !== undefined ? { brand } : {}),
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -287,7 +304,7 @@ describe('assemble_site_files tool (PageSpec path)', () => {
     mockSaveBuildSession.mockResolvedValue(undefined);
   });
 
-  it('assembles files when PageSpec is complete', async () => {
+  it('assembles files when PageSpec is complete and brand is locked', async () => {
     const fullSession = makeSession([
       { type: 'hero', copy: { headline: 'H', subheadline: 'S', ctaText: 'Go now' } },
       { type: 'problem', copy: { headline: 'H', body: 'B' } },
@@ -297,18 +314,11 @@ describe('assemble_site_files tool (PageSpec path)', () => {
       { type: 'objections', copy: { sectionHeadline: 'O', objections: [{ question: 'Q', answer: 'A' }] } },
       { type: 'final-cta', copy: { headline: 'H', body: 'B', ctaText: 'Go now' } },
       { type: 'faq', copy: { sectionHeadline: 'F', faqs: [{ question: 'Q', answer: 'A' }] } },
-    ]);
+    ], VALID_BRAND);
     fullSession.artifacts.pageSpec!.metaTitle = 'Test Title';
     fullSession.artifacts.pageSpec!.metaDescription = 'Test description';
     fullSession.artifacts.pageSpec!.ogDescription = 'Test OG';
     mockGetBuildSession.mockResolvedValue(fullSession);
-
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const assemble = findTool(tools, 'assemble_site_files');
@@ -319,16 +329,9 @@ describe('assemble_site_files tool (PageSpec path)', () => {
   });
 
   it('returns error when sections are missing', async () => {
-    // Only hero section
     mockGetBuildSession.mockResolvedValue(
-      makeSession([{ type: 'hero', copy: { headline: 'H', subheadline: 'S', ctaText: 'Go now' } }]),
+      makeSession([{ type: 'hero', copy: { headline: 'H', subheadline: 'S', ctaText: 'Go now' } }], VALID_BRAND),
     );
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const assemble = findTool(tools, 'assemble_site_files');
@@ -336,7 +339,7 @@ describe('assemble_site_files tool (PageSpec path)', () => {
     expect(result.error).toContain('missing');
   });
 
-  it('returns error when design-principles doc is missing', async () => {
+  it('returns error when brand is not locked', async () => {
     const fullSession = makeSession([
       { type: 'hero', copy: { headline: 'H', subheadline: 'S', ctaText: 'Go now' } },
       { type: 'problem', copy: { headline: 'H', body: 'B' } },
@@ -346,49 +349,17 @@ describe('assemble_site_files tool (PageSpec path)', () => {
       { type: 'objections', copy: { sectionHeadline: 'O', objections: [{ question: 'Q', answer: 'A' }] } },
       { type: 'final-cta', copy: { headline: 'H', body: 'B', ctaText: 'Go now' } },
       { type: 'faq', copy: { sectionHeadline: 'F', faqs: [{ question: 'Q', answer: 'A' }] } },
-    ]);
+    ]); // No brand
     mockGetBuildSession.mockResolvedValue(fullSession);
-    mockGetFoundationDoc.mockResolvedValue(null);
 
     const tools = await getTools();
     const assemble = findTool(tools, 'assemble_site_files');
     const result = await assemble.execute({});
-    expect(result.error).toContain('design-principles');
-  });
-
-  it('returns error when token extraction fails', async () => {
-    const fullSession = makeSession([
-      { type: 'hero', copy: { headline: 'H', subheadline: 'S', ctaText: 'Go now' } },
-      { type: 'problem', copy: { headline: 'H', body: 'B' } },
-      { type: 'features', copy: { sectionHeadline: 'F', features: [{ title: 'T', description: 'D' }, { title: 'T2', description: 'D2' }, { title: 'T3', description: 'D3' }] } },
-      { type: 'how-it-works', copy: { sectionHeadline: 'H', steps: [{ label: 'L', description: 'D' }, { label: 'L2', description: 'D2' }, { label: 'L3', description: 'D3' }] } },
-      { type: 'audience', copy: { sectionHeadline: 'A', body: 'B' } },
-      { type: 'objections', copy: { sectionHeadline: 'O', objections: [{ question: 'Q', answer: 'A' }] } },
-      { type: 'final-cta', copy: { headline: 'H', body: 'B', ctaText: 'Go now' } },
-      { type: 'faq', copy: { sectionHeadline: 'F', faqs: [{ question: 'Q', answer: 'A' }] } },
-    ]);
-    mockGetBuildSession.mockResolvedValue(fullSession);
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: '# No tokens block here',
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
-
-    const tools = await getTools();
-    const assemble = findTool(tools, 'assemble_site_files');
-    const result = await assemble.execute({});
-    expect(result.error).toContain('json:design-tokens');
+    expect(result.error).toContain('lock_brand');
   });
 
   it('surfaces Redis read failure for build session', async () => {
     mockGetBuildSession.mockRejectedValue(new Error('Redis timeout'));
-    mockGetFoundationDoc.mockResolvedValue({
-      type: 'design-principles',
-      content: makeDesignDoc(VALID_DESIGN_TOKENS),
-      generatedAt: '2026-02-19',
-      editedAt: null,
-    });
 
     const tools = await getTools();
     const assemble = findTool(tools, 'assemble_site_files');

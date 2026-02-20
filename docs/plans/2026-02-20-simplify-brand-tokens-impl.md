@@ -479,7 +479,7 @@ git commit -m "feat: add lock_brand tool for LLM-driven brand token capture"
 
 ---
 
-### Task 3: Update `assemble_site_files` to read brand from session
+### ✅ Task 3: Update `assemble_site_files` to read brand from session
 
 **Files:**
 - Modify: `src/lib/agent-tools/website.ts:474-529`

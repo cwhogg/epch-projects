@@ -625,7 +625,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
     {
       name: 'assemble_site_files',
       description:
-        'Assemble all site files from the locked PageSpec and design-principles Foundation doc. Deterministic — no LLM call. Requires all 8 sections to be locked via lock_section_copy.',
+        'Assemble all site files from the locked PageSpec and locked brand. Deterministic — no LLM call. Requires all 8 sections locked via lock_section_copy and brand locked via lock_brand.',
       input_schema: {
         type: 'object',
         properties: {},
@@ -633,7 +633,7 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
       },
       execute: async () => {
         try {
-          // Read build session for PageSpec
+          // Read build session for PageSpec and brand
           const session = await getBuildSession(ideaId);
           if (!session?.artifacts?.pageSpec) {
             return { error: 'No PageSpec found — lock all sections first' };
@@ -646,25 +646,20 @@ export async function createWebsiteTools(ideaId: string): Promise<ToolDefinition
             return { error: `Cannot assemble: missing section types: ${missing.join(', ')}` };
           }
 
-          // Extract brand from design-principles Foundation doc
-          const designDoc = await getFoundationDoc(ideaId, 'design-principles');
-          if (!designDoc) {
-            return { error: 'No design-principles Foundation doc found. Generate one first.' };
+          // Read brand from session (set by lock_brand) or closure (preloaded from site record on rebuilds)
+          const sourceBrand = session.artifacts.brand ?? brand;
+          if (!sourceBrand) {
+            return { error: 'No brand locked — call lock_brand first' };
           }
 
-          // Determine siteUrl from existing site record
-          let existingSiteUrl = '';
+          // Resolve siteUrl from existing site record
+          const sessionBrand = { ...sourceBrand } as BrandIdentity;
           try {
             const existingSite = await getPaintedDoorSite(ideaId);
-            if (existingSite?.siteUrl) existingSiteUrl = existingSite.siteUrl;
+            if (existingSite?.siteUrl) sessionBrand.siteUrl = existingSite.siteUrl;
           } catch { /* ignore */ }
 
-          const extraction = extractBrandFromDesignPrinciples(designDoc.content, existingSiteUrl);
-          if (!extraction.ok) {
-            return { error: `Brand extraction failed: ${extraction.error}` };
-          }
-
-          brand = extraction.brand as BrandIdentity;
+          brand = sessionBrand;
           allFiles = assembleFromSpec(pageSpec, brand);
 
           return {
