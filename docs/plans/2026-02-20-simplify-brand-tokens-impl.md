@@ -1006,7 +1006,7 @@ git commit -m "refactor: remove prerequisite token gate from chat route"
 
 ---
 
-### Task 6: Update system prompt to mention `lock_brand` at Stage 0
+### ✅ Task 6: Update system prompt to mention `lock_brand` at Stage 0
 
 **Files:**
 - Modify: `src/app/api/painted-door/[id]/chat/route.ts:118`

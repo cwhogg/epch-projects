@@ -114,6 +114,8 @@ ${advisorRoster}
 ## Build Tools
 You have access to all website build tools plus consult_advisor. Use them when you reach the appropriate step.
 
+**Brand Locking:** At Stage 0 (Extract & Validate Ingredients), after reading the design-principles Foundation document, call \`lock_brand\` with siteName, tagline, theme, all 9 color hex codes, and all 3 font names from the design principles. This captures the brand identity for site assembly. You may call \`lock_brand\` with \`overwrite: true\` during final review to revise brand tokens.
+
 **Copy Locking:** After each copy-producing stage, call \`lock_section_copy({ type, copy })\` to lock the section into the PageSpec accumulator. The accumulator builds the full page spec incrementally. All 8 section types must be locked before \`assemble_site_files\` can run. At Stage 4 (Final Review), use \`lock_page_meta({ metaTitle, metaDescription, ogDescription })\` to lock page metadata. Use \`overwrite: true\` in lock_section_copy only during final review to revise previously locked copy.
 
 ## Output
