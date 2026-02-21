@@ -146,7 +146,7 @@ graph TB
         S_SERP["serp-search"]
         S_PUBLISH["publish-pipeline,<br/>github-publish,<br/>publish-targets"]
         S_PD_DB["painted-door-db"]
-        S_PD_TMPL["painted-door-templates,<br/>painted-door-page-spec,<br/>painted-door-sections,<br/>foundation-tokens,<br/>contrast-utils"]
+        S_PD_TMPL["painted-door-templates,<br/>painted-door-page-spec,<br/>painted-door-sections,<br/>contrast-utils"]
         S_CONTENT["content-prompts,<br/>content-context, content-vault"]
         S_ANALYTICS_DB["analytics-db"]
         S_ADVISORS["advisors/registry,<br/>advisors/prompt-loader"]
@@ -253,7 +253,6 @@ graph TB
         painted_door_templates["painted-door-templates.ts<br/>Next.js site templates (~21 files)<br/>assembleFromSpec()"]
         painted_door_page_spec["painted-door-page-spec.ts<br/>PageSpec types + section copy validation"]
         painted_door_sections["painted-door-sections.ts<br/>8 section renderers + wrapInPage"]
-        foundation_tokens["foundation-tokens.ts<br/>Extract BrandIdentity from design-principles<br/>json:design-tokens block"]
         contrast_utils["contrast-utils.ts<br/>WCAG luminance + contrast ratio"]
     end
 
@@ -314,7 +313,7 @@ graph LR
     subgraph Website
         B7 --> D1["User clicks Build Website"]
         D1 --> D1a["/website/[id]/build"]
-        D1a --> D1b["Chat-driven pipeline<br/>lock_section_copy accumulates PageSpec<br/>assembleFromSpec renders deterministically"]
+        D1a --> D1b["Chat-driven pipeline<br/>lock_brand captures brand identity<br/>lock_section_copy accumulates PageSpec<br/>assembleFromSpec renders deterministically"]
         D1b --> D4["Live site on Vercel<br/>with email signup"]
     end
 
@@ -740,7 +739,7 @@ Both cron routes validate `CRON_SECRET` on GET (Vercel Cron) and accept unauthen
 | Research | `src/lib/research-agent.ts` | `agent-tools/research.ts` | Market research: competitors, SEO pipeline, WTP, scoring |
 | Content | `src/lib/content-agent.ts` | `agent-tools/content.ts` | Content calendar generation and piece writing |
 | Foundation | `src/lib/foundation-agent.ts` | `agent-tools/foundation.ts` | 7 strategic foundation documents |
-| Website | Chat-driven pipeline (no standalone agent) | `agent-tools/website.ts` | PageSpec accumulator via `lock_section_copy`, deterministic rendering via `assembleFromSpec` → GitHub repo → Vercel deploy |
+| Website | Chat-driven pipeline (no standalone agent) | `agent-tools/website.ts` | Brand capture via `lock_brand`, PageSpec accumulator via `lock_section_copy`, deterministic rendering via `assembleFromSpec` → GitHub repo → Vercel deploy |
 | Analytics | `src/lib/analytics-agent.ts` | `agent-tools/analytics.ts` | Weekly GSC data collection and performance reports |
 | Content Critique | `src/lib/content-critique-agent.ts` | `agent-tools/critique.ts` | Goal-oriented critique pipeline with framework injection, named critics, and agent-controlled critique selection |
 
@@ -771,7 +770,6 @@ Most agents have v1 (procedural) and v2 (agentic) modes, selected by `AGENT_V2` 
 | `src/lib/painted-door-templates.ts` | Next.js site scaffold templates (~21 files), `assembleFromSpec()` |
 | `src/lib/painted-door-page-spec.ts` | `PageSpec` types, per-section copy validation, section type helpers |
 | `src/lib/painted-door-sections.ts` | 8 section renderers (hero, problem, features, etc.) + `wrapInPage` + `renderLandingPage` |
-| `src/lib/foundation-tokens.ts` | Extract `BrandIdentity` from design-principles Foundation doc `json:design-tokens` block |
 | `src/lib/contrast-utils.ts` | WCAG 2.0 luminance calculation and contrast ratio |
 | `src/lib/painted-door-db.ts` | Painted door site persistence + dynamic publish targets + build sessions + conversation history |
 | `src/lib/analytics-db.ts` | Analytics snapshots, reports, alerts persistence |
