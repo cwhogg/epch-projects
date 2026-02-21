@@ -27,57 +27,36 @@ Present your proposed direction to the user for feedback. Include specific color
 
 ## Phase 3: Produce Design Principles Document
 
-Write the complete design-principles document with two parts:
+Write the complete design-principles document:
 
-### Part 1: Prose Principles
-
-Write 3-5 design principles covering:
+### Design Principles (3-5)
+Each principle should cover one of:
 - Typography philosophy (why these fonts, what they communicate)
 - Color philosophy (why this palette, what the hierarchy achieves)
 - Spacing and density (generous vs. compact, why)
 - Overall feeling (the emotional response the design should evoke)
 
-### Part 2: Design Tokens
+### Color Palette
+Describe the complete color palette with hex values inline (e.g., "a warm coral `#FF6B5B` for primary actions"):
+- **Primary color** (CTAs, buttons) and a lighter variant for hover states
+- **Background** and an elevated surface color (for cards)
+- **Text colors**: primary, secondary, and muted
+- **Accent color** (highlights, success states — distinct from primary)
+- **Border color** (subtle, visible but not dominant)
 
-Include a fenced code block with the exact label `json:design-tokens`:
+All colors must be 6-digit hex codes (`#RRGGBB`). No 3-digit shortcuts, no named colors.
 
-````
-```json:design-tokens
-{
-  "siteName": "Product Name",
-  "tagline": "A short tagline",
-  "colors": {
-    "primary": "#hex",
-    "primaryLight": "#hex",
-    "background": "#hex",
-    "backgroundElevated": "#hex",
-    "text": "#hex",
-    "textSecondary": "#hex",
-    "textMuted": "#hex",
-    "accent": "#hex",
-    "border": "#hex"
-  },
-  "fonts": {
-    "heading": "Google Font Name",
-    "body": "Google Font Name",
-    "mono": "Google Font Name"
-  },
-  "theme": "light"
-}
-```
-````
+### Typography
+Specify three fonts from Google Fonts:
+- **Heading font**: What it communicates, why it fits the brand
+- **Body font**: Readability and personality
+- **Monospace font**: For code or technical content
 
-### Token Requirements
+### Theme
+State whether the site uses a **light** or **dark** theme and explain why it fits the audience and brand personality.
 
-- **All 9 color fields are required.** Every value must be a valid 6-digit hex code (`#RRGGBB`).
-- **All 3 font fields are required.** Every value must be a font available on Google Fonts.
-- **WCAG AA contrast**: `text` on `background` must have >= 4.5:1 contrast ratio. Test this before finalizing.
-- **Theme** must be exactly `"light"` or `"dark"`.
-- **`primary`** is the CTA/button color — it must stand out against the background.
-- **`primaryLight`** is for hover states and secondary emphasis — slightly lighter than primary.
-- **`accent`** is for success states, highlights, and secondary actions — must differ from primary.
-- **`backgroundElevated`** is for cards and elevated surfaces — slightly different from background.
-- **`border`** should be subtle — visible but not dominant.
+### Contrast
+Ensure that the primary text color on the background color has sufficient contrast for readability (WCAG AA: at least 4.5:1 contrast ratio).
 
 **WAIT for the user's response before continuing.**
 
@@ -85,6 +64,6 @@ Include a fenced code block with the exact label `json:design-tokens`:
 
 1. Every color must be a 6-digit hex code. No 3-digit shortcuts, no named colors, no RGB/HSL.
 2. Every font must be available on Google Fonts. No system fonts (Arial, Helvetica, Times New Roman).
-3. WCAG AA contrast is non-negotiable. If text on background is below 4.5:1, pick a darker text color or lighter background.
-4. The design must serve conversion. Pretty is not enough — the visual hierarchy must guide the eye from headline to CTA.
-5. Match the brand voice. A playful brand with a corporate design (or vice versa) creates cognitive dissonance.
+3. Text on background should meet WCAG AA contrast (4.5:1). If it doesn't, adjust.
+4. The design must serve conversion. The visual hierarchy must guide the eye from headline to CTA.
+5. Match the brand voice. A playful brand with a corporate design creates cognitive dissonance.

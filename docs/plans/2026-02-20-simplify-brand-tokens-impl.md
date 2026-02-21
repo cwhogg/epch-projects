@@ -1041,7 +1041,7 @@ git commit -m "feat: add lock_brand instructions to website builder system promp
 
 ---
 
-### Task 7: Simplify design-principles prompt to prose-only
+### ✅ Task 7: Simplify design-principles prompt to prose-only
 
 **Files:**
 - Modify: `src/lib/frameworks/prompts/design-principles/prompt.md:28-91`
