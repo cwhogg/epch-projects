@@ -1109,7 +1109,7 @@ git commit -m "refactor: simplify design-principles prompt to prose-only, remove
 
 ---
 
-### Task 8: Simplify foundation.ts WAIT-stripping hack
+### ✅ Task 8: Simplify foundation.ts WAIT-stripping hack
 
 **Files:**
 - Modify: `src/lib/agent-tools/foundation.ts:83-95`
@@ -1166,7 +1166,7 @@ git commit -m "refactor: remove json:design-tokens mandate from foundation agent
 
 ---
 
-### Task 9: Delete `foundation-tokens.ts` and its test file
+### ✅ Task 9: Delete `foundation-tokens.ts` and its test file
 
 **Files:**
 - Delete: `src/lib/foundation-tokens.ts`
@@ -1195,7 +1195,7 @@ git commit -m "chore: delete foundation-tokens.ts regex parser and its tests"
 
 ---
 
-### Task 10: Full verification
+### ✅ Task 10: Full verification
 
 **Step 1: Run the full test suite**
 
