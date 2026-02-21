@@ -87,9 +87,9 @@ Ground every claim in the strategy document. Don't invent new positioning — de
         // For one-shot generation, strip WAITs and instruct complete output.
         const stripped = frameworkPrompt.replace(/\*\*WAIT for the user's response before continuing\.\*\*/g, '');
         prompt += stripped;
-        prompt += '\n\nIMPORTANT: This is a one-shot generation. Complete ALL phases in a single response. You MUST include the ```json:design-tokens``` code block with all required fields. Do not stop early or ask for feedback.';
+        prompt += '\n\nIMPORTANT: This is a one-shot generation. Complete ALL phases in a single response. Do not stop early or ask for feedback.';
       } else {
-        prompt += 'Generate a design principles document with a json:design-tokens block.';
+        prompt += 'Generate a design principles document covering color palette, typography, and theme.';
       }
       break;
     }
