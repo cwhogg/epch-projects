@@ -1742,7 +1742,7 @@ git commit -m "chore: remove design-seed.ts, content moved to framework examples
 
 ---
 
-## Task 15: Update eval-config.ts
+## ✅ Task 15: Update eval-config.ts
 
 **Files:**
 - Modify: `e2e/eval-config.ts`
@@ -1773,7 +1773,7 @@ git commit -m "chore: update eval config for new LLM surfaces"
 
 ---
 
-## Task 16: Update landing-page-assembly framework prompt
+## ✅ Task 16: Update landing-page-assembly framework prompt
 
 **Files:**
 - Modify: `src/lib/frameworks/prompts/landing-page-assembly/prompt.md`
@@ -1804,7 +1804,7 @@ git commit -m "docs: add lock_section_copy tool instructions to landing page ass
 
 ---
 
-## Task 17: Update architecture docs
+## ✅ Task 17: Update architecture docs
 
 **Files:**
 - Modify: `docs/architecture.md`
@@ -1828,7 +1828,7 @@ git commit -m "docs: update architecture for website builder rebuild"
 
 ---
 
-## Task 18: Full verification
+## ✅ Task 18: Full verification
 
 **Step 1: Run all tests**
 
