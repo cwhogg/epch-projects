@@ -82,7 +82,7 @@ export interface RejectedPiece {
 export interface ContentCalendar {
   ideaId: string;
   ideaName: string;
-  targetId?: string; // 'secondlook' | 'study-platform', defaults to 'secondlook'
+  targetId?: string; // 'secondlook' | 'study-platform' | 'medicaid-analysis', defaults to 'secondlook'
   active?: boolean; // defaults to true; set false to pause publishing
   strategySummary: string;
   pieces: ContentPiece[];

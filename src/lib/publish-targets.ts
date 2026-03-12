@@ -34,6 +34,18 @@ export const PUBLISH_TARGETS: Record<string, PublishTarget> = {
       'faq': 'content/faq',
     },
   },
+  'medicaid-analysis': {
+    id: 'medicaid-analysis',
+    repoOwner: 'cwhogg',
+    repoName: 'medicaid-analysis',
+    branch: 'main',
+    siteUrl: 'https://www.openhealthdatahub.com',
+    pathMap: {
+      'blog-post': 'content/blog',
+      'comparison': 'content/comparison',
+      'faq': 'content/faq',
+    },
+  },
 };
 
 export async function getPublishTarget(targetId: string): Promise<PublishTarget> {
