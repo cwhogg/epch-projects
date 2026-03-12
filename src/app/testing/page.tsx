@@ -7,9 +7,18 @@ import TestingAnalytics from '@/components/TestingAnalytics';
 
 export const dynamic = 'force-dynamic';
 
-async function getData(): Promise<{ programs: (ContentCalendar & { publishedCount: number; siteName: string })[] }> {
+interface ExternalSite {
+  targetId: string;
+  siteName: string;
+  siteUrl: string;
+}
+
+async function getData(): Promise<{
+  programs: (ContentCalendar & { publishedCount: number; siteName: string })[];
+  externalSites: ExternalSite[];
+}> {
   if (!isRedisConfigured()) {
-    return { programs: [] };
+    return { programs: [], externalSites: [] };
   }
 
   const [calendars, publishedKeys] = await Promise.all([
@@ -25,6 +34,9 @@ async function getData(): Promise<{ programs: (ContentCalendar & { publishedCoun
     publishedByTarget.set(targetId, (publishedByTarget.get(targetId) || 0) + count);
   }
 
+  // Collect targetIds already covered by content calendars
+  const coveredTargets = new Set(calendars.map((cal) => cal.targetId || 'secondlook'));
+
   const programs = calendars
     .map((cal) => {
       const targetId = cal.targetId || 'secondlook';
@@ -39,11 +51,20 @@ async function getData(): Promise<{ programs: (ContentCalendar & { publishedCoun
       return aActive - bActive;
     });
 
-  return { programs };
+  // Find publish targets without content calendars (external sites)
+  const externalSites: ExternalSite[] = Object.values(PUBLISH_TARGETS)
+    .filter((t) => !coveredTargets.has(t.id))
+    .map((t) => ({
+      targetId: t.id,
+      siteName: t.siteUrl.replace('https://', ''),
+      siteUrl: t.siteUrl,
+    }));
+
+  return { programs, externalSites };
 }
 
 export default async function TestingPage() {
-  const { programs } = await getData();
+  const { programs, externalSites } = await getData();
 
   return (
     <div className="space-y-8 sm:space-y-12">
@@ -115,6 +136,46 @@ export default async function TestingPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* External Sites (publish targets without content calendars) */}
+      {externalSites.length > 0 && (
+        <section className="animate-slide-up stagger-2">
+          <h2 className="text-lg font-display mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            External Sites
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {externalSites.map((site) => (
+              <div key={site.targetId} className="card-static p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                    {site.targetId.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255, 107, 91, 0.12)', color: 'var(--accent-coral)' }}>
+                      External
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {site.siteName}
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href={`/project/${site.targetId}/analytics`}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                  style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-purple-light)', border: '1px solid rgba(139, 92, 246, 0.25)' }}
+                >
+                  Analytics
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
       )}
