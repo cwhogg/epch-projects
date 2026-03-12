@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isRedisConfigured } from '@/lib/db';
+import { isRedisConfigured, getGSCLink } from '@/lib/db';
 import { getWeeklyReport, getReportWeekIds } from '@/lib/analytics-db';
 
 export interface WeeklyChartData {
@@ -17,6 +17,17 @@ export async function GET(request: NextRequest) {
   try {
     const ideaId = request.nextUrl.searchParams.get('ideaId');
     const weekIds = await getReportWeekIds();
+
+    // If filtering by ideaId, resolve which site domain this idea is linked to
+    let ideaSiteHost: string | null = null;
+    if (ideaId) {
+      const gscLink = await getGSCLink(ideaId);
+      if (gscLink) {
+        try {
+          ideaSiteHost = new URL(gscLink.siteUrl).hostname.replace('www.', '');
+        } catch { /* ignore */ }
+      }
+    }
 
     // Limit to last 8 weeks for chart readability
     const recentWeeks = weekIds.slice(0, 8).reverse(); // oldest first for chart
@@ -45,6 +56,9 @@ export async function GET(request: NextRequest) {
           // If not a URL, use the query as-is (truncated)
           siteName = page.query.length > 25 ? page.query.slice(0, 22) + '...' : page.query;
         }
+
+        // Filter by idea's linked site when ideaId is provided
+        if (ideaSiteHost && siteName !== ideaSiteHost) continue;
 
         sites[siteName] = (sites[siteName] || 0) + page.impressions;
         totalImpressions += page.impressions;
