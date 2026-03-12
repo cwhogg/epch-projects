@@ -14,61 +14,10 @@ import GSCSetupChecklist from '@/components/GSCSetupChecklist';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import {
   GSCAnalyticsData,
-  GSCQueryRow,
-  KeywordComparison,
   GSCAnalyticsSummary,
 } from '@/types';
-import { fuzzyMatchPair } from '@/lib/utils';
-import { useGSCData, AnalysisInfo } from '@/hooks/useGSCData';
+import { useGSCData } from '@/hooks/useGSCData';
 import { useWeeklyReport } from '@/hooks/useWeeklyReport';
-
-
-function buildComparisons(
-  predictedKeywords: AnalysisInfo['seoData'] extends null ? never : NonNullable<AnalysisInfo['seoData']>['synthesis']['topKeywords'],
-  queryData: GSCQueryRow[],
-): { comparisons: KeywordComparison[]; unexpectedWinners: GSCQueryRow[]; summary: Partial<GSCAnalyticsSummary> } {
-  const comparisons: KeywordComparison[] = [];
-  const matchedQueries = new Set<string>();
-
-  for (const kw of predictedKeywords) {
-    const matchingRow = queryData.find((q) => fuzzyMatchPair(q.query, kw.keyword));
-    if (matchingRow) {
-      matchedQueries.add(matchingRow.query);
-    }
-    comparisons.push({
-      keyword: kw.keyword,
-      predicted: {
-        intentType: kw.intentType,
-        estimatedVolume: kw.estimatedVolume,
-        estimatedCompetitiveness: kw.estimatedCompetitiveness,
-      },
-      actual: matchingRow
-        ? {
-            clicks: matchingRow.clicks,
-            impressions: matchingRow.impressions,
-            ctr: matchingRow.ctr,
-            position: matchingRow.position,
-          }
-        : null,
-    });
-  }
-
-  const unexpectedWinners = queryData
-    .filter((q) => !matchedQueries.has(q.query) && !predictedKeywords.some((kw) => fuzzyMatchPair(q.query, kw.keyword)))
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 20);
-
-  const withTraffic = comparisons.filter((c) => c.actual && c.actual.impressions > 0).length;
-
-  return {
-    comparisons,
-    unexpectedWinners,
-    summary: {
-      predictedKeywordsWithTraffic: withTraffic,
-      totalPredictedKeywords: predictedKeywords.length,
-    },
-  };
-}
 
 function computeSummary(analytics: GSCAnalyticsData): Omit<GSCAnalyticsSummary, 'predictedKeywordsWithTraffic' | 'totalPredictedKeywords' | 'unpredictedQueries'> {
   const totalClicks = analytics.timeSeries.reduce((sum, r) => sum + r.clicks, 0);
@@ -127,11 +76,6 @@ export default function AnalyticsPage() {
     handleWeekChange,
   } = useWeeklyReport(ideaId);
 
-  // Build keyword comparisons
-  const predictedKeywords = analysisInfo?.seoData?.synthesis?.topKeywords || [];
-  const { comparisons, unexpectedWinners, summary: predictionSummary } = analytics
-    ? buildComparisons(predictedKeywords, analytics.queryData)
-    : { comparisons: [], unexpectedWinners: [], summary: {} };
   const overallSummary = analytics ? computeSummary(analytics) : null;
 
   if (loading) {
@@ -286,57 +230,16 @@ export default function AnalyticsPage() {
             />
           </div>
 
-          {/* Prediction Accuracy */}
-          {predictedKeywords.length > 0 && predictionSummary.totalPredictedKeywords != null && (
-            <div
-              className="card-static p-5 animate-slide-up stagger-3"
-            >
-              <h2
-                className="font-display text-base mb-3 flex items-center gap-2"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-                Prediction Accuracy
-              </h2>
-              <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                {predictionSummary.predictedKeywordsWithTraffic} of {predictionSummary.totalPredictedKeywords} predicted keywords received impressions
-                ({predictionSummary.totalPredictedKeywords! > 0
-                  ? `${Math.round((predictionSummary.predictedKeywordsWithTraffic! / predictionSummary.totalPredictedKeywords!) * 100)}%`
-                  : '0%'})
-              </p>
-              <div
-                className="w-full h-2 rounded-full overflow-hidden"
-                style={{ background: 'var(--border-default)' }}
-              >
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${predictionSummary.totalPredictedKeywords! > 0
-                      ? (predictionSummary.predictedKeywordsWithTraffic! / predictionSummary.totalPredictedKeywords!) * 100
-                      : 0}%`,
-                    background: '#34d399',
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Time Series Chart */}
           {analytics.timeSeries.length > 0 && (
-            <div className="animate-slide-up stagger-4">
+            <div className="animate-slide-up stagger-3">
               <AnalyticsChart timeSeries={analytics.timeSeries} />
             </div>
           )}
 
-          {/* Keyword Comparison */}
-          <div className="animate-slide-up stagger-5">
-            <KeywordPerformance
-              comparisons={comparisons}
-              unexpectedWinners={unexpectedWinners}
-            />
+          {/* Top Search Queries */}
+          <div className="animate-slide-up stagger-4">
+            <KeywordPerformance queryData={analytics.queryData} />
           </div>
 
           {/* Per-page Performance */}
