@@ -18,6 +18,7 @@ import {
 } from '@/types';
 import { useGSCData } from '@/hooks/useGSCData';
 import { useWeeklyReport } from '@/hooks/useWeeklyReport';
+import TrafficSourcesPanel from '@/components/TrafficSourcesPanel';
 
 function computeSummary(analytics: GSCAnalyticsData): Omit<GSCAnalyticsSummary, 'predictedKeywordsWithTraffic' | 'totalPredictedKeywords' | 'unpredictedQueries'> {
   const totalClicks = analytics.timeSeries.reduce((sum, r) => sum + r.clicks, 0);
@@ -327,6 +328,16 @@ export default function AnalyticsPage() {
               </div>
             </div>
           )}
+        </>
+      )}
+
+      {/* Site Traffic (for openhealthdatahub.com) */}
+      {linkedSiteUrl?.includes('openhealthdatahub.com') && (
+        <>
+          <div className="pt-2">
+            <div style={{ borderTop: '1px solid var(--border-default)' }} />
+          </div>
+          <TrafficSourcesPanel filterPath="/blog/" />
         </>
       )}
 

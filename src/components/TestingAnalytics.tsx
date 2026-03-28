@@ -5,6 +5,7 @@ import { WeeklyReport } from '@/types';
 import dynamic from 'next/dynamic';
 import PerformanceTable from '@/components/PerformanceTable';
 import AlertsList from '@/components/AlertsList';
+import TrafficSourcesPanel from '@/components/TrafficSourcesPanel';
 
 const ImpressionsChart = dynamic(() => import('@/components/ImpressionsChart'), { ssr: false });
 
@@ -207,6 +208,12 @@ export default function TestingAnalytics() {
           </button>
         </div>
       )}
+
+      {/* Site Traffic (Open Health Data Hub) */}
+      <div className="pt-2">
+        <div style={{ borderTop: '1px solid var(--border-default)' }} />
+      </div>
+      <TrafficSourcesPanel />
 
       {report && summary && (
         <>
